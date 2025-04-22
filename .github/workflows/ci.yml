@@ -1,0 +1,15 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: foundry-rs/foundry-toolchain@v1
+    - run: forge test
+    - uses: actions/setup-node@v4
+      with: {node-version: 20}
+    - run: npm i -g yarn
+    - run: yarn install --immutable
+    - run: yarn --cwd packages/frontend type-check
+    - run: npx circom circuits/eligibility.circom --r1cs --wasm --sym
