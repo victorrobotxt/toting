@@ -1,15 +1,16 @@
-# Docker Compose v2 syntax
 services:
   anvil:
-    image: ghcr.io/foundry-rs/foundry
-    command: ["anvil", "-m", "auto"]
+    image: ghcr.io/foundry-rs/foundry:latest
+    user: "root"  # Use root user which should exist in all containers
+    command: ["anvil","--host","0.0.0.0","-m","auto"]
     ports:
       - "8545:8545"
-    user: "0:0"
+
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+
   db:
     image: postgres:16-alpine
     environment:

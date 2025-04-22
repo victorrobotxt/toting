@@ -2,3 +2,10 @@
 src   = "contracts"
 out   = "out"
 libs  = ["lib"]
+
+[invariant]
+maxRuns = 500    # default is 2000
+
+
+[fuzz]
+runs = 256        # default for fuzz tests

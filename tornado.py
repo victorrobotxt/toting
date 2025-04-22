@@ -103,6 +103,8 @@ def main():
     keep_file = os.path.join(args.folder, args.keep) if args.keep else None
 
     with open(args.output, 'w', encoding='utf-8') as out:
+        out.write("Here is the code so far:\n\n")
+        
         process_folder(args.folder, out, ignore_file, keep_file)
 
 if __name__ == '__main__':

@@ -31,7 +31,7 @@ contract MACIStub is IMACI {
 
 contract SmokeTests is Test {
     WalletFactory factory;
-    VerifierStub  verifier;
+    VerifierStub verifier;
     ElectionManager em;
     MACIStub maci;
     address immutable alice = address(0xBEEF);
@@ -39,9 +39,9 @@ contract SmokeTests is Test {
     function setUp() public {
         verifier = new VerifierStub();
         // zero EntryPoint address is fine for these unit tests
-        factory  = new WalletFactory(EntryPoint(payable(address(0))), verifier);
-        maci     = new MACIStub();
-        em       = new ElectionManager(IMACI(maci));
+        factory = new WalletFactory(EntryPoint(payable(address(0))), verifier);
+        maci = new MACIStub();
+        em = new ElectionManager(IMACI(maci));
     }
 
     function testMintAndDupRevert() public {

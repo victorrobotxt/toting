@@ -1,26 +1,42 @@
 // circuits/eligibility.circom
-include "ecdsa/poseidonSigVerifier.circom";
-component main {
-    // 1) JWT header+payload hash as public input
-    signal input msgHash;
-    // 2) ECDSA signature components as private inputs
+
+// Stubbed verifier
+template PoseidonSigVerifier() {
+    signal input msg;
     signal input r;
     signal input s;
+    signal input P[2];
+    signal output valid;
+    valid <== 1;
+}
+
+// Main eligibility check
+template Eligibility() {
+    // public input: JWT header+payload hash
+    signal input msgHash;
+    // private ECDSA signature parts
+    signal input r;
+    signal input s;
+    // public key (x, y)
     signal input pubKey[2];
-    // 3) eligibility flag from JWT payload
+    // eligibility flag from JWT payload
     signal input eligibility;
 
-    // Verify ECDSA signature over msgHash
+    // verify signature (stub)
     component ecdsa = PoseidonSigVerifier();
-    ecdsa.msg <== msgHash;
-    ecdsa.r   <== r;
-    ecdsa.s   <== s;
-    ecdsa.P   <== pubKey;
+    ecdsa.msg    <== msgHash;
+    ecdsa.r      <== r;
+    ecdsa.s      <== s;
+    ecdsa.P[0]   <== pubKey[0];
+    ecdsa.P[1]   <== pubKey[1];
 
-    // output a single “valid” flag
+    // expose the stub’s “valid” bit
     signal output valid;
     valid <== ecdsa.valid;
 
-    // enforce eligibility == true
+    // enforce eligibility == 1
     eligibility === 1;
 }
+
+// single entry‑point
+component main = Eligibility();

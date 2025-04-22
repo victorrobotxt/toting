@@ -1,0 +1,8 @@
+# .github/workflows/security.yml
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: trailofbits/slither-action@v1
+        with:
+          args: --no-compile
