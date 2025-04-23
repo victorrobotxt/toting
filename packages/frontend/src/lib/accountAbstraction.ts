@@ -1,46 +1,77 @@
-import { EntryPoint, UserOperationBuilder } from "@account-abstraction/sdk";
+import { SimpleAccountAPI } from "@account-abstraction/sdk";
 import { ethers } from "ethers";
 
 const ENTRY_POINT_ADDRESS = process.env.NEXT_PUBLIC_ENTRYPOINT!;
-const WALLET_FACTORY = process.env.NEXT_PUBLIC_WALLET_FACTORY!;
-const ELECTION_MANAGER = process.env.NEXT_PUBLIC_ELECTION_MANAGER!;
+const WALLET_FACTORY_ADDRESS = process.env.NEXT_PUBLIC_WALLET_FACTORY!;
+const ELECTION_MANAGER_ADDR = process.env.NEXT_PUBLIC_ELECTION_MANAGER!;
+const BUNDLER_RPC_URL = process.env.NEXT_PUBLIC_BUNDLER_URL!;
 
-export const ep = new EntryPoint({
-    provider: new ethers.providers.Web3Provider((window as any).ethereum),
-    entryPointAddress: ENTRY_POINT_ADDRESS,
-});
+async function getAccountAPI(signer: ethers.Signer) {
+    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+    return new SimpleAccountAPI({
+        provider,
+        entryPointAddress: ENTRY_POINT_ADDRESS,
+        owner: signer,
+        factoryAddress: WALLET_FACTORY_ADDRESS,
+    });
+}
+
+async function sendUserOpToBundler(userOp: any): Promise<string> {
+    // Use a pure JsonRpcProvider pointed at your bundler
+    const bundler = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
+    // eth_sendUserOperation takes [UserOperation, EntryPointAddress] and returns the hash
+    const userOpHash: string = await bundler.send(
+        "eth_sendUserOperation",
+        [userOp, ENTRY_POINT_ADDRESS]
+    );
+    return userOpHash;
+}
 
 export async function bundleCreateWallet(
     signer: ethers.Signer,
-    proof: { a: [string, string], b: [[string, string], [string, string]], c: [string, string] },
+    proof: { a: [string, string]; b: [[string, string], [string, string]]; c: [string, string] },
     pubSignals: string[],
     owner: string
-) {
-    const initOp = await UserOperationBuilder.createWalletOp({
-        factoryAddress: WALLET_FACTORY,
-        owner,
-        initData: { a: proof.a, b: proof.b, c: proof.c, pubSignals },
+): Promise<string> {
+    const api = await getAccountAPI(signer);
+
+    const factoryIface = new ethers.utils.Interface([
+        "function mintWallet(uint256[2],uint256[2][2],uint256[2],uint256[],address) returns (address)"
+    ]);
+    const initData = factoryIface.encodeFunctionData("mintWallet", [
+        proof.a, proof.b, proof.c, pubSignals, owner
+    ]);
+
+    // 1) build & sign the UserOp
+    const unsignedOp = await api.createSignedUserOp({
+        target: WALLET_FACTORY_ADDRESS,
+        data: initData,
     });
-    return ep.sendUserOperation(initOp, signer);
+    const signedOp = await api.signUserOp(unsignedOp);
+
+    // 2) send it to your bundler via eth_sendUserOperation
+    return sendUserOpToBundler(signedOp);
 }
 
 export async function bundleSubmitVote(
     signer: ethers.Signer,
     voteOption: number,
     nonce: number,
-    vcProof: Uint8Array
-) {
-    const iface = new ethers.utils.Interface([
-        "function enqueueMessage(uint256,uint256,bytes)",
+    vcProof: Uint8Array | string
+): Promise<string> {
+    const api = await getAccountAPI(signer);
+
+    const managerIface = new ethers.utils.Interface([
+        "function enqueueMessage(uint256,uint256,bytes)"
     ]);
-    const data = iface.encodeFunctionData("enqueueMessage", [
-        voteOption,
-        nonce,
-        vcProof,
+    const data = managerIface.encodeFunctionData("enqueueMessage", [
+        voteOption, nonce, vcProof,
     ]);
-    const voteOp = await UserOperationBuilder.accountOp({
-        target: ELECTION_MANAGER,
+
+    const unsignedOp = await api.createSignedUserOp({
+        target: ELECTION_MANAGER_ADDR,
         data,
     });
-    return ep.sendUserOperation(voteOp, signer);
+    const signedOp = await api.signUserOp(unsignedOp);
+    return sendUserOpToBundler(signedOp);
 }

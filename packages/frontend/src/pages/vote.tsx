@@ -10,8 +10,8 @@ export default function VotePage() {
         const signer = provider.getSigner();
         // fetch your MACI voice‑credit proof
         const { nonce, vcProof } = await fetch("/api/maci/getProof").then(r => r.json());
-        const resp = await bundleSubmitVote(signer, option, nonce, vcProof);
-        setReceipt(resp.userOpHash);
+        const userOpHash = await bundleSubmitVote(signer, option, nonce, vcProof);
+        setReceipt(userOpHash);
     };
     return (
         <div>
