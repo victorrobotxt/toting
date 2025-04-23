@@ -6,5 +6,10 @@
   "dependencies": {
     "@account-abstraction/sdk": "^0.6.0",
     "ethers": "^6.13.5"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc --noEmit && node dist/index.js"
   }
 }
