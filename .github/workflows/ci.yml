@@ -37,10 +37,10 @@ jobs:
           node-version: 20
 
       - name: Install frontend dependencies
-        run: npm install -g yarn
-
+        run: yarn install --immutable
       - name: Type-check frontend
-        run: yarn install --immutable && yarn --cwd packages/frontend type-check
-
+        working-directory: packages/frontend
+        run: npx tsc --noEmit
+        
       - name: Compile Circom circuits
         run: npx circom circuits/eligibility.circom --r1cs --wasm --sym
