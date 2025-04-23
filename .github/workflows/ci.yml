@@ -1,8 +1,9 @@
-# .github/workflows/ci.yml
 name: CI
 on:
   push:
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -19,7 +20,7 @@ jobs:
       - name: Init Git submodules
         run: git submodule update --init --recursive
 
-      - name: Run unit tests
+      - name: Run Solidity unit tests
         run: forge test
 
       - name: Generate gas report
@@ -37,8 +38,8 @@ jobs:
           node-version: 20
 
       - name: Install frontend dependencies
-        run: yarn install --immutable
-        
+        run: yarn --cwd packages/frontend install
+
       - name: Type-check frontend
         run: yarn --cwd packages/frontend type-check
 
