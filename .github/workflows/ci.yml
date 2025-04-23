@@ -38,9 +38,9 @@ jobs:
 
       - name: Install frontend dependencies
         run: yarn install --immutable
-      - name: Type-check frontend
-        working-directory: packages/frontend
-        run: npx tsc --noEmit
         
+      - name: Type-check frontend
+        run: yarn --cwd packages/frontend type-check
+
       - name: Compile Circom circuits
         run: npx circom circuits/eligibility.circom --r1cs --wasm --sym
