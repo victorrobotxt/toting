@@ -1,5 +1,3 @@
-mkdir -p scripts
-cat > scripts/run_smoke.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -35,4 +33,3 @@ python3 scripts/smoke_auth_to_mint.py
 
 # 5) Tear down Anvil
 kill $ANVIL_PID
-EOF
