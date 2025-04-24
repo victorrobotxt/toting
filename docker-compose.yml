@@ -1,7 +1,7 @@
 services:
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
-    user: "root"  # Use root user which should exist in all containers
+    user: "0"               # ← run as root so the container can start
     command: ["anvil","--host","0.0.0.0","-m","auto"]
     ports:
       - "8545:8545"
@@ -17,3 +17,9 @@ services:
       POSTGRES_PASSWORD: pass
     ports:
       - "5432:5432"
+  
+  solana:
+    image: solanalabs/solana:v1.18.3
+    command: ["solana-test-validator", "--quiet"]
+    ports:
+      - "8899:8899"

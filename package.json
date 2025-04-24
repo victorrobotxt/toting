@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "@account-abstraction/sdk": "^0.6.0",
+    "@coral-xyz/anchor": "^0.31.1",
     "ethers": "^5"
   },
   "license": "MIT",

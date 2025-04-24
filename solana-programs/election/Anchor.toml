@@ -1,0 +1,7 @@
+[programs.localnet]
+election_mirror = "AdemcJyFzDyiCTyuCQuhkWQHQdQUkaqj15nwAPgsARmj"
+
+[provider]
+cluster = "localnet"
+# use whatever your solana config wallet is
+wallet = ""

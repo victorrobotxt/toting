@@ -1,0 +1,14 @@
+name: Solana-tests
+on: [push, pull_request]
+jobs:
+  solana:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: metaplex-foundation/setup-anchor@v1
+      - run: anchor --version
+      - run: anchor test -- --features skip-entrypoint
