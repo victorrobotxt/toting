@@ -4,20 +4,23 @@ jobs:
   solana:
     runs-on: ubuntu-latest
     steps:
-      # 1) checkout repo with submodules
+      # 1) checkout code + submodules
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      # 2) install Node, Solana CLI, and Anchor CLI
+      # 2) install Node, Solana CLI & Anchor CLI
       - uses: metaDAOproject/setup-anchor@v3.1
         with:
-          node-version:     '20'      # your Node.js version
-          solana-cli-version: '1.18.18'  # match your local CLI
-          anchor-version:     '0.30.1'   # match your Anchor.toml
+          node-version:       '20'
+          solana-cli-version: '1.18.18'
+          anchor-version:     '0.30.1'
 
-      # 3) sanity check
-      - run: anchor --version
+      # 3) run anchor in the election folder
+      - name: Show Anchor version
+        run: anchor --version
+        working-directory: solana-programs/election
 
-      # 4) run tests
-      - run: anchor test -- --features skip-entrypoint
+      - name: Build & test Solana program
+        run: anchor test -- --features skip-entrypoint
+        working-directory: solana-programs/election
