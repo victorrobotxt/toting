@@ -1,42 +1,40 @@
 // circuits/eligibility.circom
+include "ecdsa/ecdsa.circom";     // secp256k1 ECDSA gadget from iden3/circomlib
+include "poseidon.circom";        // for any hashing (if needed)
 
-// Stubbed verifier
-template PoseidonSigVerifier() {
-    signal input msg;
-    signal input r;
-    signal input s;
-    signal input P[2];
-    signal output valid;
+template Eligibility() {
+    // ── Public inputs ─────────────────────────────────────────────────────────
+    // keccak256(header‖payload)
+    signal input msgHash;          
+    // Ethereum public key (uncompressed)
+    signal input pubKey[2];        
+
+    // ── Private inputs ────────────────────────────────────────────────────────
+    // signature r, s values
+    signal input sigR;
+    signal input sigS;
+    // eligibility flag extracted from JWT JSON (0 or 1)
+    signal input eligibility;      
+
+    // ── ECDSA verify ─────────────────────────────────────────────────────────
+    component ecdsaVerify = EcdsaSecp256k1( );  
+    // assign inputs to the gadget
+    ecdsaVerify.msgHash  <== msgHash;  
+    ecdsaVerify.R        <== sigR;     
+    ecdsaVerify.S        <== sigS;     
+    ecdsaVerify.Px       <== pubKey[0];
+    ecdsaVerify.Py       <== pubKey[1];
+    // gadget emits `ecdsaVerify.out === 1` on success
+
+    // ── Eligibility check ─────────────────────────────────────────────────────
+    // enforce the JWT contained `"eligibility":true`
+    eligibility === 1;
+
+    // ── Output ────────────────────────────────────────────────────────────────
+    // we still need exactly one public output for our Solidity stub
+    signal output valid;  
+    // Because both constraints above must pass, we can safely set:
     valid <== 1;
 }
 
-// Main eligibility check
-template Eligibility() {
-    // public input: JWT header+payload hash
-    signal input msgHash;
-    // private ECDSA signature parts
-    signal input r;
-    signal input s;
-    // public key (x, y)
-    signal input pubKey[2];
-    // eligibility flag from JWT payload
-    signal input eligibility;
-
-    // verify signature (stub)
-    component ecdsa = PoseidonSigVerifier();
-    ecdsa.msg    <== msgHash;
-    ecdsa.r      <== r;
-    ecdsa.s      <== s;
-    ecdsa.P[0]   <== pubKey[0];
-    ecdsa.P[1]   <== pubKey[1];
-
-    // expose the stub’s “valid” bit
-    signal output valid;
-    valid <== ecdsa.valid;
-
-    // enforce eligibility == 1
-    eligibility === 1;
-}
-
-// single entry‑point
 component main = Eligibility();
