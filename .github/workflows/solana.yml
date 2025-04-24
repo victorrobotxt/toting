@@ -4,11 +4,20 @@ jobs:
   solana:
     runs-on: ubuntu-latest
     steps:
+      # 1) checkout repo with submodules
       - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with: { submodules: recursive }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - uses: metaplex-foundation/setup-anchor@v1
+        with:
+          submodules: recursive
+
+      # 2) install Node, Solana CLI, and Anchor CLI
+      - uses: metaDAOproject/setup-anchor@v3.1
+        with:
+          node-version:     '20'      # your Node.js version
+          solana-cli-version: '1.18.18'  # match your local CLI
+          anchor-version:     '0.30.1'   # match your Anchor.toml
+
+      # 3) sanity check
       - run: anchor --version
+
+      # 4) run tests
       - run: anchor test -- --features skip-entrypoint
