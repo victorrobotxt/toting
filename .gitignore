@@ -2,3 +2,5 @@ node_modules
 
 .myignore
 .venv
+
+res.txt
