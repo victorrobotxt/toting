@@ -20,9 +20,15 @@ jobs:
       - name: Init Git submodules
         run: git submodule update --init --recursive
 
-      - name: Run Solidity unit tests
-        run: forge test
+      # ─── Forge tests: unit + fuzz (skip invariants) ────────────────────────
+      - name: Run unit & fuzz tests
+        run: forge test --no-match-contract InvariantTests
 
+      # ─── Forge invariants (only your InvariantTests contract) ──────────
+      - name: Run invariant tests
+        run: forge test --match-contract InvariantTests
+
+      # ─── Gas reporting ───────────────────────────────────────────────────
       - name: Generate gas report
         run: forge test --gas-report > gas-report.txt
 
@@ -32,6 +38,7 @@ jobs:
           name: gas-report
           path: gas-report.txt
 
+      # ─── Frontend type-check ──────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -43,5 +50,6 @@ jobs:
       - name: Type-check frontend
         run: yarn --cwd packages/frontend type-check
 
+      # ─── Circom compilation ──────────────────────────────────────────────
       - name: Compile Circom circuits
         run: npx circom circuits/eligibility.circom --r1cs --wasm --sym

@@ -46,7 +46,7 @@ contract ElectionManager {
         uint256[2] calldata a,
         uint256[2][2] calldata b,
         uint256[2] calldata c,
-        uint256[] calldata pubSignals
+        uint256[7] calldata pubSignals
     ) external {
         require(!tallied, "already tallied");
         require(

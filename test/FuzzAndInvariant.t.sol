@@ -1,4 +1,3 @@
-// test/FuzzAndInvariant.t.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -11,11 +10,11 @@ import "@account-abstraction/contracts/core/EntryPoint.sol";
 // --- Stub verifier that always passes ---
 contract VerifierStub is Verifier {
     function verifyProof(
-        uint256[2] memory,
-        uint256[2][2] memory,
-        uint256[2] memory,
-        uint256[] memory
-    ) external pure override returns (bool) {
+        uint256[2] calldata a,
+        uint256[2][2] calldata b,
+        uint256[2] calldata c,
+        uint256[7] calldata pubSignals
+    ) public view override returns (bool) {
         return true;
     }
 }
@@ -32,13 +31,13 @@ contract FuzzTests is Test {
         em = new ElectionManager(IMACI(address(0)));
     }
 
-    /// For any non‑zero caller+owner, mintWallet must return a non‑zero address
+    /// For any non-zero caller+owner, mintWallet must return a non-zero address
     function testFuzz_MintProducesWallet(address caller, address owner) public {
         vm.assume(caller != address(0) && owner != address(0));
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;
-        uint256[] memory inputs;
+        uint256[7] memory inputs;
         vm.prank(caller);
         address wallet = factory.mintWallet(a, b, c, inputs, owner);
         assertTrue(wallet != address(0));
@@ -54,7 +53,7 @@ contract FuzzTests is Test {
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;
-        uint256[] memory inputs;
+        uint256[7] memory inputs;
         vm.prank(caller);
         factory.mintWallet(a, b, c, inputs, owner);
 

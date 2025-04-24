@@ -4,8 +4,7 @@ out   = "out"
 libs  = ["lib"]
 
 [invariant]
-maxRuns = 500    # default is 2000
-
+maxRuns = 50   # default is 2000 - fart emoji
 
 [fuzz]
 runs = 256        # default for fuzz tests

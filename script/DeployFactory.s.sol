@@ -7,11 +7,11 @@ import "@account-abstraction/contracts/core/EntryPoint.sol";
 
 contract VerifierStub is Verifier {
     function verifyProof(
-        uint256[2] memory,
-        uint256[2][2] memory,
-        uint256[2] memory,
-        uint256[] memory
-    ) external pure override returns (bool) {
+        uint256[2] calldata a,
+        uint256[2][2] calldata b,
+        uint256[2] calldata c,
+        uint256[7] calldata pubSignals
+    ) public view override returns (bool) {
         return true;
     }
 }

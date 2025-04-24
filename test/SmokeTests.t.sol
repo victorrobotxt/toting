@@ -11,11 +11,11 @@ import "@account-abstraction/contracts/core/EntryPoint.sol";
 
 contract VerifierStub is Verifier {
     function verifyProof(
-        uint256[2] memory,
-        uint256[2][2] memory,
-        uint256[2] memory,
-        uint256[] memory
-    ) external pure override returns (bool) {
+        uint256[2] calldata a,
+        uint256[2][2] calldata b,
+        uint256[2] calldata c,
+        uint256[7] calldata pubSignals
+    ) public view override returns (bool) {
         return true;
     }
 }
@@ -38,7 +38,6 @@ contract SmokeTests is Test {
 
     function setUp() public {
         verifier = new VerifierStub();
-        // zero EntryPoint address is fine for these unit tests
         factory = new WalletFactory(EntryPoint(payable(address(0))), verifier);
         maci = new MACIStub();
         em = new ElectionManager(IMACI(maci));
@@ -48,10 +47,10 @@ contract SmokeTests is Test {
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;
-        uint256[] memory inputs;
+        uint256[7] memory inputs;
 
         vm.prank(alice);
-        factory.mintWallet(a, b, c, inputs, alice);
+        address aWallet = factory.mintWallet(a, b, c, inputs, alice);
 
         vm.prank(alice);
         vm.expectRevert(bytes("Factory: already minted"));
