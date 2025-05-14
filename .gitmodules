@@ -10,3 +10,9 @@
 [submodule "circuits/ecdsa"]
 	path = circuits/ecdsa
 	url = https://github.com/0xPARC/circom-ecdsa.git
+[submodule "circuits/circomlib"]
+	path = circuits/circomlib
+	url = https://github.com/iden3/circomlib.git
+[submodule "circuits/eligibility/circuits/circomlib"]
+	path = circuits/eligibility/circuits/circomlib
+	url = https://github.com/iden3/circomlib.git
