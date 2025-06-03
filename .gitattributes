@@ -1,1 +1,3 @@
 * text eol=lf
+packages/backend/__pycache__/main.cpython-310.pyc -text
+packages/frontend/.next/** -text
