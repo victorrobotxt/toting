@@ -10,7 +10,18 @@ async function main() {
     const provider = new ethers.JsonRpcProvider(evmRpc);
     const receipt = await provider.getTransactionReceipt(evmTx);
     const iface = new ethers.Interface(["event Tally(uint256,uint256)"]);
-    const [log] = receipt.logs.filter(l => iface.parseLog(l));
+    // parseLog throws if the log doesn't match, so find the first matching entry
+    const log = receipt.logs.find(l => {
+        try {
+            iface.parseLog(l);
+            return true;
+        } catch {
+            return false;
+        }
+    });
+    if (!log) {
+        throw new Error("Tally event not found in receipt");
+    }
     const { args: [A, B] } = iface.parseLog(log);
 
     // 2. push to Solana
