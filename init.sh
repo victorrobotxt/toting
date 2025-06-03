@@ -26,7 +26,7 @@ jobs:
     - run: npm i -g yarn
     - run: yarn install --immutable
     - run: yarn --cwd packages/frontend type-check
-    - run: npx circom circuits/eligibility/eligibility.circom --r1cs --wasm --sym
+    - run: npx -y circom2 circuits/eligibility/eligibility.circom --r1cs --wasm --sym
 YAML
 
 cat > contracts/WalletFactory.sol <<'SOL'
