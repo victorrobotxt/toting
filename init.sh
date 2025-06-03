@@ -26,7 +26,7 @@ jobs:
     - run: npm i -g yarn
     - run: yarn install --immutable
     - run: yarn --cwd packages/frontend type-check
-    - run: npx circom circuits/eligibility.circom --r1cs --wasm --sym
+    - run: npx circom circuits/eligibility/eligibility.circom --r1cs --wasm --sym
 YAML
 
 cat > contracts/WalletFactory.sol <<'SOL'
@@ -68,7 +68,7 @@ contract ElectionManager{
 }
 SOL
 
-cat > circuits/eligibility.circom <<'CIR'
+cat > circuits/eligibility/eligibility.circom <<'CIR'
 template Eligibility(){
   signal input eligibility;
   signal input pubKey[2];
