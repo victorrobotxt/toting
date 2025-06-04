@@ -8,3 +8,7 @@ res.txt
 .yarnrc.yml
 packages/frontend/.next
 packages/frontend/package-lock.json
+
+# Yarn Plug'n'Play artefacts
+.pnp.cjs
+.pnp.loader.mjs

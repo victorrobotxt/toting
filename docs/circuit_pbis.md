@@ -32,3 +32,41 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 ## C-05 Proof Fuzzing Harness
 - Negative-testing with `ffmpeg-wasm` noise.
 - Generate 1 000 random bad witnesses per circuit; ensure verifier reverts.
+
+## C-06 Deposit-Nullifier Circuit
+- Groth16 circuit proving one-time deposit without leaking identity.
+- ≤ 200 k constraints.
+- Rejects duplicate nullifier in 1 000 negative tests.
+- Solidity verifier auto-generated and unit-tested in Foundry.
+
+## C-07 Poseidon Hash Refactor
+- Replace MiMC in all circuits with Poseidon (Arkworks params 3,5).
+- Proof size must remain unchanged.
+- Benchmarks ≤ 5 % slower than baseline.
+
+## C-08 Recursive Batch-Tally v2
+- Halo2 or Plonk recursion proof that rolls 8 × `C-03` tallies into one.
+- Constraint budget ≤ 2 M.
+- Prove & verify under 30 s on CI.
+
+## C-09 Signal Range Proofs
+- Generic gadget library for `0 ≤ value ≤ 2³²-1` usable by other circuits.
+- Fuzz harness must find zero false negatives/positives.
+
+## C-10 Parallel Witness Builder
+- Rust `rayon` based `build_witness` saturating all cores.
+- 2 × speed-up vs serial.
+- Integrated in Makefile with CI proving speed shortcut.
+
+## C-11 Multi-Curve Compatibility
+- Port circuits to support BN254 and BLS12-381.
+- Build matrix in CI.
+- Contracts auto-select curve at deploy.
+
+## C-12 Proof Compression Benchmark
+- Script that compares zkey size, proof size and verifier gas across `C-01…C-11`.
+- CI uploads CSV artefact.
+
+## C-13 E2E Circuit Docs
+- Architecture doc with constraint graphs, input tables and trusted setup workflow.
+- Published as MkDocs site with diagrams exported from Circom graph.
