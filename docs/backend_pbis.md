@@ -120,3 +120,42 @@ The following product backlog items (PBIs) capture upcoming backend work.
 - GitHub Actions inject the token.
 - Ensure zero secrets appear in logs.
 - No dependencies.
+
+## B-21 OpenID → Verifiable Credentials
+- Replace dummy JWT with EU eIDAS Verifiable Credential.
+- `python-jose` verifies the JWS signature.
+- Option for a mock credential without connecting to eIDAS.
+- AC: smoke test signs and verifies a real VC.
+- Depends on **B-01**.
+
+## B-22 OAuth PKCE & mTLS
+- Add S256 code challenge parameter to the OAuth flow.
+- Optional mTLS on the token endpoint.
+- Integration test using mitm-proxy.
+- Depends on **B-01**.
+
+## B-23 Hierarchical RBAC
+- Roles: viewer → editor → admin.
+- Implement using FastAPI dependency injection.
+- Unit tests cover 100% of RBAC code.
+- Depends on **B-09**.
+
+## B-24 Off-chain Voting Simulation
+- `/simulate` returns gas+fee and expected tally.
+- Runs as a Celery job.
+- Result must be within ≤ 2% diff vs on-chain test.
+- Depends on **C-03**.
+
+## B-25 Live Metrics WebSocket
+- `/ws/metrics` pushes Prometheus counters for FE devtools overlay.
+- Depends on **B-07**.
+
+## B-26 REST Deprecation Proxy
+- Returns HTTP 299 Deprecated header with link to GraphQL.
+- Middleware test verifies the header.
+- Depends on **B-19**.
+
+## B-27 Pydantic v2 Migration
+- Drop v1 compatibility.
+- Benchmark shows ≥ 10% performance gain.
+- No dependencies.
