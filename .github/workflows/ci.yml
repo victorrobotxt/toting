@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Checkout code (with submodules)
         uses: actions/checkout@v4
@@ -37,6 +38,17 @@ jobs:
         with:
           name: gas-report
           path: gas-report.txt
+
+      - name: Generate gas snapshot diff
+        uses: atarpara/foundry-snapshot-diff@v0.8
+        id: gas_diff
+
+      - name: Comment gas delta
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          delete: ${{ !steps.gas_diff.outputs.markdown }}
+          message: ${{ steps.gas_diff.outputs.markdown }}
 
       # ─── Frontend type-check ──────────────────────────────────────────────
       - name: Setup Node.js
