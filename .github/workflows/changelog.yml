@@ -13,6 +13,7 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v3
         with:
           configuration: .github/changelog-config.json
+          failOnError: false
       - name: Commit Changelog
         run: |
           git config user.email "github-actions@users.noreply.github.com"
