@@ -8,10 +8,11 @@ on:
   schedule:
     - cron: '0 2 * * 0'
 
+# ── Minimal but sufficient token scopes ────────────────────────────
 permissions:
   contents: read
+  actions: read
   security-events: write
-  pull-requests: write
 
 jobs:
   analyze:
@@ -19,40 +20,41 @@ jobs:
     strategy:
       matrix:
         language: [ 'javascript-typescript' ]
+
     steps:
-      - name: Checkout code (for PRs)
-        if: github.event_name == 'pull_request_target'
+      # Checkout the PR head if this is pull_request_target,
+      # otherwise the normal ref.
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ github.token }}
+          repository: >-
+            ${{ (github.event_name == 'pull_request_target')
+                && github.event.pull_request.head.repo.full_name
+                || github.repository }}
+          ref: >-
+            ${{ (github.event_name == 'pull_request_target')
+                && github.event.pull_request.head.ref
+                || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-
-      - name: Checkout code (other events)
-        if: github.event_name != 'pull_request_target'
-        uses: actions/checkout@v4
+          submodules: recursive
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install frontend dependencies
-        run: yarn --cwd packages/frontend install
+      - name: Install frontend deps
+        run: yarn --cwd packages/frontend install --frozen-lockfile
 
       - name: Build frontend
         run: yarn --cwd packages/frontend build
 
-      - name: Perform CodeQL analysis
+      # This step runs the queries **and** uploads SARIF automatically
+      - name: CodeQL – analyze & upload
         uses: github/codeql-action/analyze@v3
-
-      - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          token: ${{ github.token }}
