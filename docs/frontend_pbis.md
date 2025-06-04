@@ -35,3 +35,24 @@ The following product backlog items (PBIs) capture upcoming frontend work.
 
 ## F-10 Dark-Mode Theming Tokens
 - Tailwind CSS vars driven by next-themes; snapshot visual regression tests.
+
+## F-11 ZK-Proof Worker Pool
+- Shared-worker pool (Comlink) multiplexes witness builds; CPU utilisation \u2265 80 % of cores.
+
+## F-12 Ledger OTG Support
+- WebUSB flow; Cypress E2E on Chromebook runner.
+
+## F-13 Real-Time Solana Chart
+- Recharts bar chart subscribes to `/ws/solana`; updates within 2 s of relay.
+
+## F-14 A11y 100 \u2192 WCAG AAA
+- Goes beyond Lighthouse; axe-core CI gate \u2264 1 violation.
+
+## F-15 i18n RTL & Plurals
+- Arabic localisation + ICU plural-rules; E2E visual diff.
+
+## F-16 PWA Offline Mode
+- ServiceWorker caches circuit WASM & proofs; acts as proof cache layer.
+
+## F-17 EIP-6963 Wallet Standard
+- Replace wagmi auto-detect with official API; Storybook example.
