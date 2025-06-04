@@ -10,13 +10,13 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Must still compile in < 30 s on CI.
 - Unit tests in `circuits/eligibility/__tests__` proving ≥ 99 % valid, 100 % invalid rejection.
 
-## C-02 Voice-Credits Range Proof
+## C-02 Voice-Credits Range Proof *(Implemented)*
 - Prevent overflow / negative credit injection.
 - Add field range checks `0 ≤ vc ≤ 1 000 000`.
 - Enforce quadratic cost formula inside circuit to close "cheap vote" loophole.
 - Groth16 proof size unchanged (≈ 192 bytes).
 
-## C-03 Batch Tally
+## C-03 Batch Tally *(Implemented)*
 - Aggregate 128 encrypted ballots per proof.
 - Circuit takes an array of 128 ElGamal ciphertexts + public key, outputs `(sumA, sumB)`.
 - Provide a Poseidon root to let contracts verify subsets.

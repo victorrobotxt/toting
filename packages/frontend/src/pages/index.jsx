@@ -1,4 +1,5 @@
 import ThemeToggle from '../components/ThemeToggle';
+import GasFeeEstimator from '../components/GasFeeEstimator';
 
 export default function Home() {
   return (
@@ -6,6 +7,7 @@ export default function Home() {
       <ThemeToggle />
       <a href="http://localhost:8000/auth/initiate">Log in with eID</a>
       <a href="/solana">View Solana Chart</a>
+      <div>Gas: <GasFeeEstimator /></div>
     </main>
   )
 }

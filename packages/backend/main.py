@@ -55,3 +55,7 @@ def get_election(election_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "election not found")
     return election
 
+@app.get("/api/gas")
+async def gas_estimate():
+    """Return a fake 95th percentile gas fee in gwei."""
+    return {"p95": 42}

@@ -37,6 +37,7 @@ Circuits are stored under `circuits/`. Run the following to rebuild proofs:
 npx -y circom2 circuits/eligibility/eligibility.circom --r1cs --wasm --sym
 npx -y circom2 circuits/qv/voice_check.circom --r1cs --wasm --sym
 npx -y circom2 circuits/qv/qv_tally.circom --r1cs --wasm --sym
+npx -y circom2 circuits/tally/batch_tally.circom --r1cs --wasm --sym
 ```
 
 Generated artifacts are written to the `out/` directory.
