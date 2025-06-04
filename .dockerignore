@@ -1,1 +1,28 @@
+# Exclude version control and build artifacts
+.git
+**/node_modules
+.yarn
+.yarnrc.yml
+
+# Frontend build output
+packages/frontend/.next
+packages/frontend/package-lock.json
+packages/frontend/node_modules
+
+# Python virtual envs
 packages/backend/.venv
+
+# Local build caches and artifacts
+out
+cache
+broadcast
+proofs
+
+# Generic compiled output
+*.r1cs
+*.wasm
+*.sym
+
+
+# Solana build output
+solana-programs/**/target
