@@ -5,7 +5,7 @@
 ```bash
 git clone <repo>
 cd toting
-just up
+docker-compose up -d
 # wait 60 s
 open http://localhost:3000
 ```

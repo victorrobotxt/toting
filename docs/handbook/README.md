@@ -4,13 +4,15 @@ This guide covers running services, debugging contracts and regenerating ZK proo
 
 ## Running Services
 
-Use Docker Compose to launch all backend services:
+Use Docker Compose to launch the full stack (frontend, backend,
+proof orchestrator and relay):
 
 ```bash
 docker-compose up -d
 ```
 
-The API will be available on `http://localhost:3000` and Postgres on `localhost:5432`.
+The frontend will be available on `http://localhost:3000`, the API on
+`http://localhost:8000` and Postgres on `localhost:5432`.
 
 ## Debugging Contracts
 
