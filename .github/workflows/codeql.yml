@@ -14,28 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        language: [ 'javascript-typescript', 'solidity' ]
+        language: [ 'javascript-typescript' ]
     steps:
       - uses: actions/checkout@v4
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
       - uses: actions/setup-node@v4
-        if: matrix.language == 'javascript-typescript'
         with:
           node-version: 20
       - name: Install frontend deps
-        if: matrix.language == 'javascript-typescript'
         run: yarn --cwd packages/frontend install
       - name: Build frontend
-        if: matrix.language == 'javascript-typescript'
         run: yarn --cwd packages/frontend build
-      - name: Build contracts
-        if: matrix.language == 'solidity'
-        uses: foundry-rs/foundry-toolchain@v1
-      - name: Compile contracts
-        if: matrix.language == 'solidity'
-        run: forge build
       - uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{ matrix.language }}"
