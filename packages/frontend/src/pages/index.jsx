@@ -1,13 +1,16 @@
 import ThemeToggle from '../components/ThemeToggle';
 import GasFeeEstimator from '../components/GasFeeEstimator';
+import NavBar from '../components/NavBar';
 
 export default function Home() {
   return (
-    <main style={{ display:'flex',alignItems:'center',justifyContent:'center',height:'100vh', gap:'1rem' }}>
-      <ThemeToggle />
-      <a href="http://localhost:8000/auth/initiate">Log in with eID</a>
-      <a href="/solana">View Solana Chart</a>
-      <div>Gas: <GasFeeEstimator /></div>
-    </main>
+    <>
+      <NavBar />
+      <main style={{ display:'flex',alignItems:'center',justifyContent:'center',height:'80vh', gap:'1rem' }}>
+        <ThemeToggle />
+        <a href="/solana">View Solana Chart</a>
+        <div>Gas: <GasFeeEstimator /></div>
+      </main>
+    </>
   )
 }
