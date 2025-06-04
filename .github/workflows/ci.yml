@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+        solc: ['0.8.24', '0.8.26']
     steps:
       - name: Checkout code (with submodules)
         uses: actions/checkout@v4
@@ -22,27 +27,27 @@ jobs:
 
       # ─── Forge tests: unit + fuzz (skip invariants) ────────────────────────
       - name: Run unit & fuzz tests
-        run: forge test --no-match-contract InvariantTests
+        run: forge test --no-match-contract InvariantTests --use ${{ matrix.solc }}
 
       # ─── Forge invariants (only your InvariantTests contract) ──────────
       - name: Run invariant tests
-        run: forge test --match-contract InvariantTests
+        run: forge test --match-contract InvariantTests --use ${{ matrix.solc }}
 
       # ─── Gas reporting ───────────────────────────────────────────────────
       - name: Generate gas report
-        run: forge test --gas-report > gas-report.txt
+        run: forge test --gas-report --use ${{ matrix.solc }} > gas-report.txt
 
       - name: Upload gas report artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gas-report
+          name: gas-report-${{ matrix.node }}-${{ matrix.solc }}
           path: gas-report.txt
 
       # ─── Frontend type-check ──────────────────────────────────────────────
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
 
       - name: Install frontend dependencies
         run: yarn --cwd packages/frontend install
@@ -53,3 +58,60 @@ jobs:
       # ─── Circom compilation ──────────────────────────────────────────────
       - name: Compile Circom circuits
         run: npx -y circom2 circuits/eligibility/eligibility.circom --r1cs --wasm --sym
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: build
+    services:
+      anvil:
+        image: ghcr.io/foundry-rs/foundry:latest
+        options: >-
+          --health-cmd "anvil --version" --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 8545:8545
+        command: ["anvil","--host","0.0.0.0","-m","test test test test test test test test test test test junk","--silent"]
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5432:5432
+      solana:
+        image: solanalabs/solana:v1.18.3
+        command: ["solana-test-validator","--quiet"]
+        ports:
+          - 8899:8899
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: git submodule update --init --recursive
+      - name: Install Python deps
+        run: pip install web3 requests eth-account fastapi uvicorn
+      - name: Deploy factory
+        run: |
+          forge script script/DeployFactory.s.sol:DeployFactory \
+            --rpc-url http://localhost:8545 \
+            --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+            --broadcast -q
+          echo "FACTORY_ADDRESS=$(jq -r '.transactions[-1].contractAddress' broadcast/DeployFactory.s.sol/31337/run-latest.json)" >> $GITHUB_ENV
+      - name: Start backend
+        run: |
+          uvicorn packages.backend.main:app --host 0.0.0.0 --port 8000 &
+          echo $! > backend.pid
+          sleep 5
+      - name: Run smoke test
+        run: |
+          BACKEND=http://localhost:8000 FACTORY_ADDRESS=$FACTORY_ADDRESS \
+          python3 scripts/smoke_auth_to_mint.py
+      - name: Stop backend
+        run: kill $(cat backend.pid)
+
