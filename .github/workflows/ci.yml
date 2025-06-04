@@ -138,7 +138,7 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
       - run: git submodule update --init --recursive
       - name: Install Python deps
-        run: pip install web3 requests eth-account fastapi uvicorn
+        run: pip install web3 requests eth-account fastapi uvicorn sqlalchemy
       - name: Deploy factory
         run: |
           forge script script/DeployFactory.s.sol:DeployFactory \
