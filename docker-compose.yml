@@ -33,6 +33,7 @@ services:
       GRAO_CLIENT_ID: ${GRAO_CLIENT_ID:-test-client}
       GRAO_CLIENT_SECRET: ${GRAO_CLIENT_SECRET:-test-secret}
       GRAO_REDIRECT_URI: ${GRAO_REDIRECT_URI:-http://localhost:3000/callback}
+      USE_REAL_OAUTH: ${USE_REAL_OAUTH:-false}
     ports:
       - "8000:8000"
     depends_on:

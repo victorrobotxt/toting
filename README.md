@@ -20,6 +20,11 @@ Using plain `npx circom` installs the legacy Circom 1 package, which fails on `
 
 See [docs/handbook](docs/handbook/README.md) for instructions on running services and regenerating proofs.
 
+The backend exposes a simple mock OAuth login for local testing. By default
+`docker-compose` starts the API with `USE_REAL_OAUTH=false`, serving a minimal
+form at `/auth/initiate` that lets you enter an email. Set
+`USE_REAL_OAUTH=true` to redirect to the configured `GRAO_BASE_URL` instead.
+
 ## Design Deep-Dive Videos
 
 - [Circuits Overview](https://www.loom.com/share/circuits-demo)
