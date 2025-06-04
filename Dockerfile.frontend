@@ -1,18 +1,38 @@
+# 1) Install dependencies inside packages/frontend directly
+
 FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+WORKDIR /app/packages/frontend
 
+# Copy only the package.json + yarn.lock of the frontend
+COPY packages/frontend/package.json packages/frontend/yarn.lock ./
+
+# Install into /app/packages/frontend/node_modules
+RUN yarn install --frozen-lockfile
+
+# 2) Build using those exact node_modules
 FROM node:20-alpine AS build
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY packages/frontend ./packages/frontend
-RUN npm run --prefix packages/frontend build
+WORKDIR /app/packages/frontend
 
-FROM node:20-alpine
-WORKDIR /app
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/packages/frontend ./packages/frontend
+# Copy the already-installed node_modules from the deps stage
+COPY --from=deps /app/packages/frontend/node_modules ./node_modules
+
+# Copy the rest of the frontend files
+COPY packages/frontend ./
+
+# Run Next.js build (now "next" is in node_modules/.bin)
+RUN yarn build
+
+# 3) Final image to run the production server
+FROM node:20-alpine AS runner
+WORKDIR /app/packages/frontend
+
+# Copy only the built output and production node_modules
+COPY --from=build /app/packages/frontend/node_modules ./node_modules
+COPY --from=build /app/packages/frontend/.next ./.next
+COPY --from=build /app/packages/frontend/package.json ./
+
 ENV NODE_ENV=production
 EXPOSE 3000
-CMD ["npm","run","--prefix","packages/frontend","start"]
+
+# Use `next start` to serve the build
+CMD ["yarn", "start"]
