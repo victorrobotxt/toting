@@ -1,6 +1,7 @@
 FROM python:3.11-slim
 WORKDIR /app
 COPY packages/backend /app/packages/backend
-RUN pip install fastapi uvicorn python-jose[cryptography] httpx
+# pin uvicorn to avoid old apt versions that miss the Server class
+RUN pip install fastapi "uvicorn>=0.27" python-jose[cryptography] httpx
 EXPOSE 8000
 CMD ["uvicorn","packages.backend.main:app","--host","0.0.0.0","--port","8000"]
