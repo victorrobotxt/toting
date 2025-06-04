@@ -1,0 +1,38 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: write
+  packages: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}/orchestrator:${{ github.ref_name }}
+      - name: Compute checksums
+        run: sha256sum proofs/*.zkey > checksums.txt
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            checksums.txt
+            proofs/*.zkey
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

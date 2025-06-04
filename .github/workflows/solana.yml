@@ -9,6 +9,16 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache Anchor and Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cache/anchor
+          key: ${{ runner.os }}-anchor-${{ hashFiles('**/Anchor.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-anchor-
+
       # 2) install Node, Solana CLI & Anchor CLI
       - uses: metaDAOproject/setup-anchor@v3.1
         with:
