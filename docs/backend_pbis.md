@@ -47,3 +47,38 @@ The following product backlog items (PBIs) capture upcoming backend work.
 - CI job fails if 95th percentile latency > 300 ms for `/elections` and WS lag > 1 s.
 - Produce a load test report artifact using Locust.
 
+## B-09 Admin Dashboard & Role-Based Access
+- Secure admin-only HTTP interface under `/admin/*`.
+- Users table stores email and role.
+- Middleware checks the `admin` claim in JWTs; non-admins receive HTTP 403.
+- Endpoints to manage users and read system metrics:
+  - `GET /admin/users` lists users and roles.
+  - `POST /admin/users` creates a user with role `admin` or `viewer`.
+  - `PUT /admin/users/{id}` changes a user role.
+  - `DELETE /admin/users/{id}` removes a user.
+  - `GET /admin/metrics` shows request rate and queue stats.
+- Swagger groups these routes under an "Admin operations" tag.
+- Unit tests cover authorization and error cases.
+
+## B-10 Email & SMS Notification Service
+- Event hooks publish notifications for new elections, closing windows and final tallies.
+- Celery worker sends templated email via SendGrid and optional SMS via Twilio.
+- `GET /notifications/status/{job_id}` reports `{queued|sent|failed}` with up to three retries.
+- Notifications table tracks payloads, attempts and errors.
+- Integration tests mock the mail and SMS providers.
+
+## B-11 GraphQL Proxy Layer
+- `/graphql` endpoint wraps existing REST APIs.
+- Supports queries for elections, users and metrics plus mutations to create or delete users.
+- Schema validation rejects unknown fields; playground disabled in production.
+- Implement with Ariadne or Strawberry and generate type definitions.
+- Unit tests target resolver functions with 90% coverage.
+
+## B-12 Backend CLI for Admins (Typer)
+- Command `backend-admin` provides subcommands:
+  - `healthcheck` to ping Postgres, Redis and RabbitMQ.
+  - `list-users --role=admin` to print users with a given role.
+  - `migrate` runs Alembic migrations.
+  - `seed-demo` inserts demo data.
+- Returns exit code 0 on success and includes README examples.
+- Implement using Typer and SQLAlchemy Core with unit tests for each command.
