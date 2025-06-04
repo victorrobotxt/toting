@@ -33,7 +33,11 @@ contract SmartWalletSigTest is Test {
     function testValidSignature() public {
         bytes32 msgHash = keccak256("dummy userOp");
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_KEY, msgHash);
-        bytes memory sig = abi.encode(v, r, s);
+        // abi.encode pads each value to 32 bytes resulting in a 96-byte
+        // array which the wallet interprets as a Baby-Jubjub signature.
+        // Use abi.encodePacked to produce the standard 65-byte secp256k1
+        // signature format.
+        bytes memory sig = abi.encodePacked(v, r, s);
         bool ok = wallet.isValid(msgHash, sig);
         assertTrue(ok, "correct key should validate");
     }
@@ -41,7 +45,10 @@ contract SmartWalletSigTest is Test {
     function testInvalidSignature() public {
         bytes32 msgHash = keccak256("dummy userOp");
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xBEEF, msgHash);
-        bytes memory sig = abi.encode(v, r, s);
+        // Use the packed encoding for the secp256k1 signature to avoid the
+        // 96-byte padded encoding which would be treated as an EdDSA
+        // signature by the wallet.
+        bytes memory sig = abi.encodePacked(v, r, s);
         bool ok = wallet.isValid(msgHash, sig);
         assertFalse(ok, "wrong key should fail");
     }
