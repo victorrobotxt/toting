@@ -26,7 +26,8 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
+          fetch-depth: 0
 
       - name: Checkout code (other events)
         if: github.event_name != 'pull_request_target'
@@ -56,4 +57,4 @@ jobs:
       - name: Upload SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
