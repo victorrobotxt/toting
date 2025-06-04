@@ -82,3 +82,14 @@ The following product backlog items (PBIs) capture upcoming backend work.
   - `seed-demo` inserts demo data.
 - Returns exit code 0 on success and includes README examples.
 - Implement using Typer and SQLAlchemy Core with unit tests for each command.
+
+## B-13 Zero-Knowledge Proof API
+- `/api/zk/{circuit}` `POST` accepts JSON, returns proof + pubSignals.
+- Runs in Celery worker with concurrency = 2 × CPU.
+- Proofs cached in Redis keyed by input SHA-256.
+
+## B-14 EVM Event Indexer
+- Async task reading ElectionManager logs, upserts Postgres, broadcasts WebSocket.
+
+## B-15 Rate-Limit Bypass for Internal IPs
+- CIDR whitelist via env var.
