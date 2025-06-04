@@ -1,4 +1,11 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    BigInteger,
+    Index,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
@@ -13,9 +20,13 @@ Base = declarative_base()
 class Election(Base):
     __tablename__ = "elections"
     id = Column(Integer, primary_key=True, index=True)
-    meta = Column(String, nullable=False)
-    start = Column(Integer, nullable=False)
-    end = Column(Integer, nullable=False)
-    status = Column(String, default="pending")
+    meta = Column(String, nullable=False, unique=True)
+    start = Column(BigInteger, nullable=False)
+    end = Column(BigInteger, nullable=False)
+    status = Column(String, nullable=False, default="pending", index=True)
     tally = Column(String, nullable=True)
+
+    __table_args__ = (
+        Index("idx_status", "status"),
+    )
 

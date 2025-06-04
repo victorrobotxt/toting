@@ -34,7 +34,7 @@ def setup_db():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    db.add(Election(id=1, meta="demo", start=0, end=10))
+    db.add(Election(id=1, meta="0x" + "a" * 64, start=0, end=10))
     db.commit()
     db.close()
 
@@ -60,10 +60,27 @@ def test_mock_login_and_list():
     assert r.status_code == 200
     body = r.json()
     assert len(body) == 1
-    assert body[0]["meta"] == "demo"
+    assert body[0]["meta"].startswith("0x")
 
     # get single election
     r = client.get("/elections/1")
     assert r.status_code == 200
     assert r.json()["id"] == 1
+
+
+def test_create_and_update_election():
+    payload = {"meta_hash": "0x" + "b" * 64, "start": 5, "end": 15}
+    r = client.post("/elections", json=payload)
+    assert r.status_code == 201
+    data = r.json()
+    assert data["meta"] == payload["meta_hash"]
+    election_id = data["id"]
+
+    r = client.patch(f"/elections/{election_id}", json={"status": "open"})
+    assert r.status_code == 200
+    assert r.json()["status"] == "open"
+
+    r = client.patch(f"/elections/{election_id}", json={"tally": "A:1,B:0"})
+    assert r.status_code == 200
+    assert r.json()["tally"] == "A:1,B:0"
 
