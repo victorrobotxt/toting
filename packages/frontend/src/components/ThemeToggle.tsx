@@ -17,8 +17,9 @@ export default function ThemeToggle() {
       checked={enabled}
       onChange={() => setTheme(enabled ? 'light' : 'dark')}
       className={`switch ${enabled ? 'on' : 'off'}`}
+      aria-label="Toggle dark mode"
     >
-      <span />
+      <span className="thumb" aria-hidden="true" />
     </Switch>
   );
 }
