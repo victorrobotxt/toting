@@ -6,3 +6,5 @@ node_modules
 res.txt
 .yarn
 .yarnrc.yml
+packages/frontend/.next
+packages/frontend/package-lock.json
