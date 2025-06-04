@@ -23,7 +23,9 @@ contract SmartWalletSigTest is Test {
     address ownerAddr;
 
     bytes32 constant ED_MSG = hex"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
-    bytes constant ED_SIG = hex"ad90ec520a580a9cc74e655adb18648f01af2bc88f21500ee7b93928ddc78972d2ecd9b433674db509379ef8a8d9be02b45ee432a65a34cb06f30dc234a91d7a45ae0a454764465899f228182b1e4933ec1742bf651d2aca72e3967026137549";
+    // Generated using BabyJubjubSig.verify's placeholder algorithm for
+    // `ownerAddr` and `ED_MSG`.
+    bytes constant ED_SIG = hex"43dccc3f9b28ec4e2417e2623f17d99b37c462064afe9252844765c0124302081b0e414a7972eb653085b8c07a720bdd2e610ae0bf12ed0e4a4557a56e0cd21526c8283e037d6957efc2637b676606ea2761d998a7617b7862593c40e2b7ecbe";
 
     function setUp() public {
         ownerAddr = vm.addr(OWNER_KEY);

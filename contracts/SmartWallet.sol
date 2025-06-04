@@ -35,14 +35,22 @@ contract SmartWallet is BaseAccount {
         return 0;
     }
 
-    /// @dev Dual-curve signature validation. 65-byte secp256k1 or 96-byte Baby-Jubjub.
+    /// @dev Dual-curve signature validation. 65-byte secp256k1 (r,s,v packed)
+    ///      or 96-byte Baby-Jubjub.
     function _isValidSignature(bytes32 hash, bytes memory signature)
         internal
         view
         returns (bool)
     {
         if (signature.length == 65) {
-            (uint8 v, bytes32 r, bytes32 s) = abi.decode(signature, (uint8, bytes32, bytes32));
+            bytes32 r;
+            bytes32 s;
+            uint8 v;
+            assembly {
+                r := mload(add(signature, 0x20))
+                s := mload(add(signature, 0x40))
+                v := byte(0, mload(add(signature, 0x60)))
+            }
             address recovered = ecrecover(hash, v, r, s);
             return recovered == owner;
         }
