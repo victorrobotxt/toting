@@ -25,7 +25,6 @@ jobs:
     strategy:
       matrix:
         language: [ 'javascript-typescript' ]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,3 +50,5 @@ jobs:
 
       - name: CodeQL – analyze & upload SARIF
         uses: github/codeql-action/analyze@v3
+        with:
+          token: ${{ secrets.CODEQL_PAT }}
