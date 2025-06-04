@@ -52,4 +52,4 @@ jobs:
       - name: CodeQL - analyze & upload SARIF
         uses: github/codeql-action/analyze@v3
         with:
-          token: ${{ secrets.CODEQL_PAT }}
+          token: ${{ github.token  }}
