@@ -1,0 +1,55 @@
+name: CodeQL
+
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 0'
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      security-events: write
+    strategy:
+      matrix:
+        language: [ 'javascript-typescript' ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        run: corepack yarn@1.22.22 --cwd packages/frontend install --frozen-lockfile
+
+      - name: Build frontend
+        run: yarn --cwd packages/frontend build
+
+      - name: CodeQL - analyze & upload SARIF
+        uses: github/codeql-action/analyze@v3
+        with:
+          token: ${{ github.token  }}
