@@ -13,3 +13,13 @@ npx -y circom2 circuits/qv/qv_tally.circom --r1cs --wasm --sym
 Using plain `npx circom` installs the legacy Circom 1 package, which fails on `pragma circom 2.x`. Always invoke Circom 2 via the `circom2` package.
 
 
+
+## Developer Handbook
+
+See [docs/handbook](docs/handbook/README.md) for instructions on running services and regenerating proofs.
+
+## Design Deep-Dive Videos
+
+- [Circuits Overview](https://www.loom.com/share/circuits-demo)
+- [Contracts Overview](https://www.loom.com/share/contracts-demo)
+- [Backend Overview](https://www.loom.com/share/backend-demo)
