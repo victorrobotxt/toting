@@ -1,24 +1,9 @@
 pragma circom 2.1.6;
 
-// ========== STUB DEFINITIONS (for initial compile) ==========
-// These are placeholders—replace with real implementations later.
+include "../circomlib/circuits/eddsaposeidon.circom";
+include "../circomlib/circuits/poseidon.circom";
 
-// 1) Stub ECDSA verifier: no constraints (always 'true')
-template Ecdsa() {
-    signal input sig_r;
-    signal input sig_s;
-    signal input msg;
-    signal input pk_x;
-    signal input pk_y;
-    // no-op: no constraints
-}
-
-// 2) Stub Poseidon hash: outputs zero
-template Poseidon(n) {
-    signal input inputs[n];
-    signal output out;
-    out <== 0;
-}
+// Stub Merkle proof: checks leaf == root
 
 // 3) Stub Merkle proof: checks leaf == root
 template MerkleProof(depth) {
@@ -38,26 +23,29 @@ template Eligibility(depth) {
     signal input nullifier;  // Nullifier output
 
     // --- WITNESS INPUTS ---
-    signal input sigR;                // ECDSA signature R
-    signal input sigS;                // ECDSA signature S
+    signal input Ax;
+    signal input Ay;
+    signal input R8x;
+    signal input R8y;
+    signal input S;
     signal input msgHash;             // Hash of the challenge message
-    signal input pkX;                 // PubKey X coordinate
-    signal input pkY;                 // PubKey Y coordinate
     signal input pathElements[depth]; // Merkle sibling hashes
     signal input pathIndices[depth];  // Merkle path indices
 
-    // 1) ECDSA signature check (stub)
-    component ecdsa = Ecdsa();
-    ecdsa.sig_r <== sigR;
-    ecdsa.sig_s <== sigS;
-    ecdsa.msg   <== msgHash;
-    ecdsa.pk_x  <== pkX;
-    ecdsa.pk_y  <== pkY;
+    // 1) EdDSA signature check
+    component ed = EdDSAPoseidonVerifier();
+    ed.enabled <== 1;
+    ed.Ax <== Ax;
+    ed.Ay <== Ay;
+    ed.R8x <== R8x;
+    ed.R8y <== R8y;
+    ed.S <== S;
+    ed.M <== msgHash;
 
     // 2) Compute leaf = Poseidon(pkX, pkY) (stub)
     component leafHash = Poseidon(2);
-    leafHash.inputs[0] <== pkX;
-    leafHash.inputs[1] <== pkY;
+    leafHash.inputs[0] <== Ax;
+    leafHash.inputs[1] <== Ay;
 
     // 3) Merkle proof: ensure leaf ∈ tree (stub)
     component merkleProof = MerkleProof(depth);

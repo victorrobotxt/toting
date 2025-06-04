@@ -7,9 +7,9 @@
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
-[submodule "circuits/ecdsa"]
-	path = circuits/ecdsa
-	url = https://github.com/0xPARC/circom-ecdsa.git
+[submodule "circuits/eddsa"]
+        path = circuits/eddsa
+        url = https://github.com/0xPARC/circom-eddsa.git
 [submodule "circuits/circomlib"]
 	path = circuits/circomlib
 	url = https://github.com/iden3/circomlib.git
