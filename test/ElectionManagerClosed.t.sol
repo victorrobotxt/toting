@@ -19,6 +19,6 @@ contract ElectionManagerClosedTest is Test {
         vm.roll(endBlock + 1);
 
         vm.expectRevert("closed");
-        em.enqueueMessage(1, 0, new bytes(0));
+        em.enqueueMessage(0, 1, 0, new bytes(0));
     }
 }
