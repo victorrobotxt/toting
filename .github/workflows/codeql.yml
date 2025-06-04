@@ -2,7 +2,7 @@ name: CodeQL
 on:
   push:
     branches: [ main ]
-  pull_request:
+  pull_request_target:
     branches: [ main ]
   schedule:
     - cron: '0 2 * * 0'
@@ -17,6 +17,12 @@ jobs:
         language: [ 'javascript-typescript' ]
     steps:
       - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
