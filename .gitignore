@@ -8,3 +8,5 @@ res.txt
 .yarnrc.yml
 packages/frontend/.next
 packages/frontend/package-lock.json
+.pnp.cjs
+.pnp.loader.mjs
