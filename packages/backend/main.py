@@ -33,3 +33,9 @@ async def callback(code: str):
         "base64"  # <<< any string, we're not verifying it yet
     )
     return {"id_token": fake_jwt, "eligibility": True}
+
+
+@app.get("/api/gas")
+async def gas_estimate():
+    """Return a fake 95th percentile gas fee in gwei."""
+    return {"p95": 42}
