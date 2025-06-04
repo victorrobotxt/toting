@@ -7,7 +7,7 @@ import os
 from typing import Optional
 
 from .db import SessionLocal, Base, engine, Election
-from .schemas import ElectionSchema
+from .schemas import ElectionSchema, CreateElectionSchema, UpdateElectionSchema
 
 app = FastAPI()
 
@@ -70,11 +70,36 @@ async def callback(code: Optional[str] = None, user: Optional[str] = None):
 def list_elections(db: Session = Depends(get_db)):
     return db.query(Election).all()
 
+
+@app.post("/elections", response_model=ElectionSchema, status_code=201)
+def create_election(payload: CreateElectionSchema, db: Session = Depends(get_db)):
+    election = Election(meta=payload.meta_hash, start=payload.start, end=payload.end)
+    db.add(election)
+    db.commit()
+    db.refresh(election)
+    return election
+
 @app.get("/elections/{election_id}", response_model=ElectionSchema)
 def get_election(election_id: int, db: Session = Depends(get_db)):
     election = db.query(Election).filter(Election.id == election_id).first()
     if not election:
         raise HTTPException(404, "election not found")
+    return election
+
+
+@app.patch("/elections/{election_id}", response_model=ElectionSchema)
+def update_election(
+    election_id: int, payload: UpdateElectionSchema, db: Session = Depends(get_db)
+):
+    election = db.query(Election).filter(Election.id == election_id).first()
+    if not election:
+        raise HTTPException(404, "election not found")
+    if payload.status is not None:
+        election.status = payload.status
+    if payload.tally is not None:
+        election.tally = payload.tally
+    db.commit()
+    db.refresh(election)
     return election
 
 @app.get("/api/gas")
