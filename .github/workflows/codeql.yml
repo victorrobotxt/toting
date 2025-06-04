@@ -17,6 +17,11 @@ permissions:
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      security-events: write
     strategy:
       matrix:
         language: [ 'javascript-typescript' ]
@@ -39,10 +44,7 @@ jobs:
           node-version: 20
 
       - name: Install frontend dependencies
-        # Option A: update & commit your yarn.lock so --frozen-lockfile passes
-        run: yarn --cwd packages/frontend install --frozen-lockfile
-        # Option B: if you don’t want strict lockfile enforcement, drop --frozen-lockfile
-        # run: yarn --cwd packages/frontend install
+        run: corepack yarn@1.22.22 --cwd packages/frontend install --frozen-lockfile
 
       - name: Build frontend
         run: yarn --cwd packages/frontend build
