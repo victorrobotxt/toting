@@ -9,12 +9,13 @@
   },
   "dependencies": {
     "@account-abstraction/sdk": "^0.6.0",
+    "@headlessui/react": "^1.7.16",
     "ethers": "^5",
     "next": "^13.0.0",
+    "next-themes": "^0.2.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "@headlessui/react": "^1.7.16",
-    "next-themes": "^0.2.1"
+    "recharts": "^2.6.2"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
