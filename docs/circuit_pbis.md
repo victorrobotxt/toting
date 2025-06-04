@@ -70,3 +70,29 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 ## C-13 E2E Circuit Docs
 - Architecture doc with constraint graphs, input tables and trusted setup workflow.
 - Published as MkDocs site with diagrams exported from Circom graph.
+
+## C-14 Multi-Proof Aggregator
+- Groth16 → BLS12-381 aggregator that rolls up ≤ 512 vote proofs into one.
+- Solidity verifier gas ≤ 6 M.
+- AC: same public signals out, ≤ 5 s prove time on CI.
+- Depends on **C-08**.
+
+## C-15 Trusted-Setup Audit Kit
+- Script reproduces PTAU & ZKey hashes, uploads to release.
+- AC: `make audit` exits 0 on identical hashes, non-zero otherwise.
+- Depends on **C-04**.
+
+## C-16 Warp-Swap Curve Port
+- Compile circuits for bn254 and curve25519 via CirC.
+- AC: unit tests pass on both targets; Verifier gas delta ≤ +5 %.
+- Depends on **C-11**.
+
+## C-17 Hardware Keccak Gadget
+- Verilog Poseidon ASIC stub + constraint mapping; prove on GPU CI runner.
+- AC: FPGA sim < 150 ms per hash.
+- Depends on **C-07**.
+
+## C-18 Stateless Witness Builder
+- Rust lib returns streaming iterator so browser can GC.
+- Benchmark 30 % less peak RAM vs baseline.
+- Depends on **C-10**.
