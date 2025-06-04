@@ -82,4 +82,3 @@ The following product backlog items (PBIs) capture upcoming backend work.
   - `seed-demo` inserts demo data.
 - Returns exit code 0 on success and includes README examples.
 - Implement using Typer and SQLAlchemy Core with unit tests for each command.
-
