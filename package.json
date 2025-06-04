@@ -10,6 +10,7 @@
   "dependencies": {
     "@account-abstraction/sdk": "^0.6.0",
     "@coral-xyz/anchor": "^0.31.1",
+    "@solana/web3.js": "^1.98.2",
     "dotenv": "^16.5.0",
     "ethers": "^5",
     "express": "^5.1.0",
@@ -19,6 +20,6 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "test": "tsc --noEmit && node dist/index.js"
+    "test": "yarn exec tsc -p services/relay-daemon"
   }
 }

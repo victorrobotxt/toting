@@ -93,3 +93,30 @@ The following product backlog items (PBIs) capture upcoming backend work.
 
 ## B-15 Rate-Limit Bypass for Internal IPs
 - CIDR whitelist via env var.
+
+## B-16 gRPC Proof Service
+- gRPC wrapper around `/api/zk/*` for micro-service internal calls.
+- Proto definitions and Python server implementation.
+- Depends on **C-06**.
+
+## B-17 Streaming Blocks Listener
+- Async generator that yields new block and remaining time.
+- Replaces current polling; lag on Anvil must be ≤ 1 s.
+- Depends on **SC-04**.
+
+## B-18 OAuth2 Token Cache Revocation
+- Store JTI → revoked boolean respecting `exp` and `nbf` claims.
+- Flush revoked entries via nightly cron.
+- 100 % unit test coverage.
+- Depends on **B-01**.
+
+## B-19 REST→GraphQL Deprecation Layer
+- Add deprecation headers and metrics to REST endpoints.
+- REST calls must log a warning after hitting `/elections`.
+- Depends on **B-11**.
+
+## B-20 Vault-Based Secrets
+- Swap environment secrets for HashiCorp Vault.
+- GitHub Actions inject the token.
+- Ensure zero secrets appear in logs.
+- No dependencies.

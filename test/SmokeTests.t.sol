@@ -60,6 +60,6 @@ contract SmokeTests is Test {
     function testElectionCreateAndEnqueue() public {
         em.createElection(bytes32(uint256(0x42)));
         vm.roll(block.number + 1);
-        em.enqueueMessage(1, 0, new bytes(0));
+        em.enqueueMessage(0, 1, 0, new bytes(0));
     }
 }
