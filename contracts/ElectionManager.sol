@@ -22,6 +22,15 @@ contract ElectionManager {
     mapping(uint => E) public elections;
     uint public nextId;
 
+    modifier onlyDuringElection(uint id) {
+        E memory e = elections[id];
+        require(
+            block.number >= e.start && block.number <= e.end,
+            "closed"
+        );
+        _;
+    }
+
     constructor(IMACI _m) {
         maci = _m;
         tallyVerifier = TallyVerifier(address(0)); // wire up real verifier later
@@ -34,11 +43,11 @@ contract ElectionManager {
     }
 
     function enqueueMessage(
+        uint id,
         uint vote,
         uint nonce,
         bytes calldata vcProof
-    ) external {
-        require(block.number <= elections[0].end, "closed");
+    ) external onlyDuringElection(id) {
         maci.publishMessage(abi.encode(msg.sender, vote, nonce, vcProof));
     }
 

@@ -69,7 +69,28 @@ contract FuzzTests is Test {
         (, uint256 endBlock) = em.elections(0);
         vm.roll(endBlock + offset);
         vm.expectRevert("closed");
-        em.enqueueMessage(1, 0, new bytes(0));
+        em.enqueueMessage(0, 1, 0, new bytes(0));
+    }
+
+    /// Randomized start/end window should gate enqueueMessage correctly
+    function testFuzz_RandomWindow(uint64 startOffset, uint64 duration) public {
+        vm.assume(startOffset < 1000 && duration > 0 && duration < 1000);
+        em.createElection(bytes32(uint256(0x42)));
+        bytes32 base = keccak256(abi.encode(uint256(0), uint256(2)));
+        uint start = block.number + startOffset;
+        uint end = start + duration;
+        vm.store(address(em), base, bytes32(start));
+        vm.store(address(em), bytes32(uint256(base) + 1), bytes32(end));
+
+        vm.expectRevert("closed");
+        em.enqueueMessage(0, 1, 0, new bytes(0));
+
+        vm.roll(start);
+        em.enqueueMessage(0, 1, 0, new bytes(0));
+
+        vm.roll(end + 1);
+        vm.expectRevert("closed");
+        em.enqueueMessage(0, 1, 0, new bytes(0));
     }
 }
 
