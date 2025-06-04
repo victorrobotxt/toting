@@ -1,38 +1,55 @@
 name: CodeQL
+
+
 on:
   push:
     branches: [ main ]
-  pull_request_target:
+  pull_request:
     branches: [ main ]
   schedule:
     - cron: '0 2 * * 0'
+
 permissions:
   contents: read
+  actions: read
+  checks: write
   security-events: write
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+      security-events: write
     strategy:
       matrix:
         language: [ 'javascript-typescript' ]
     steps:
-      - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request_target'
+      - name: Checkout code
+        uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request_target'
-      - uses: github/codeql-action/init@v3
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install frontend deps
-        run: yarn --cwd packages/frontend install
+
+      - name: Install frontend dependencies
+        run: corepack yarn@1.22.22 --cwd packages/frontend install --frozen-lockfile
+
       - name: Build frontend
         run: yarn --cwd packages/frontend build
-      - uses: github/codeql-action/analyze@v3
+
+      - name: CodeQL - analyze & upload SARIF
+        uses: github/codeql-action/analyze@v3
         with:
-          category: "/language:${{ matrix.language }}"
+          token: ${{ github.token  }}
