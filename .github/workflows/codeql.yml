@@ -48,7 +48,7 @@ jobs:
       - name: Build frontend
         run: yarn --cwd packages/frontend build
 
-      - name: CodeQL – analyze & upload SARIF
+      - name: CodeQL - analyze & upload SARIF
         uses: github/codeql-action/analyze@v3
         with:
           token: ${{ secrets.CODEQL_PAT }}
