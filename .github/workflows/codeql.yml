@@ -3,15 +3,20 @@ name: CodeQL
 on:
   push:
     branches: [ main ]
-  pull_request_target:
+  pull_request:
     branches: [ main ]
   schedule:
     - cron: '0 2 * * 0'
 
+# ── Grant exactly the scopes CodeQL needs ─────────────────────────
+#   • contents: read   → so it can check out code
+#   • actions: read    → so it can call “Get a workflow run” successfully
+#   • checks: write    → so it can create/update the code-scanning check
+#   • security-events: write → so it can upload SARIF alerts
 permissions:
   contents: read
   actions: read
-  checks: write        # ← allow CodeQL to create/update checks
+  checks: write
   security-events: write
 
 jobs:
@@ -44,6 +49,5 @@ jobs:
       - name: Build frontend
         run: yarn --cwd packages/frontend build
 
-      # This single step both runs queries and uploads SARIF
-      - name: CodeQL – analyze & upload
+      - name: CodeQL - analyze & upload SARIF
         uses: github/codeql-action/analyze@v3
