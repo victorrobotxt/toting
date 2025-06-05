@@ -1,0 +1,29 @@
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/router';
+
+export default function CallbackPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (!window.opener) {
+      router.replace('/login');
+      return;
+    }
+    const query = window.location.search;
+    fetch(`http://localhost:8000/auth/callback${query}`)
+      .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then(data => {
+        window.opener.postMessage({ id_token: data.id_token, eligibility: data.eligibility }, 'http://localhost:3000');
+        window.close();
+      })
+      .catch(() => {
+        window.opener.postMessage({ error: true }, 'http://localhost:3000');
+        window.close();
+      });
+  }, [router.isReady]);
+
+  return (
+    <p style={{padding:'1rem'}}>Processing...</p>
+  );
+}

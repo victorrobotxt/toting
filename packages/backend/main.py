@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Header, WebSocket
+from fastapi import FastAPI, HTTPException, Depends, Header, WebSocket, Request
 from datetime import datetime
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,6 +33,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Always expose CORS header even without Origin
+@app.middleware("http")
+async def add_cors_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("access-control-allow-origin", "*")
+    return response
 
 # On-chain ElectionManager config
 EVM_RPC = os.getenv("EVM_RPC", "http://127.0.0.1:8545")
