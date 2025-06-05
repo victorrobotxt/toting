@@ -2,5 +2,7 @@ fastapi
 uvicorn
 sqlalchemy
 python-jose[cryptography]
-httpx
+httpx<0.25
+web3
+eth-account
 pytest

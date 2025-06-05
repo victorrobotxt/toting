@@ -5,11 +5,47 @@ from jose import jwt
 import httpx
 import os
 from typing import Optional
+from web3 import Web3
+from eth_account import Account
 
 from .db import SessionLocal, Base, engine, Election
 from .schemas import ElectionSchema, CreateElectionSchema, UpdateElectionSchema
 
 app = FastAPI()
+
+# On-chain ElectionManager config
+EVM_RPC = os.getenv("EVM_RPC", "http://127.0.0.1:8545")
+ELECTION_MANAGER = Web3.to_checksum_address(os.getenv("ELECTION_MANAGER", "0x" + "0"*40))
+PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY", "0x" + "0"*64)
+CHAIN_ID = int(os.getenv("CHAIN_ID", "1337"))
+EM_ABI = [
+    {
+        "inputs": [{"internalType": "bytes32", "name": "meta", "type": "bytes32"}],
+        "name": "createElection",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    }
+]
+
+def create_election_onchain(meta: str) -> int:
+    """Call the ElectionManager contract and return the start block number."""
+    w3 = Web3(Web3.HTTPProvider(EVM_RPC))
+    mgr = w3.eth.contract(address=ELECTION_MANAGER, abi=EM_ABI)
+    acct = Account.from_key(PRIVATE_KEY)
+    tx = mgr.functions.createElection(meta).build_transaction(
+        {
+            "from": acct.address,
+            "nonce": w3.eth.get_transaction_count(acct.address),
+            "gas": 200_000,
+            "gasPrice": w3.to_wei("1", "gwei"),
+            "chainId": CHAIN_ID,
+        }
+    )
+    signed = acct.sign_transaction(tx)
+    txh = w3.eth.send_raw_transaction(signed.rawTransaction)
+    rcpt = w3.eth.wait_for_transaction_receipt(txh)
+    return rcpt.blockNumber
 
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
@@ -73,7 +109,8 @@ def list_elections(db: Session = Depends(get_db)):
 
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
 def create_election(payload: CreateElectionSchema, db: Session = Depends(get_db)):
-    election = Election(meta=payload.meta_hash, start=payload.start, end=payload.end)
+    start_block = create_election_onchain(payload.meta_hash)
+    election = Election(meta=payload.meta_hash, start=start_block, end=start_block + 7200)
     db.add(election)
     db.commit()
     db.refresh(election)
