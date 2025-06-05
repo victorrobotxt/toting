@@ -65,6 +65,6 @@ contract WalletFactoryDeterminismTest is Test {
         );
 
         assertEq(wallet, expected, "mintWallet wrong");
-        assertEq(factory.walletOf(alice), expected, "walletOf wrong");
+        assertEq(factory.walletOf(owner), expected, "walletOf wrong");
     }
 }
