@@ -28,6 +28,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
+    allow_origin_regex=".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -109,9 +110,9 @@ def initiate():
             f"response_type=code&client_id={CLIENT_ID}"
             f"&redirect_uri={REDIRECT}&scope=openid email"
         )
-        return RedirectResponse(url)
-
-    html = """
+        response = RedirectResponse(url)
+    else:
+        html = """
     <html>
       <body>
         <h1>Mock Login</h1>
@@ -122,7 +123,10 @@ def initiate():
       </body>
     </html>
     """
-    return HTMLResponse(html)
+        response = HTMLResponse(html)
+
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
 
 @app.get("/auth/callback")
 async def callback(code: Optional[str] = None, user: Optional[str] = None):
