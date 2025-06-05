@@ -3,6 +3,7 @@ import NavBar from '../components/NavBar';
 import withAuth from '../components/withAuth';
 import { useAuth } from '../lib/AuthProvider';
 import Skeleton from '../components/Skeleton';
+import { jsonFetcher } from '../lib/api';
 
 interface AuditRow {
   id: number;
@@ -12,10 +13,7 @@ interface AuditRow {
   timestamp: string;
 }
 
-const fetcher = (url: string) => fetch(`http://localhost:8000${url}`).then(r => {
-  if (!r.ok) throw new Error(r.statusText);
-  return r.json();
-});
+const fetcher = (url: string) => jsonFetcher(url);
 
 function VerifierPage() {
   const { isLoggedIn } = useAuth();

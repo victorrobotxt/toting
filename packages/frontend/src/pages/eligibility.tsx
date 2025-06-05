@@ -6,6 +6,7 @@ import { useToast } from '../lib/ToastProvider';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { NoProofs } from '../components/ZeroState';
 import HelpTip from '../components/HelpTip';
+import { apiUrl } from '../lib/api';
 
 function EligibilityPage() {
   const { token, isLoggedIn } = useAuth();
@@ -22,7 +23,7 @@ function EligibilityPage() {
     
     setProof(null);
     const payload = { country, dob, residency };
-    const res = await fetch('http://localhost:8000/api/zk/eligibility', {
+    const res = await fetch(apiUrl('/api/zk/eligibility'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -45,7 +46,7 @@ function EligibilityPage() {
     <ProgressOverlay
       jobId={jobId}
       onDone={async () => {
-        const res = await fetch(`http://localhost:8000/api/zk/eligibility/${jobId}`).then(r => r.json());
+        const res = await fetch(`${apiUrl('/api/zk/eligibility/')}${jobId}`).then(r => r.json());
         setJobId(null);
         setLoading(false);
         if (res.status === 'done' && res.proof) setProof(res.proof);

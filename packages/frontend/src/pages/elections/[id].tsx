@@ -6,6 +6,7 @@ import NavBar from '../../components/NavBar';
 import withAuth from '../../components/withAuth';
 import { useAuth } from '../../lib/AuthProvider';
 import Skeleton from '../../components/Skeleton';
+import { jsonFetcher, apiUrl } from '../../lib/api';
 
 interface Election {
   id: number;
@@ -16,12 +17,7 @@ interface Election {
   tally?: string;
 }
 
-const fetcher = ([url, token]: [string, string]) => fetch(`http://localhost:8000${url}`, {
-  headers: { Authorization: `Bearer ${token}` }
-}).then(r => {
-  if (!r.ok) throw new Error(r.statusText);
-  return r.json();
-});
+const fetcher = ([url, token]: [string, string]) => jsonFetcher([url, token]);
 
 function ElectionDetail() {
   const router = useRouter();
@@ -35,7 +31,7 @@ function ElectionDetail() {
     const payload: any = {};
     if (newStatus) payload.status = newStatus;
     if (newTally) payload.tally = newTally;
-    await fetch(`http://localhost:8000/elections/${id}`, {
+    await fetch(apiUrl(`/elections/${id}`), {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

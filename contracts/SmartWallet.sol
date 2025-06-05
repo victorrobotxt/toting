@@ -55,7 +55,8 @@ contract SmartWallet is BaseAccount {
             return recovered == owner;
         }
         if (signature.length == 96) {
-            return BabyJubjubSig.verify(hash, signature, owner);
+            bytes32 digest = sha256(abi.encodePacked(bytes20(owner), hash));
+            return BabyJubjubSig.verify(digest, signature, owner);
         }
         return false;
     }

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from '../lib/api';
 
 export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDone: () => void }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const ws = new WebSocket(`ws://localhost:8000/ws/proofs/${jobId}`);
+    const wsUrl = apiUrl(`/ws/proofs/${jobId}`).replace(/^http/, 'ws');
+    const ws = new WebSocket(wsUrl);
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data);
       setProgress(msg.progress || 0);
@@ -13,6 +15,7 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
         ws.close();
       }
     };
+    ws.onclose = onDone;
     return () => ws.close();
   }, [jobId, onDone]);
 
