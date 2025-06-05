@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useRouter } from 'next/router';
 
 interface AuthContextValue {
   token: string | null;
@@ -37,6 +38,7 @@ function tokenExpired(token: string): boolean {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [eligibility, setEligibility] = useState<boolean>(false);
+  const router = useRouter();
 
   useEffect(() => {
     const stored = localStorage.getItem('id_token');
@@ -47,6 +49,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('id_token');
       localStorage.removeItem('eligibility');
     }
+
+    const handler = (e: MessageEvent) => {
+      if (e.origin !== 'http://localhost:3000') return;
+      const { id_token, eligibility: elig } = e.data || {};
+      if (typeof id_token === 'string' && typeof elig === 'boolean') {
+        login(id_token, elig);
+        router.replace('/dashboard');
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
   }, []);
 
   const login = (tok: string, elig: boolean) => {

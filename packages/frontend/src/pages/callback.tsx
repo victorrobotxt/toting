@@ -1,31 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '../lib/AuthProvider';
 
 export default function CallbackPage() {
   const router = useRouter();
-  const { login } = useAuth();
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (!window.opener) {
+      router.replace('/login');
+      return;
+    }
     const query = window.location.search;
     fetch(`http://localhost:8000/auth/callback${query}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
       .then(data => {
-        if (data.id_token) {
-          login(data.id_token, data.eligibility);
-          router.replace('/dashboard');
-        } else {
-          setError('No token received');
-        }
+        window.opener.postMessage({ id_token: data.id_token, eligibility: data.eligibility }, 'http://localhost:3000');
+        window.close();
       })
-      .catch(() => setError('Login failed'));
+      .catch(() => {
+        window.opener.postMessage({ error: true }, 'http://localhost:3000');
+        window.close();
+      });
   }, [router.isReady]);
 
   return (
-    <div style={{display:'flex',justifyContent:'center',paddingTop:'2rem'}}>
-      {error ? <p style={{color:'red'}}>{error}</p> : <p>Processing login...</p>}
-    </div>
+    <p style={{padding:'1rem'}}>Processing...</p>
   );
 }
