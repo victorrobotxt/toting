@@ -174,6 +174,7 @@ async def gas_estimate():
 def post_eligibility(
     payload: EligibilityInput,
     authorization: str = Header(None),
+    x_curve: str | None = Header("bn254", alias="x-curve"),
     db: Session = Depends(get_db),
 ):
     user = get_user_id(authorization)
@@ -188,11 +189,12 @@ def post_eligibility(
         db.add(pr)
     db.commit()
 
-    cached = cache_get("eligibility", payload.dict())
+    curve = x_curve.lower() if x_curve else "bn254"
+    cached = cache_get("eligibility", payload.dict(), curve)
     if cached:
         return {"status": "done", **cached}
 
-    job = generate_proof.delay("eligibility", payload.dict())
+    job = generate_proof.delay("eligibility", payload.dict(), curve)
     return {"job_id": job.id}
 
 
@@ -210,6 +212,7 @@ def get_eligibility(job_id: str):
 def post_voice(
     payload: VoiceInput,
     authorization: str = Header(None),
+    x_curve: str | None = Header("bn254", alias="x-curve"),
     db: Session = Depends(get_db),
 ):
     user = get_user_id(authorization)
@@ -224,11 +227,12 @@ def post_voice(
         db.add(pr)
     db.commit()
 
-    cached = cache_get("voice", payload.dict())
+    curve = x_curve.lower() if x_curve else "bn254"
+    cached = cache_get("voice", payload.dict(), curve)
     if cached:
         return {"status": "done", **cached}
 
-    job = generate_proof.delay("voice", payload.dict())
+    job = generate_proof.delay("voice", payload.dict(), curve)
     return {"job_id": job.id}
 
 
@@ -246,6 +250,7 @@ def get_voice(job_id: str):
 def post_batch_tally(
     payload: BatchTallyInput,
     authorization: str = Header(None),
+    x_curve: str | None = Header("bn254", alias="x-curve"),
     db: Session = Depends(get_db),
 ):
     user = get_user_id(authorization)
@@ -260,11 +265,12 @@ def post_batch_tally(
         db.add(pr)
     db.commit()
 
-    cached = cache_get("batch_tally", payload.dict())
+    curve = x_curve.lower() if x_curve else "bn254"
+    cached = cache_get("batch_tally", payload.dict(), curve)
     if cached:
         return {"status": "done", **cached}
 
-    job = generate_proof.delay("batch_tally", payload.dict())
+    job = generate_proof.delay("batch_tally", payload.dict(), curve)
     return {"job_id": job.id}
 
 

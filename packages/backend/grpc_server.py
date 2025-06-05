@@ -13,7 +13,9 @@ class ProofService(proof_pb2_grpc.ProofServiceServicer):
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details('invalid json')
             return proof_pb2.GenerateResponse()
-        job = generate_proof.delay(request.circuit, inputs)
+        meta = dict(context.invocation_metadata())
+        curve = meta.get("x-curve", "bn254").lower()
+        job = generate_proof.delay(request.circuit, inputs, curve)
         return proof_pb2.GenerateResponse(job_id=job.id)
 
     def Status(self, request, context):

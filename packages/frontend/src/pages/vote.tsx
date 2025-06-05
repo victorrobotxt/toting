@@ -16,14 +16,27 @@ function VotePage() {
         const provider = new ethers.providers.Web3Provider((window as any).ethereum);
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
-        const proofRes = await fetch(`http://localhost:8000/api/maci/getProof`, {
-            headers: { Authorization: `Bearer ${token}` }
+        const payload = { credits: [option], nonce: 1 };
+        const res = await fetch(`http://localhost:8000/api/zk/voice`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
         });
-        if (!proofRes.ok) {
-            logout();
+        if (res.status === 429) {
+            setReceipt('quota exceeded');
             return;
         }
-        const { nonce, vcProof } = await proofRes.json();
+        const job = await res.json();
+        const out = await fetch(`http://localhost:8000/api/zk/voice/${job.job_id}`).then(r => r.json());
+        if (out.status !== 'done') {
+            setReceipt('proof error');
+            return;
+        }
+        const vcProof = out.proof;
+        const nonce = payload.nonce;
         try {
             const userOpHash = await bundleSubmitVote(signer, option, nonce, vcProof);
             setReceipt(userOpHash);

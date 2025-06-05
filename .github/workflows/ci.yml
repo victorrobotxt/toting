@@ -69,8 +69,12 @@ jobs:
         run: yarn --cwd packages/frontend type-check
 
       # ─── Circom compilation ──────────────────────────────────────────────
-      - name: Compile Circom circuits
-        run: npx -y circom2 circuits/eligibility/eligibility.circom --r1cs --wasm --sym
+      - name: Compile Circom circuits (multi-curve)
+        run: |
+          for curve in bn254 bls12-381; do
+            CURVE=$curve python scripts/build_manifest.py
+          done
+          python scripts/check_manifest.py
 
       # ─── Build and scan Docker image ──────────────────────────────────────
       - name: Build Docker image

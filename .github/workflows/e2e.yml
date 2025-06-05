@@ -1,0 +1,37 @@
+name: e2e
+on:
+  workflow_dispatch:
+  pull_request:
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      anvil:
+        image: ghcr.io/foundry-rs/foundry:latest
+        options: >-
+          --health-cmd "anvil --version" --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 8545:8545
+        command: ["anvil","--host","0.0.0.0","-m","test test test test test test test test test test test junk","--silent"]
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: pass
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - run: pip install requests web3 eth-account fastapi uvicorn sqlalchemy
+      - run: uvicorn packages.backend.main:app --host 0.0.0.0 --port 8000 & echo $! > backend.pid && sleep 5
+      - name: Run end-to-end script
+        run: python scripts/run_e2e.py
+      - run: kill $(cat backend.pid)

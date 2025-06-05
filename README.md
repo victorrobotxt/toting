@@ -25,6 +25,28 @@ The backend exposes a simple mock OAuth login for local testing. By default
 form at `/auth/initiate` that lets you enter an email. Set
 `USE_REAL_OAUTH=true` to redirect to the configured `GRAO_BASE_URL` instead.
 
+### API Endpoints
+
+The backend exposes several REST endpoints used by the frontend:
+
+| Method | Path | Description |
+|-------|------|-------------|
+| `GET` | `/auth/initiate` | Start OAuth login (mock form in local mode). |
+| `GET` | `/auth/callback` | Finalize login, returns `{id_token, eligibility}`. |
+| `GET` | `/elections` | List elections. |
+| `POST` | `/elections` | Create a new election. |
+| `PATCH` | `/elections/{id}` | Update an election status/tally. |
+| `POST` | `/api/zk/eligibility` | Submit eligibility proof input. Optional `X-Curve` header selects curve. |
+| `GET` | `/api/zk/eligibility/{job}` | Poll proof status. |
+| `POST` | `/api/zk/voice` | Submit voice-credit proof input. |
+| `POST` | `/api/zk/batch_tally` | Submit batch tally proof request. |
+| `GET` | `/api/zk/voice/{job}` | Poll voice proof result. |
+| `GET` | `/api/zk/batch_tally/{job}` | Poll tally proof result. |
+| `WS` | `/ws/proofs/{job}` | WebSocket progress updates. |
+
+All proof endpoints accept an optional `X-Curve: bls12-381` header to use the
+BLS12-381 artifact set; BN254 is the default.
+
 ## Design Deep-Dive Videos
 
 - [Circuits Overview](https://www.loom.com/share/circuits-demo)

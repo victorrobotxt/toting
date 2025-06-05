@@ -10,12 +10,14 @@ for cfile in glob.glob('circuits/**/*.circom', recursive=True):
     with open(cfile, 'rb') as f:
         h = hashlib.sha256(f.read()).hexdigest()
     name = os.path.splitext(os.path.basename(cfile))[0]
-    out_dir = os.path.join('artifacts', name, h)
-    current[h] = {
-        'r1cs': f'{out_dir}/{name}.r1cs',
-        'wasm': f'{out_dir}/{name}.wasm',
-        'zkey': f'{out_dir}/{name}.zkey',
-    }
+    for curve in ('bn254', 'bls12-381'):
+        out_dir = os.path.join('artifacts', curve, name, h)
+        current.setdefault(name, {})[curve] = {
+            'hash': h,
+            'r1cs': f'{out_dir}/{name}.r1cs',
+            'wasm': f'{out_dir}/{name}.wasm',
+            'zkey': f'{out_dir}/{name}.zkey',
+        }
 
 if current != manifest:
     print('Manifest out of date. Expected:')
