@@ -20,7 +20,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "test": "yarn exec tsc -p services/relay-daemon"
+    "test": "npx tsc -p services/relay-daemon"
   },
   "packageManager": "yarn@1.22.22"
 }

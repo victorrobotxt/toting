@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "strict": true,
     "outDir": "dist",
+    "rootDir": ".",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "types": ["node"]

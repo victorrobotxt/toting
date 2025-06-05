@@ -3,7 +3,6 @@ import os
 import time
 import subprocess
 from web3 import Web3
-    
 from web3.exceptions import LogTopicError
 
 EVM_RPC      = os.getenv("EVM_RPC", "http://127.0.0.1:8545")
@@ -44,6 +43,17 @@ ELECTION_MANAGER_ABI = [
       "name":"tallyVotes","outputs":[],"stateMutability":"nonpayable","type":"function"
     }
 ]
+
+
+def connect_w3() -> Web3:
+    """Try to connect to the EVM provider until it is reachable."""
+    for _ in range(20):
+        w3 = Web3(Web3.HTTPProvider(EVM_RPC))
+        if w3.is_connected():
+            return w3
+        print("⏳ waiting for anvil…")
+        time.sleep(3)
+    raise RuntimeError("EVM RPC not reachable")
 
 
 
@@ -115,7 +125,7 @@ def submit_tally(w3, mgr, acct, calldata):
     print("✅ Tally on-chain!")
 
 def main():
-    w3 = Web3(Web3.HTTPProvider(EVM_RPC))
+    w3 = connect_w3()
     mgr = w3.eth.contract(address=FACTORY_ADDR, abi=ELECTION_MANAGER_ABI)
     acct = w3.eth.account.from_key(PRIVATE_KEY)
 
