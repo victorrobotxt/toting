@@ -34,6 +34,9 @@ services:
       GRAO_CLIENT_SECRET: ${GRAO_CLIENT_SECRET:-test-secret}
       GRAO_REDIRECT_URI: ${GRAO_REDIRECT_URI:-http://localhost:3000/callback}
       USE_REAL_OAUTH: ${USE_REAL_OAUTH:-false}
+      EVM_RPC: http://anvil:8545
+      CELERY_BROKER: redis://redis:6379/0
+      CELERY_BACKEND: redis://redis:6379/0
     ports:
       - "8000:8000"
     depends_on:
@@ -59,6 +62,7 @@ services:
       dockerfile: Dockerfile
     environment:
       EVM_RPC: http://anvil:8545
+      EVM_MAX_RETRIES: "0"
       ELECTION_MANAGER: ${ELECTION_MANAGER:-0x0000000000000000000000000000000000000000}
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY:-0x0000000000000000000000000000000000000000000000000000000000000000}
     volumes:
