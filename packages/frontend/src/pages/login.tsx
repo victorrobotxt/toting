@@ -38,10 +38,26 @@ export default function LoginPage() {
   return (
     <>
       <NavBar />
-      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'1rem',padding:'2rem'}}>
-        <button onClick={startLogin}>Log in with eID</button>
-        <button onClick={openMock}>Mock Login (developer mode)</button>
-      </div>
+      <main
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem',
+          padding: '2rem',
+        }}
+      >
+        <h1 style={{ fontSize: '1.5rem' }}>Login</h1>
+        <button onClick={startLogin} aria-label="Log in with national eID">
+          Log in with eID
+        </button>
+        <button
+          onClick={openMock}
+          aria-label="Open developer mock login"
+        >
+          Mock Login (developer mode)
+        </button>
+      </main>
       {showMock && <MockLoginModal onClose={() => setShowMock(false)} />}
     </>
   );

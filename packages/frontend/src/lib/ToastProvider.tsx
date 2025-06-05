@@ -16,9 +16,35 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div style={{position:'fixed',bottom:'1rem',right:'1rem',display:'flex',flexDirection:'column',gap:'0.5rem',zIndex:1000}}>
-        {toasts.map(t => (
-          <div key={t.id} style={{padding:'0.5rem 1rem',border:'1px solid',borderRadius:'4px',background:'white',color:t.type==='error'?'red':t.type==='success'?'green':'black'}}>
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '1rem',
+          right: '1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          zIndex: 1000,
+        }}
+        aria-live="assertive"
+      >
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            role="alert"
+            style={{
+              padding: '0.5rem 1rem',
+              border: '1px solid',
+              borderRadius: '4px',
+              background: 'white',
+              color:
+                t.type === 'error'
+                  ? 'red'
+                  : t.type === 'success'
+                  ? 'green'
+                  : 'black',
+            }}
+          >
             {t.message}
           </div>
         ))}
