@@ -5,7 +5,13 @@ import express from 'express';
 import { Gauge, collectDefaultMetrics, register } from 'prom-client';
 import { Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import { AnchorProvider, Program, setProvider } from '@coral-xyz/anchor';
-import idl from '../../solana-programs/election/target/idl/election_mirror.json';
+import fs from 'fs';
+import path from 'path';
+
+// Load the IDL at runtime so the path resolves correctly when the script
+// is executed from the compiled `dist` directory.
+const idlPath = path.join(__dirname, '..', '..', '..', 'solana-programs', 'election', 'target', 'idl', 'election_mirror.json');
+const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8'));
 
 const EVM_RPC = process.env.EVM_RPC || 'http://127.0.0.1:8545';
 const SOLANA_RPC = process.env.SOLANA_RPC || 'http://localhost:8899';
