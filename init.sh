@@ -6,7 +6,7 @@ for dir in "${d[@]}"; do mkdir -p "$dir"; done
 cat > docker-compose.yml <<'YAML'
 version: "3.9"
 services:
-  anvil: {image: ghcr.io/foundry-rs/foundry, command: ["anvil", "-m", "auto"], ports: ["8545:8545"]}
+  anvil: {image: ghcr.io/foundry-rs/foundry, command: ["anvil", "--host", "0.0.0.0", "--port", "8545", "-m", "auto"], ports: ["8545:8545"]}
   redis: {image: redis:7-alpine, ports: ["6379:6379"]}
   db:    {image: postgres:16-alpine, environment: {POSTGRES_PASSWORD: pass}, ports: ["5432:5432"]}
 YAML
