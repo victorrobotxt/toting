@@ -5,9 +5,20 @@ import { useAuth } from '../../lib/AuthProvider';
 import NavBar from '../../components/NavBar';
 import { useToast } from '../../lib/ToastProvider';
 import GateBanner from '../../components/GateBanner';
+import { useSWRConfig } from 'swr';
+
+interface Election {
+  id: number;
+  meta: string;
+  start: number;
+  end: number;
+  status: string;
+  tally?: string;
+}
 
 function CreateElectionPage() {
   const { token, eligibility, role, isLoggedIn } = useAuth();
+  const { mutate } = useSWRConfig();
   const router = useRouter();
   const step = parseInt((router.query.step as string) || '1', 10);
   const [meta, setMeta] = useState('');
@@ -28,7 +39,8 @@ function CreateElectionPage() {
       body: JSON.stringify({ meta_hash: hash }),
     });
     if (res.ok) {
-      const data = await res.json();
+      const data: Election = await res.json();
+      mutate(['/elections', token] as any, (curr: Election[] = []) => [...curr, data], false);
       router.push(`/elections/${data.id}`);
     } else {
       showToast({ type: 'error', message: 'Failed to create' });
