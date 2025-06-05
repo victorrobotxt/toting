@@ -3,5 +3,8 @@
   "login.retryBtn": "Опитай отново",
   "login.switch": "Превключи към макет",
   "account.logout": "Изход",
-  "account.switch": "Смени метода"
+  "account.switch": "Смени метода",
+  "account.role": "Смяна на роля",
+  "account.roleChanged": "Ролята е обновена",
+  "account.roleFailed": "Неуспешна смяна"
 }

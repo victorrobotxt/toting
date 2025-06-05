@@ -3,5 +3,8 @@
   "login.retryBtn": "Retry",
   "login.switch": "Switch to Mock",
   "account.logout": "Logout",
-  "account.switch": "Switch Login Method"
+  "account.switch": "Switch Login Method",
+  "account.role": "Change User Role",
+  "account.roleChanged": "Role updated",
+  "account.roleFailed": "Failed to update"
 }
