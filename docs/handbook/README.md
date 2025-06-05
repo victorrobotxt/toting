@@ -16,6 +16,11 @@ The orchestrator service connects to an EVM JSON‑RPC endpoint. When using
 orchestrator will retry connecting for up to 20 attempts. Set `EVM_RPC` to a
 custom URL or use `EVM_MAX_RETRIES=0` to wait indefinitely.
 
+The backend uses Celery with Redis for proof generation. The Compose
+configuration sets `EVM_RPC` along with `CELERY_BROKER` and
+`CELERY_BACKEND` so it can talk to the `anvil` and `redis` services. If you
+run the backend on its own, provide these variables manually.
+
 The frontend will be available on `http://localhost:3000`, the API on
 `http://localhost:8000` and Postgres on `localhost:5432`.
 
