@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import hashlib, json, os, subprocess, glob
+import hashlib, json, os, subprocess, glob, sys
 
 ARTIFACTS_DIR = "artifacts"
 PTAU_FILE = os.environ.get("PTAU_FILE", "pot12_final.ptau")
 CURVE = os.environ.get("CURVE", "bn254").lower()
 
 manifest = {}
+had_error = False
 manifest_file = os.path.join(ARTIFACTS_DIR, "manifest.json")
 if os.path.exists(manifest_file):
     with open(manifest_file) as f:
@@ -38,6 +39,7 @@ for cfile in glob.glob("circuits/**/*.circom", recursive=True):
             )
         except subprocess.CalledProcessError:
             print(f"skip {cfile}: circom compilation failed")
+            had_error = True
             continue
     if os.path.exists(PTAU_FILE) and not os.path.exists(zkey):
         try:
@@ -56,6 +58,7 @@ for cfile in glob.glob("circuits/**/*.circom", recursive=True):
             )
         except subprocess.CalledProcessError:
             print(f"skip {cfile}: snarkjs setup failed")
+            had_error = True
             continue
     manifest.setdefault(name, {})[CURVE] = {
         "hash": h,
@@ -68,3 +71,5 @@ os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 with open(manifest_file, "w") as f:
     json.dump(manifest, f, indent=2)
 print("Wrote", manifest_file)
+if had_error:
+    sys.exit(1)
