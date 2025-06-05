@@ -9,7 +9,13 @@ from web3 import Web3
 from eth_account import Account
 
 from .db import SessionLocal, Base, engine, Election
-from .schemas import ElectionSchema, CreateElectionSchema, UpdateElectionSchema
+from .schemas import (
+    ElectionSchema,
+    CreateElectionSchema,
+    UpdateElectionSchema,
+    EligibilityInput,
+)
+from .proof import celery_app, generate_proof
 
 app = FastAPI()
 
@@ -143,3 +149,19 @@ def update_election(
 async def gas_estimate():
     """Return a fake 95th percentile gas fee in gwei."""
     return {"p95": 42}
+
+
+@app.post("/api/zk/eligibility")
+def post_eligibility(payload: EligibilityInput):
+    job = generate_proof.delay("eligibility", payload.dict())
+    return {"job_id": job.id}
+
+
+@app.get("/api/zk/eligibility/{job_id}")
+def get_eligibility(job_id: str):
+    async_result = celery_app.AsyncResult(job_id)
+    if async_result.state in {"PENDING", "STARTED"}:
+        return {"status": async_result.state.lower()}
+    if async_result.state == "SUCCESS":
+        return {"status": "done", **async_result.result}
+    return {"status": "error"}

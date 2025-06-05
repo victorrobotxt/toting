@@ -1,7 +1,27 @@
 {
+  "f41cf5b40622303074b80daed248db510eef0d1955cccc6b0baa0e2bbb86a7c3": {
+    "r1cs": "artifacts/merkle/f41cf5b40622303074b80daed248db510eef0d1955cccc6b0baa0e2bbb86a7c3/merkle.r1cs",
+    "wasm": "artifacts/merkle/f41cf5b40622303074b80daed248db510eef0d1955cccc6b0baa0e2bbb86a7c3/merkle.wasm",
+    "zkey": "artifacts/merkle/f41cf5b40622303074b80daed248db510eef0d1955cccc6b0baa0e2bbb86a7c3/merkle.zkey"
+  },
+  "00d0d32d648a266808105c1ed7e45157838361682cb9e2853d31bdc87cdade88": {
+    "r1cs": "artifacts/qv_tally/00d0d32d648a266808105c1ed7e45157838361682cb9e2853d31bdc87cdade88/qv_tally.r1cs",
+    "wasm": "artifacts/qv_tally/00d0d32d648a266808105c1ed7e45157838361682cb9e2853d31bdc87cdade88/qv_tally.wasm",
+    "zkey": "artifacts/qv_tally/00d0d32d648a266808105c1ed7e45157838361682cb9e2853d31bdc87cdade88/qv_tally.zkey"
+  },
+  "250dc836c4654c537cbe8ca1b61a188d0fac62cba52295e31486cf32c6396aa8": {
+    "r1cs": "artifacts/voice_check/250dc836c4654c537cbe8ca1b61a188d0fac62cba52295e31486cf32c6396aa8/voice_check.r1cs",
+    "wasm": "artifacts/voice_check/250dc836c4654c537cbe8ca1b61a188d0fac62cba52295e31486cf32c6396aa8/voice_check.wasm",
+    "zkey": "artifacts/voice_check/250dc836c4654c537cbe8ca1b61a188d0fac62cba52295e31486cf32c6396aa8/voice_check.zkey"
+  },
   "0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9": {
     "r1cs": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.r1cs",
     "wasm": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.wasm",
     "zkey": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.zkey"
+  },
+  "25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027": {
+    "r1cs": "artifacts/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.r1cs",
+    "wasm": "artifacts/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.wasm",
+    "zkey": "artifacts/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.zkey"
   }
 }

@@ -1,6 +1,8 @@
 FROM python:3.11-slim
 WORKDIR /app
 COPY packages/backend /app/packages/backend
+# copy circuit manifest
+COPY artifacts/manifest.json /app/circuits/manifest.json
 # pin uvicorn to avoid old apt versions that miss the Server class
 RUN pip install fastapi "uvicorn>=0.27" python-jose[cryptography] httpx sqlalchemy web3 eth-account
 EXPOSE 8000

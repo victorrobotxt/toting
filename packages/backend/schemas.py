@@ -36,3 +36,25 @@ class UpdateElectionSchema(BaseModel):
             raise ValueError("invalid status")
         return v
 
+
+class EligibilityInput(BaseModel):
+    root: int
+    nullifier: int
+    Ax: int
+    Ay: int
+    R8x: int
+    R8y: int
+    S: int
+    msgHash: int
+    pathElements: list[int]
+    pathIndices: list[int]
+
+    class Config:
+        extra = "forbid"
+
+    @validator("pathElements", "pathIndices")
+    def check_len(cls, v):
+        if len(v) != 32:
+            raise ValueError("expected length 32")
+        return v
+
