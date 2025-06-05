@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../lib/AuthProvider';
 import { useToast } from '../lib/ToastProvider';
 import { useI18n } from '../lib/I18nProvider';
+import { apiUrl } from '../lib/api';
 
 export default function RoleSwitchModal({ onClose }: { onClose: () => void }) {
   const { token } = useAuth();
@@ -17,7 +18,7 @@ export default function RoleSwitchModal({ onClose }: { onClose: () => void }) {
 
   const submit = async () => {
     const res = await fetch(
-      `http://localhost:8000/admin/users/${encodeURIComponent(email)}`,
+      apiUrl(`/admin/users/${encodeURIComponent(email)}`),
       {
         method: 'PUT',
         headers: {
