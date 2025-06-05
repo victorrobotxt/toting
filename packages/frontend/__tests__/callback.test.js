@@ -1,29 +1,21 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react'
-import router from 'next-router-mock'
-import CallbackPage from '../src/pages/callback'
-import { AuthProvider } from '../src/lib/AuthProvider'
+import { render, waitFor } from '@testing-library/react';
+import router from 'next-router-mock';
+import CallbackPage from '../src/pages/callback';
 
-jest.mock('next/router', () => require('next-router-mock'))
+jest.mock('next/router', () => require('next-router-mock'));
 
-describe('login flow', () => {
+describe('callback page', () => {
   beforeEach(() => {
-    localStorage.clear()
     globalThis.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ id_token: 'jwt', eligibility: true })
-    })
-  })
+    });
+    router.setCurrentUrl('/callback?code=dummy');
+  });
 
-  it('stores token and redirects', async () => {
-    router.setCurrentUrl('/callback?code=dummy')
-    render(
-      <AuthProvider>
-        <CallbackPage />
-      </AuthProvider>
-    )
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled())
-    expect(localStorage.getItem('id_token')).toBe('jwt')
-    expect(router.asPath).toBe('/dashboard')
-  })
-})
+  it('redirects to login without opener', async () => {
+    render(<CallbackPage />);
+    await waitFor(() => expect(router.asPath).toBe('/login'));
+  });
+});

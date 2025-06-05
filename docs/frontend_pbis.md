@@ -56,3 +56,18 @@ The following product backlog items (PBIs) capture upcoming frontend work.
 
 ## F-17 EIP-6963 Wallet Standard
 - Replace wagmi auto-detect with official API; Storybook example.
+## F-18 Frontend Login Page & Redirect to OAuth Initiation
+- Implement a dedicated `/login` route with a “Log in with eID” button.
+- Fetch `/auth/initiate` and open the returned URL or HTML inside a popup window so the main tab never shows raw JSON.
+
+## F-19 Callback Handling & Token Storage in AuthProvider
+- Popup posts `{ id_token, eligibility }` back to the opener after `/auth/callback`.
+- `AuthProvider` listens for the message, stores the token and eligibility, then redirects to `/dashboard`.
+
+## F-20 Dashboard & Navbar Adjustments Post-Login
+- Navbar shows “Logout” when authenticated and guards protected pages.
+- Logged-in users visiting `/login` are redirected to `/dashboard` automatically.
+
+## F-21 Eligibility & Voting Links Only Visible When Eligible
+- Navbar and dashboard links depend on the `eligibility` flag from the backend.
+- Voting buttons disabled when `eligibility === false`.

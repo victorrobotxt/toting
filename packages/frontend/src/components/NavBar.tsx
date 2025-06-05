@@ -15,7 +15,7 @@ export default function NavBar() {
       {isLoggedIn ? (
         <button onClick={logout}>Logout</button>
       ) : (
-        <a href="http://localhost:8000/auth/initiate">Log in with eID</a>
+        <Link href="/login">Log in with eID</Link>
       )}
     </nav>
   );
