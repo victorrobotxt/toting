@@ -125,7 +125,7 @@ def initiate():
     """
         response = HTMLResponse(html)
 
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    print("HEIII")
     return response
 
 @app.get("/auth/callback")

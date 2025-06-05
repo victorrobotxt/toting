@@ -94,6 +94,9 @@ body {
   }
   .hamburger {
     display: block;
+  }
+} /* closes @media */
+
 .skeleton {
   background-color: #e5e7eb;
   border-radius: 4px;
