@@ -5,10 +5,12 @@ import { bundleSubmitVote } from "../lib/accountAbstraction";
 import withAuth from "../components/withAuth";
 import NavBar from "../components/NavBar";
 import { useAuth } from "../lib/AuthProvider";
+import { useToast } from "../lib/ToastProvider";
 
 function VotePage() {
     const router = useRouter();
     const { token, eligibility, logout } = useAuth();
+    const { showToast } = useToast();
     const [receipt, setReceipt] = useState<string>();
     const id = router.query.id as string | undefined;
 
@@ -26,13 +28,13 @@ function VotePage() {
             body: JSON.stringify(payload),
         });
         if (res.status === 429) {
-            setReceipt('quota exceeded');
+            showToast({ type: 'error', message: 'quota exceeded' });
             return;
         }
         const job = await res.json();
         const out = await fetch(`http://localhost:8000/api/zk/voice/${job.job_id}`).then(r => r.json());
         if (out.status !== 'done') {
-            setReceipt('proof error');
+            showToast({ type: 'error', message: 'proof error' });
             return;
         }
         const vcProof = out.proof;
@@ -41,7 +43,7 @@ function VotePage() {
             const userOpHash = await bundleSubmitVote(signer, option, nonce, vcProof);
             setReceipt(userOpHash);
         } catch (e:any) {
-            setReceipt("error: " + e.message);
+            showToast({ type: 'error', message: e.message });
         }
     };
 
