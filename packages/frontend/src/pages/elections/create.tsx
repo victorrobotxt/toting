@@ -3,11 +3,12 @@ import { keccak256, toUtf8Bytes } from 'ethers/lib/utils';
 import { useAuth } from '../../lib/AuthProvider';
 import withAuth from '../../components/withAuth';
 import NavBar from '../../components/NavBar';
+import { useToast } from '../../lib/ToastProvider';
 
 function CreateElectionPage() {
   const { token, eligibility } = useAuth();
   const [meta, setMeta] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const submit = async () => {
     if (!eligibility) return;
@@ -23,7 +24,7 @@ function CreateElectionPage() {
     if (res.ok) {
       window.location.href = '/dashboard';
     } else {
-      setError('Failed to create');
+      showToast({ type: 'error', message: 'Failed to create' });
     }
   };
 
@@ -36,7 +37,6 @@ function CreateElectionPage() {
         <h2>Create Election</h2>
         <input value={meta} onChange={e => setMeta(e.target.value)} placeholder="metadata" />
         <button onClick={submit}>Submit</button>
-        {error && <p style={{color:'red'}}>{error}</p>}
       </div>
     </>
   );

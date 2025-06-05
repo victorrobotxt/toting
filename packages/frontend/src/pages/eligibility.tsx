@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import withAuth from '../components/withAuth';
 import NavBar from '../components/NavBar';
 import { useAuth } from '../lib/AuthProvider';
+import { useToast } from '../lib/ToastProvider';
 
 function EligibilityPage() {
   const { token } = useAuth();
@@ -9,12 +10,12 @@ function EligibilityPage() {
   const [dob, setDob] = useState('');
   const [residency, setResidency] = useState('');
   const [proof, setProof] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setLoading(true);
-    setError(null);
+    
     setProof(null);
     const payload = { country, dob, residency };
     const res = await fetch('http://localhost:8000/api/zk/eligibility', {
@@ -26,7 +27,7 @@ function EligibilityPage() {
       body: JSON.stringify(payload),
     });
     if (res.status === 429) {
-      setError('quota exceeded');
+      showToast({ type: 'error', message: 'quota exceeded' });
       setLoading(false);
       return;
     }
@@ -38,12 +39,12 @@ function EligibilityPage() {
       while (true) {
         const poll = await fetch(`http://localhost:8000/api/zk/eligibility/${jobId}`).then(r => r.json());
         if (poll.status === 'done') { result = poll; break; }
-        if (poll.status === 'error') { setError('proof error'); setLoading(false); return; }
+        if (poll.status === 'error') { showToast({ type: 'error', message: 'proof error' }); setLoading(false); return; }
         await new Promise(r => setTimeout(r, 1000));
       }
     }
     if (result.proof) setProof(result.proof);
-    else setError('proof error');
+    else showToast({ type: 'error', message: 'proof error' });
     setLoading(false);
   };
 
@@ -64,7 +65,6 @@ function EligibilityPage() {
         <button onClick={submit} disabled={loading}>Submit</button>
         {loading && <p>Waiting for proof...</p>}
         {proof && <p>Proof: {proof}</p>}
-        {error && <p style={{color:'red'}}>{error}</p>}
       </div>
     </>
   );

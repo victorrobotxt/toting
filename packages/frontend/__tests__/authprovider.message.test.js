@@ -31,6 +31,7 @@ describe('postMessage login', () => {
       window.dispatchEvent(evt);
     });
     await waitFor(() => expect(localStorage.getItem('id_token')).toBe('jwt'));
+    expect(localStorage.getItem('auth_mode')).toBe('eid');
     expect(router.asPath).toBe('/dashboard');
   });
 });
