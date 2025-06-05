@@ -57,6 +57,7 @@ def test_mock_login_and_list():
     r = client.get("/auth/initiate")
     assert r.status_code == 200
     assert "Mock Login" in r.text
+    assert r.headers["access-control-allow-origin"] == "*"
 
     # callback returns fake JWT
     r = client.get("/auth/callback", params={"user": "alice@example.com"})
