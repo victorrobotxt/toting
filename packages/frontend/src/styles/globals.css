@@ -1,10 +1,14 @@
 :root {
   --bg: #ffffff;
   --text: #000000;
+  --primary: #2563eb;
+  --muted: #e5e7eb;
 }
 .dark {
   --bg: #000000;
   --text: #ffffff;
+  --primary: #3b82f6;
+  --muted: #374151;
 }
 body {
   background-color: var(--bg);
@@ -30,13 +34,13 @@ body {
   transition: transform 0.2s;
 }
 .switch.on {
-  background: #2563eb;
+  background: var(--primary);
 }
 .switch.on .thumb {
   transform: translateX(18px);
 }
 .switch.off {
-  background: #e5e7eb;
+  background: var(--muted);
 }
 .switch.off .thumb {
   transform: translateX(0px);
