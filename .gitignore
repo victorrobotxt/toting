@@ -11,3 +11,6 @@ packages/frontend/.next
 # Yarn Plug'n'Play artefacts
 .pnp.cjs
 .pnp.loader.mjs
+artifacts/
+!artifacts/
+!artifacts/manifest.json

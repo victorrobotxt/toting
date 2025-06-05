@@ -1,0 +1,7 @@
+{
+  "0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9": {
+    "r1cs": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.r1cs",
+    "wasm": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.wasm",
+    "zkey": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.zkey"
+  }
+}
