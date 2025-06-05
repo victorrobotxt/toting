@@ -5,8 +5,9 @@ import AuthChip from './AuthChip';
 
 export default function NavBar() {
   const { isLoggedIn, eligibility, logout } = useAuth();
-  return (
-    <nav style={{display:'flex',gap:'1rem',padding:'1rem',alignItems:'center'}}>
+
+  const links = (
+    <>
       <Link href="/">Home</Link>
       {isLoggedIn && (
         <>
@@ -14,10 +15,39 @@ export default function NavBar() {
           {eligibility && <Link href="/eligibility">Eligibility</Link>}
         </>
       )}
-      {isLoggedIn ? (
-        <button onClick={logout}>Logout</button>
-      ) : (
-        <Link href="/login">Log in with eID</Link>
+    </>
+  );
+
+  return (
+    <>
+      <nav className="navbar">
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button className="hamburger" onClick={() => setOpen(true)} aria-label="Open menu">
+            &#9776;
+          </button>
+          <div className="nav-links">{links}</div>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems:'center' }}>
+          <ThemeToggle />
+          {isLoggedIn ? (
+            <button onClick={logout}>Logout</button>
+          ) : (
+            <Link href="/login">Log in with eID</Link>
+          )}
+        </div>
+      </nav>
+      {open && (
+        <div className="drawer-overlay" onClick={() => setOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            {links}
+            {isLoggedIn ? (
+              <button onClick={() => { setOpen(false); logout(); }}>Logout</button>
+            ) : (
+              <Link href="/login" onClick={() => setOpen(false)}>Log in with eID</Link>
+            )}
+            <ThemeToggle />
+          </div>
+        </div>
       )}
       <ThemeToggle />
       <AuthChip />
