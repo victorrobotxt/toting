@@ -51,9 +51,25 @@ class EligibilityInput(BaseModel):
             raise ValueError("country must be ISO alpha-2 code")
         return v
 
-    @validator("dob")
-    def check_dob(cls, v):
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
-            raise ValueError("dob must be YYYY-MM-DD")
+
+class VoiceInput(BaseModel):
+    credits: list[int]
+    nonce: int
+
+    class Config:
+        extra = "forbid"
+
+    @validator("credits")
+    def check_range(cls, v):
+        for c in v:
+            if c < 0 or c > 1_000_000:
+                raise ValueError("credits must be 0-1e6")
         return v
+
+
+class BatchTallyInput(BaseModel):
+    election_id: int
+
+    class Config:
+        extra = "forbid"
 

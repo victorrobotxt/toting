@@ -6,9 +6,16 @@ from celery import Celery
 # simple in-memory cache (used in tests when Redis unavailable)
 PROOF_CACHE: dict[str, dict] = {}
 
-# circuit hash for eligibility.circom artifacts
+# circuit hashes for compiled circuits
 ELIGIBILITY_HASH = "58973d361f4b6fa0c9d9f7d52d8cd6b5d5be54473a7fa80638a44eb2e0975bf2"
-CIRCUIT_HASHES = {"eligibility": ELIGIBILITY_HASH}
+VOICE_HASH = "250dc836c4654c537cbe8ca1b61a188d0fac62cba52295e31486cf32c6396aa8"
+BATCH_TALLY_HASH = "0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9"
+
+CIRCUIT_HASHES = {
+    "eligibility": ELIGIBILITY_HASH,
+    "voice": VOICE_HASH,
+    "batch_tally": BATCH_TALLY_HASH,
+}
 
 
 def cache_key(circuit: str, inputs: dict) -> str:

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, WebSocket
 from datetime import datetime
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
@@ -6,6 +6,7 @@ from jose import jwt
 import httpx
 import os
 from typing import Optional
+import asyncio
 from web3 import Web3
 from eth_account import Account
 
@@ -15,6 +16,8 @@ from .schemas import (
     CreateElectionSchema,
     UpdateElectionSchema,
     EligibilityInput,
+    VoiceInput,
+    BatchTallyInput,
 )
 from .proof import celery_app, generate_proof, cache_get
 
@@ -201,3 +204,92 @@ def get_eligibility(job_id: str):
     if async_result.state == "SUCCESS":
         return {"status": "done", **async_result.result}
     return {"status": "error"}
+
+
+@app.post("/api/zk/voice")
+def post_voice(
+    payload: VoiceInput,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+):
+    user = get_user_id(authorization)
+    day = datetime.utcnow().strftime("%Y-%m-%d")
+    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
+    if pr:
+        if pr.count >= PROOF_QUOTA:
+            raise HTTPException(429, "proof quota exceeded")
+        pr.count += 1
+    else:
+        pr = ProofRequest(user=user, day=day, count=1)
+        db.add(pr)
+    db.commit()
+
+    cached = cache_get("voice", payload.dict())
+    if cached:
+        return {"status": "done", **cached}
+
+    job = generate_proof.delay("voice", payload.dict())
+    return {"job_id": job.id}
+
+
+@app.get("/api/zk/voice/{job_id}")
+def get_voice(job_id: str):
+    async_result = celery_app.AsyncResult(job_id)
+    if async_result.state in {"PENDING", "STARTED"}:
+        return {"status": async_result.state.lower()}
+    if async_result.state == "SUCCESS":
+        return {"status": "done", **async_result.result}
+    return {"status": "error"}
+
+
+@app.post("/api/zk/batch_tally")
+def post_batch_tally(
+    payload: BatchTallyInput,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+):
+    user = get_user_id(authorization)
+    day = datetime.utcnow().strftime("%Y-%m-%d")
+    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
+    if pr:
+        if pr.count >= PROOF_QUOTA:
+            raise HTTPException(429, "proof quota exceeded")
+        pr.count += 1
+    else:
+        pr = ProofRequest(user=user, day=day, count=1)
+        db.add(pr)
+    db.commit()
+
+    cached = cache_get("batch_tally", payload.dict())
+    if cached:
+        return {"status": "done", **cached}
+
+    job = generate_proof.delay("batch_tally", payload.dict())
+    return {"job_id": job.id}
+
+
+@app.get("/api/zk/batch_tally/{job_id}")
+def get_batch_tally(job_id: str):
+    async_result = celery_app.AsyncResult(job_id)
+    if async_result.state in {"PENDING", "STARTED"}:
+        return {"status": async_result.state.lower()}
+    if async_result.state == "SUCCESS":
+        return {"status": "done", **async_result.result}
+    return {"status": "error"}
+
+
+@app.websocket("/ws/proofs/{job_id}")
+async def ws_proofs(websocket: WebSocket, job_id: str):
+    await websocket.accept()
+    while True:
+        async_result = celery_app.AsyncResult(job_id)
+        if async_result.state in {"PENDING", "STARTED"}:
+            await websocket.send_json({"state": async_result.state.lower(), "progress": 0})
+        elif async_result.state == "SUCCESS":
+            await websocket.send_json({"state": "done", "progress": 100})
+            break
+        else:
+            await websocket.send_json({"state": "error", "progress": 0})
+            break
+        await asyncio.sleep(2)
+    await websocket.close()
