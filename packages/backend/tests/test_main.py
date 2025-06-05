@@ -241,3 +241,21 @@ def test_multicurve_header():
     r = client.get(f"/api/zk/eligibility/{jid}")
     assert r.json()["status"] == "done"
 
+
+def test_quota_endpoint():
+    token = jwt.encode({"email": "quota@example.com"}, "test-secret", algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    r = client.get("/api/quota", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["left"] == 3
+
+    payload = {"country": "US", "dob": "1999-01-01", "residency": "CA"}
+    r = client.post("/api/zk/eligibility", json=payload, headers=headers)
+    jid = r.json()["job_id"]
+    client.get(f"/api/zk/eligibility/{jid}")
+
+    r = client.get("/api/quota", headers=headers)
+    assert r.status_code == 200
+    assert r.json()["left"] == 2
+

@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import { useState } from 'react';
 import { useAuth } from '../lib/AuthProvider';
 import ThemeToggle from './ThemeToggle';
 import AuthChip from './AuthChip';
 
 export default function NavBar() {
   const { isLoggedIn, eligibility, logout } = useAuth();
+  const [open, setOpen] = useState(false);
 
   const links = (
     <>
@@ -51,6 +53,6 @@ export default function NavBar() {
       )}
       <ThemeToggle />
       <AuthChip />
-    </nav>
+    </>
   );
 }
