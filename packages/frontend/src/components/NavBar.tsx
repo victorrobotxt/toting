@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { useAuth } from '../lib/AuthProvider';
+import ThemeToggle from './ThemeToggle';
+import AuthChip from './AuthChip';
 
 export default function NavBar() {
   const { isLoggedIn, eligibility, logout } = useAuth();
   return (
-    <nav style={{display:'flex',gap:'1rem',padding:'1rem'}}>
+    <nav style={{display:'flex',gap:'1rem',padding:'1rem',alignItems:'center'}}>
       <Link href="/">Home</Link>
       {isLoggedIn && (
         <>
@@ -17,6 +19,8 @@ export default function NavBar() {
       ) : (
         <Link href="/login">Log in with eID</Link>
       )}
+      <ThemeToggle />
+      <AuthChip />
     </nav>
   );
 }
