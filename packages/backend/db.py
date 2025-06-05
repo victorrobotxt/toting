@@ -30,3 +30,15 @@ class Election(Base):
         Index("idx_status", "status"),
     )
 
+
+class ProofRequest(Base):
+    __tablename__ = "proof_requests"
+    id = Column(Integer, primary_key=True)
+    user = Column(String, nullable=False, index=True)
+    day = Column(String, nullable=False, index=True)
+    count = Column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        Index("idx_user_day", "user", "day", unique=True),
+    )
+

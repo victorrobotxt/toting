@@ -10,6 +10,7 @@ os.environ["USE_REAL_OAUTH"] = "false"
 os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
 os.environ["CELERY_BROKER"] = "memory://"
 os.environ["CELERY_BACKEND"] = "cache+memory://"
+os.environ["PROOF_QUOTA"] = "3"
 
 # allow "packages" imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -102,27 +103,31 @@ def test_manifest_check():
     assert result.returncode == 0
 
 
-def test_proof_api_valid_and_invalid(monkeypatch):
-    payload = {
-        "root": 1,
-        "nullifier": 2,
-        "Ax": 0,
-        "Ay": 0,
-        "R8x": 0,
-        "R8y": 0,
-        "S": 0,
-        "msgHash": 0,
-        "pathElements": [0]*32,
-        "pathIndices": [0]*32,
-    }
-    r = client.post("/api/zk/eligibility", json=payload)
+def test_proof_cache_and_quota(monkeypatch):
+    token = jwt.encode({"email": "bob@example.com"}, "test-secret", algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    payload = {"country": "US", "dob": "1990-01-01", "residency": "CA"}
+
+    r = client.post("/api/zk/eligibility", json=payload, headers=headers)
     assert r.status_code == 200
     jid = r.json()["job_id"]
     r = client.get(f"/api/zk/eligibility/{jid}")
     assert r.status_code == 200
     assert r.json()["status"] == "done"
 
-    bad = payload.copy()
-    bad["extra"] = 1
-    r = client.post("/api/zk/eligibility", json=bad)
+    # cache hit on identical request
+    r = client.post("/api/zk/eligibility", json=payload, headers=headers)
+    assert r.status_code == 200
+    assert r.json()["status"] == "done"
+
+    # quota enforcement
+    r = client.post("/api/zk/eligibility", json=payload | {"dob": "1990-01-02"}, headers=headers)
+    assert r.status_code == 200
+    r = client.post("/api/zk/eligibility", json=payload | {"dob": "1990-01-03"}, headers=headers)
+    assert r.status_code == 429
+
+    # invalid input
+    bad = {"country": "USA", "dob": "19900101", "residency": "CA"}
+    r = client.post("/api/zk/eligibility", json=bad, headers=headers)
     assert r.status_code == 422

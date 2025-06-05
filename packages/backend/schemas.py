@@ -38,23 +38,22 @@ class UpdateElectionSchema(BaseModel):
 
 
 class EligibilityInput(BaseModel):
-    root: int
-    nullifier: int
-    Ax: int
-    Ay: int
-    R8x: int
-    R8y: int
-    S: int
-    msgHash: int
-    pathElements: list[int]
-    pathIndices: list[int]
+    country: str
+    dob: str
+    residency: str
 
     class Config:
         extra = "forbid"
 
-    @validator("pathElements", "pathIndices")
-    def check_len(cls, v):
-        if len(v) != 32:
-            raise ValueError("expected length 32")
+    @validator("country")
+    def check_country(cls, v):
+        if not re.fullmatch(r"[A-Z]{2}", v):
+            raise ValueError("country must be ISO alpha-2 code")
+        return v
+
+    @validator("dob")
+    def check_dob(cls, v):
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+            raise ValueError("dob must be YYYY-MM-DD")
         return v
 
