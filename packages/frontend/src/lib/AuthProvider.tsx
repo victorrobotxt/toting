@@ -11,6 +11,7 @@ interface AuthContextValue {
   isLoggedIn: boolean;
   mode: AuthMode;
   role: Role;
+  ready: boolean;
   setMode: (m: AuthMode) => void;
   login: (token: string, eligibility: boolean, mode: AuthMode) => void;
   logout: () => void;
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextValue>({
   isLoggedIn: false,
   mode: 'guest',
   role: 'user',
+  ready: false,
   setMode: () => {},
   login: () => {},
   logout: () => {},
@@ -50,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [eligibility, setEligibility] = useState<boolean>(false);
   const [mode, setMode] = useState<AuthMode>('guest');
   const [role, setRole] = useState<Role>('user');
+  const [ready, setReady] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -76,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
     window.addEventListener('message', handler);
+    setReady(true);
     return () => window.removeEventListener('message', handler);
   }, []);
 
@@ -102,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, eligibility, isLoggedIn: !!token, mode, role, setMode, login, logout }}>
+    <AuthContext.Provider value={{ token, eligibility, isLoggedIn: !!token, mode, role, ready, setMode, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
