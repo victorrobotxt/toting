@@ -6,6 +6,7 @@ from web3 import Web3
 from web3.exceptions import LogTopicError
 
 EVM_RPC      = os.getenv("EVM_RPC", "http://127.0.0.1:8545")
+MAX_RETRIES  = int(os.getenv("EVM_MAX_RETRIES", "20"))
 FACTORY_ADDR = Web3.to_checksum_address(os.environ["ELECTION_MANAGER"])
 PRIVATE_KEY  = os.environ["ORCHESTRATOR_KEY"]
 CHAIN_ID     = int(os.getenv("CHAIN_ID", "1337"))
@@ -47,13 +48,16 @@ ELECTION_MANAGER_ABI = [
 
 def connect_w3() -> Web3:
     """Try to connect to the EVM provider until it is reachable."""
-    for _ in range(20):
+    retries = 0
+    while True:
         w3 = Web3(Web3.HTTPProvider(EVM_RPC))
         if w3.is_connected():
             return w3
+        retries += 1
         print("⏳ waiting for anvil…")
         time.sleep(3)
-    raise RuntimeError("EVM RPC not reachable")
+        if 0 < MAX_RETRIES <= retries:
+            raise RuntimeError(f"EVM RPC not reachable at {EVM_RPC}")
 
 
 
