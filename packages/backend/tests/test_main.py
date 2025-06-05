@@ -7,6 +7,9 @@ from jose import jwt
 # set env vars before importing app
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["USE_REAL_OAUTH"] = "false"
+os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
+os.environ["CELERY_BROKER"] = "memory://"
+os.environ["CELERY_BACKEND"] = "cache+memory://"
 
 # allow "packages" imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -92,3 +95,34 @@ def test_create_and_update_election():
     assert r.status_code == 200
     assert r.json()["tally"] == "A:1,B:0"
 
+
+def test_manifest_check():
+    import subprocess
+    result = subprocess.run(["python", "scripts/check_manifest.py"], capture_output=True)
+    assert result.returncode == 0
+
+
+def test_proof_api_valid_and_invalid(monkeypatch):
+    payload = {
+        "root": 1,
+        "nullifier": 2,
+        "Ax": 0,
+        "Ay": 0,
+        "R8x": 0,
+        "R8y": 0,
+        "S": 0,
+        "msgHash": 0,
+        "pathElements": [0]*32,
+        "pathIndices": [0]*32,
+    }
+    r = client.post("/api/zk/eligibility", json=payload)
+    assert r.status_code == 200
+    jid = r.json()["job_id"]
+    r = client.get(f"/api/zk/eligibility/{jid}")
+    assert r.status_code == 200
+    assert r.json()["status"] == "done"
+
+    bad = payload.copy()
+    bad["extra"] = 1
+    r = client.post("/api/zk/eligibility", json=bad)
+    assert r.status_code == 422
