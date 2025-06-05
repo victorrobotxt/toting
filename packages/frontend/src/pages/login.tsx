@@ -20,35 +20,39 @@ export default function LoginPage() {
     };
   }, [isLoggedIn, router]);
 
-  const startLogin = async () => {
-    setMode('eid');
-    setFlowAborted(false);
-    const res = await fetch('http://localhost:8000/auth/initiate', { redirect: 'manual' });
-    const location = res.status >= 300 && res.status < 400 ? res.headers.get('Location') : undefined;
-    if (res.ok && res.headers.get('content-type')?.includes('text/html') && !location) {
-      const html = await res.text();
-      const popup = window.open('', 'login', 'width=500,height=600');
-      if (popup) {
-        popup.document.write(html);
-        popup.document.close();
-      }
-      return;
-    }
-    const url = location || 'http://localhost:8000/auth/initiate';
-    const popup = window.open(url, 'login', 'width=500,height=600');
-    if (popup) {
-      poll = window.setInterval(() => {
-        if (popup.closed) {
-          window.clearInterval(poll);
-          setFlowAborted(true);
-        }
-      }, 500);
-    }
-  };
-
   const openMock = () => {
     setMode('mock');
     setShowMock(true);
+  };
+
+  const startLogin = async () => {
+    setMode('eid');
+    setFlowAborted(false);
+    try {
+      const res = await fetch('http://localhost:8000/auth/initiate', { redirect: 'manual' });
+      const location = res.status >= 300 && res.status < 400 ? res.headers.get('Location') : undefined;
+      if (res.ok && res.headers.get('content-type')?.includes('text/html') && !location) {
+        const html = await res.text();
+        const popup = window.open('', 'login', 'width=500,height=600');
+        if (popup) {
+          popup.document.write(html);
+          popup.document.close();
+        }
+        return;
+      }
+      const url = location || 'http://localhost:8000/auth/initiate';
+      const popup = window.open(url, 'login', 'width=500,height=600');
+      if (popup) {
+        poll = window.setInterval(() => {
+          if (popup.closed) {
+            window.clearInterval(poll);
+            setFlowAborted(true);
+          }
+        }, 500);
+      }
+    } catch (err) {
+      openMock();
+    }
   };
 
   return (
