@@ -6,7 +6,8 @@
     "build": "next build",
     "start": "next start",
     "type-check": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "cypress run"
   },
   "dependencies": {
     "@account-abstraction/sdk": "^0.6.0",
@@ -34,7 +35,8 @@
     "jest-environment-jsdom": "^29.7.0",
     "next-router-mock": "^1.0.2",
     "ts-jest": "^29.1.1",
-    "typescript": "^4.9.0"
+    "typescript": "^4.9.0",
+    "cypress": "^13.7.0"
   },
   "packageManager": "yarn@1.22.22"
 }

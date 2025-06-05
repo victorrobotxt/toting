@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import useSWR from 'swr';
 import { useState } from 'react';
+import Link from 'next/link';
 import NavBar from '../../components/NavBar';
 import withAuth from '../../components/withAuth';
 import { useAuth } from '../../lib/AuthProvider';
@@ -73,7 +74,7 @@ function ElectionDetail() {
             <p>Status: {data.status}</p>
             {data.tally && <p>Tally: {data.tally}</p>}
             {data.status === 'open' && eligibility && (
-              <a href={`/vote?id=${data.id}`}>Vote</a>
+              <Link href={`/vote?id=${data.id}`}>Vote</Link>
             )}
             {data.status !== 'open' && eligibility && (
               <button onClick={() => alert('run tally placeholder')}>Run Tally</button>

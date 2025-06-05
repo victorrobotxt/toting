@@ -2,6 +2,7 @@ import useSWR from 'swr';
 import { useAuth } from '../lib/AuthProvider';
 import withAuth from '../components/withAuth';
 import NavBar from '../components/NavBar';
+import Link from 'next/link';
 import Skeleton from '../components/Skeleton';
 import { NoElections } from '../components/ZeroState';
 
@@ -34,7 +35,7 @@ function DashboardPage() {
     <>
       <NavBar />
       <div style={{padding:'1rem'}}>
-        {eligibility && <a href="/elections/create">Create Election</a>}
+        {eligibility && <Link href="/elections/create">Create Election</Link>}
         <h2>Election List</h2>
         {!data ? (
           <table>
@@ -63,7 +64,7 @@ function DashboardPage() {
             <tbody>
               {data.map(e => (
                 <tr key={e.id}>
-                  <td><a href={`/elections/${e.id}`}>{e.id}</a></td>
+                  <td><Link href={`/elections/${e.id}`}>{e.id}</Link></td>
                   <td>{e.meta}</td>
                   <td>{e.start}</td>
                   <td>{e.end}</td>
