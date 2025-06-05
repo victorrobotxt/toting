@@ -260,3 +260,17 @@ def test_quota_endpoint():
     assert r.status_code == 200
     assert r.json()["left"] == 2
 
+
+def test_list_proofs():
+    token = jwt.encode({"email": "veri@example.com"}, "test-secret", algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"country": "US", "dob": "1990-12-12", "residency": "CA"}
+    r = client.post("/api/zk/eligibility", json=payload, headers=headers)
+    jid = r.json()["job_id"]
+    client.get(f"/api/zk/eligibility/{jid}")
+
+    r = client.get("/proofs")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list) and len(data) >= 1
+

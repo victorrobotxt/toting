@@ -11,7 +11,7 @@ import asyncio
 from web3 import Web3
 from eth_account import Account
 
-from .db import SessionLocal, Base, engine, Election, ProofRequest
+from .db import SessionLocal, Base, engine, Election, ProofRequest, ProofAudit
 from .schemas import (
     ElectionSchema,
     CreateElectionSchema,
@@ -19,6 +19,7 @@ from .schemas import (
     EligibilityInput,
     VoiceInput,
     BatchTallyInput,
+    ProofAuditSchema,
 )
 from .proof import celery_app, generate_proof, cache_get
 
@@ -330,3 +331,15 @@ def get_quota(authorization: str = Header(None), db: Session = Depends(get_db)):
     pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
     used = pr.count if pr else 0
     return {"left": PROOF_QUOTA - used}
+
+
+@app.get("/proofs", response_model=list[ProofAuditSchema])
+def list_proofs(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+    """Return recent proof audit entries."""
+    return (
+        db.query(ProofAudit)
+        .order_by(ProofAudit.id.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
