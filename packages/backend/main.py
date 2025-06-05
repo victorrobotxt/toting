@@ -299,3 +299,13 @@ async def ws_proofs(websocket: WebSocket, job_id: str):
             break
         await asyncio.sleep(2)
     await websocket.close()
+
+
+@app.get("/api/quota")
+def get_quota(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """Return remaining proof quota for the current user."""
+    user = get_user_id(authorization)
+    day = datetime.utcnow().strftime("%Y-%m-%d")
+    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
+    used = pr.count if pr else 0
+    return {"left": PROOF_QUOTA - used}
