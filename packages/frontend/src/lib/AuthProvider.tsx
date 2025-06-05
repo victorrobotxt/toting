@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/router';
 
+export type AuthMode = 'eid' | 'mock' | 'guest';
+
 interface AuthContextValue {
   token: string | null;
   eligibility: boolean;
   isLoggedIn: boolean;
-  login: (token: string, eligibility: boolean) => void;
+  mode: AuthMode;
+  setMode: (m: AuthMode) => void;
+  login: (token: string, eligibility: boolean, mode: AuthMode) => void;
   logout: () => void;
 }
 
@@ -13,6 +17,8 @@ const AuthContext = createContext<AuthContextValue>({
   token: null,
   eligibility: false,
   isLoggedIn: false,
+  mode: 'guest',
+  setMode: () => {},
   login: () => {},
   logout: () => {},
 });
@@ -38,10 +44,13 @@ function tokenExpired(token: string): boolean {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [eligibility, setEligibility] = useState<boolean>(false);
+  const [mode, setMode] = useState<AuthMode>('guest');
   const router = useRouter();
 
   useEffect(() => {
     const stored = localStorage.getItem('id_token');
+    const storedMode = (localStorage.getItem('auth_mode') as AuthMode) || 'guest';
+    setMode(storedMode);
     if (stored && !tokenExpired(stored)) {
       setToken(stored);
       setEligibility(localStorage.getItem('eligibility') === 'true');
@@ -54,7 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (e.origin !== 'http://localhost:3000') return;
       const { id_token, eligibility: elig } = e.data || {};
       if (typeof id_token === 'string' && typeof elig === 'boolean') {
-        login(id_token, elig);
+        const m = (localStorage.getItem('auth_mode') as AuthMode) || 'eid';
+        login(id_token, elig, m);
         router.replace('/dashboard');
       }
     };
@@ -62,25 +72,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('message', handler);
   }, []);
 
-  const login = (tok: string, elig: boolean) => {
+  const login = (tok: string, elig: boolean, m: AuthMode) => {
     setToken(tok);
     setEligibility(elig);
+    setMode(m);
     localStorage.setItem('id_token', tok);
     localStorage.setItem('eligibility', String(elig));
+    localStorage.setItem('auth_mode', m);
   };
 
   const logout = () => {
     setToken(null);
     setEligibility(false);
+    setMode('guest');
     localStorage.removeItem('id_token');
     localStorage.removeItem('eligibility');
+    localStorage.removeItem('auth_mode');
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }
   };
 
   return (
-    <AuthContext.Provider value={{ token, eligibility, isLoggedIn: !!token, login, logout }}>
+    <AuthContext.Provider value={{ token, eligibility, isLoggedIn: !!token, mode, setMode, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

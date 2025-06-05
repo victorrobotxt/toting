@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import Skeleton from '../components/Skeleton';
 
 interface SolanaTally {
   A: number;
@@ -11,6 +12,7 @@ export default function SolanaChart() {
     { option: 'A', votes: 0 },
     { option: 'B', votes: 0 },
   ]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -22,6 +24,7 @@ export default function SolanaChart() {
           { option: 'A', votes: msg.A },
           { option: 'B', votes: msg.B },
         ]);
+        setLoading(false);
       } catch {
         // ignore malformed payloads
       }
@@ -31,13 +34,17 @@ export default function SolanaChart() {
 
   return (
     <div style={{ display:'flex',justifyContent:'center',paddingTop:'2rem' }}>
-      <BarChart width={400} height={300} data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="option" />
-        <YAxis allowDecimals={false} />
-        <Tooltip />
-        <Bar dataKey="votes" fill="#8884d8" isAnimationActive={false} />
-      </BarChart>
+      {loading ? (
+        <Skeleton width={400} height={300} />
+      ) : (
+        <BarChart width={400} height={300} data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="option" />
+          <YAxis allowDecimals={false} />
+          <Tooltip />
+          <Bar dataKey="votes" fill="#8884d8" isAnimationActive={false} />
+        </BarChart>
+      )}
     </div>
   );
 }

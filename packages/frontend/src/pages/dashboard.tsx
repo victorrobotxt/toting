@@ -2,6 +2,7 @@ import useSWR from 'swr';
 import { useAuth } from '../lib/AuthProvider';
 import withAuth from '../components/withAuth';
 import NavBar from '../components/NavBar';
+import Skeleton from '../components/Skeleton';
 
 interface Election {
   id: number;
@@ -34,7 +35,24 @@ function DashboardPage() {
       <div style={{padding:'1rem'}}>
         {eligibility && <a href="/elections/create">Create Election</a>}
         <h2>Election List</h2>
-        {!data ? <p>Loading...</p> : (
+        {!data ? (
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Meta</th><th>Start</th><th>End</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {[1,2,3].map(i => (
+                <tr key={i}>
+                  <td><Skeleton width={20} height={16} /></td>
+                  <td><Skeleton width={80} height={16} /></td>
+                  <td><Skeleton width={80} height={16} /></td>
+                  <td><Skeleton width={80} height={16} /></td>
+                  <td><Skeleton width={60} height={16} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
           <table>
             <thead>
               <tr><th>ID</th><th>Meta</th><th>Start</th><th>End</th><th>Status</th></tr>
