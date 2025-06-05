@@ -74,6 +74,7 @@ services:
     build:
       context: .
       dockerfile: services/relay-daemon/Dockerfile
+    restart: always
     environment:
       EVM_RPC: http://anvil:8545
       SOLANA_RPC: http://solana:8899

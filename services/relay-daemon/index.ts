@@ -28,6 +28,20 @@ const ethProvider = new ethers.providers.JsonRpcProvider(EVM_RPC);
 const iface = new ethers.utils.Interface(['event Tally(uint256,uint256)']);
 const pool = new Pool({ connectionString: POSTGRES_URL });
 
+async function waitForDb() {
+  let delay = 1000;
+  while (true) {
+    try {
+      await pool.query('SELECT 1');
+      return;
+    } catch (err) {
+      console.error('db not ready, retrying', err);
+      await new Promise(res => setTimeout(res, delay));
+      delay = Math.min(delay * 2, 30000);
+    }
+  }
+}
+
 collectDefaultMetrics();
 const lagGauge = new Gauge({ name: 'relay_lag', help: 'L1 block lag' });
 const app = express();
@@ -66,6 +80,7 @@ async function bridgeTally(A: bigint, B: bigint, blockHash: string) {
 }
 
 async function main() {
+  await waitForDb();
   let last = await getLastBlock();
   console.log('starting from block', last);
   while (true) {
