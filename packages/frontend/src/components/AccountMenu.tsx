@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useAuth } from '../lib/AuthProvider';
 import ThemeToggle from './ThemeToggle';
 import { useI18n } from '../lib/I18nProvider';
+import RoleSwitchModal from './RoleSwitchModal';
 
 export default function AccountMenu() {
-  const { logout, mode, setMode } = useAuth();
+  const { logout, mode, setMode, role } = useAuth();
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const [showRole, setShowRole] = useState(false);
 
   const toggleMode = () => {
     setMode(mode === 'mock' ? 'eid' : 'mock');
@@ -21,9 +23,13 @@ export default function AccountMenu() {
         <div style={{ position:'absolute', right:0, marginTop:'0.5rem', background:'var(--bg)', border:'1px solid var(--muted)', borderRadius:'4px', padding:'0.5rem', display:'flex', flexDirection:'column', gap:'0.5rem' }}>
           <button onClick={logout}>{t('account.logout')}</button>
           <button onClick={toggleMode}>{t('account.switch')}</button>
+          {role === 'admin' && (
+            <button onClick={() => setShowRole(true)}>{t('account.role')}</button>
+          )}
           <ThemeToggle />
         </div>
       )}
+      {showRole && <RoleSwitchModal onClose={() => setShowRole(false)} />}
     </div>
   );
 }
