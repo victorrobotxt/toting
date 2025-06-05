@@ -1,9 +1,14 @@
-FROM python:3.11-slim
-WORKDIR /app
+ FROM python:3.11-slim
+ WORKDIR /app
+
+# Copy backend code and requirements
 COPY packages/backend /app/packages/backend
+COPY packages/backend/requirements.txt /app/requirements.txt
 # copy circuit manifest
 COPY artifacts/manifest.json /app/circuits/manifest.json
-# pin uvicorn to avoid old apt versions that miss the Server class
-RUN pip install fastapi "uvicorn>=0.27" python-jose[cryptography] httpx sqlalchemy web3 eth-account
+
+# Install everything from requirements.txt (including celery, redis, grpcio, etc.)
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "packages.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
