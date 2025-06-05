@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import { keccak256, toUtf8Bytes } from 'ethers/lib/utils';
 import { useAuth } from '../../lib/AuthProvider';
 import withAuth from '../../components/withAuth';
@@ -7,6 +8,7 @@ import { useToast } from '../../lib/ToastProvider';
 
 function CreateElectionPage() {
   const { token, eligibility } = useAuth();
+  const router = useRouter();
   const [meta, setMeta] = useState('');
   const { showToast } = useToast();
 
@@ -22,7 +24,7 @@ function CreateElectionPage() {
       body: JSON.stringify({ meta_hash: hash }),
     });
     if (res.ok) {
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } else {
       showToast({ type: 'error', message: 'Failed to create' });
     }
