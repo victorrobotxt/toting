@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../lib/AuthProvider';
 import ThemeToggle from './ThemeToggle';
 import AuthChip from './AuthChip';
+import AccountMenu from './AccountMenu';
 
 export default function NavBar() {
   const { isLoggedIn, eligibility, logout } = useAuth();
@@ -30,12 +31,7 @@ export default function NavBar() {
           <div className="nav-links">{links}</div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems:'center' }}>
-          <ThemeToggle />
-          {isLoggedIn ? (
-            <button onClick={logout}>Logout</button>
-          ) : (
-            <Link href="/login">Log in with eID</Link>
-          )}
+          {isLoggedIn ? <AccountMenu /> : <Link href="/login">Log in with eID</Link>}
         </div>
       </nav>
       {open && (

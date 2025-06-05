@@ -1,0 +1,7 @@
+{
+  "login.retry": "Login window closed.",
+  "login.retryBtn": "Retry",
+  "login.switch": "Switch to Mock",
+  "account.logout": "Logout",
+  "account.switch": "Switch Login Method"
+}
