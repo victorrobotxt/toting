@@ -3,18 +3,26 @@ import NavBar from '../components/NavBar';
 import { useRouter } from 'next/router';
 import { useAuth } from '../lib/AuthProvider';
 import MockLoginModal from '../components/MockLoginModal';
+import { useI18n } from '../lib/I18nProvider';
 
 export default function LoginPage() {
   const router = useRouter();
   const { isLoggedIn, setMode } = useAuth();
+  const { t } = useI18n();
   const [showMock, setShowMock] = useState(false);
+  const [flowAborted, setFlowAborted] = useState(false);
+  let poll: number | undefined;
 
   useEffect(() => {
     if (isLoggedIn) router.replace('/dashboard');
+    return () => {
+      if (poll) window.clearInterval(poll);
+    };
   }, [isLoggedIn, router]);
 
   const startLogin = async () => {
     setMode('eid');
+    setFlowAborted(false);
     const res = await fetch('http://localhost:8000/auth/initiate', { redirect: 'manual' });
     const location = res.status >= 300 && res.status < 400 ? res.headers.get('Location') : undefined;
     if (res.ok && res.headers.get('content-type')?.includes('text/html') && !location) {
@@ -27,7 +35,15 @@ export default function LoginPage() {
       return;
     }
     const url = location || 'http://localhost:8000/auth/initiate';
-    window.open(url, 'login', 'width=500,height=600');
+    const popup = window.open(url, 'login', 'width=500,height=600');
+    if (popup) {
+      poll = window.setInterval(() => {
+        if (popup.closed) {
+          window.clearInterval(poll);
+          setFlowAborted(true);
+        }
+      }, 500);
+    }
   };
 
   const openMock = () => {
@@ -48,6 +64,12 @@ export default function LoginPage() {
         }}
       >
         <h1 style={{ fontSize: '1.5rem' }}>Login</h1>
+        {flowAborted && (
+          <div style={{background:'#fee2e2',padding:'0.5rem 1rem',borderRadius:'4px'}}>
+            {t('login.retry')} <button onClick={startLogin}>{t('login.retryBtn')}</button> {' '}
+            <button onClick={openMock}>{t('login.switch')}</button>
+          </div>
+        )}
         <button onClick={startLogin} aria-label="Log in with national eID">
           Log in with eID
         </button>

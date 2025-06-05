@@ -3,6 +3,7 @@ import { useAuth } from '../lib/AuthProvider';
 import withAuth from '../components/withAuth';
 import NavBar from '../components/NavBar';
 import Skeleton from '../components/Skeleton';
+import { NoElections } from '../components/ZeroState';
 
 interface Election {
   id: number;
@@ -52,6 +53,8 @@ function DashboardPage() {
               ))}
             </tbody>
           </table>
+        ) : data.length === 0 ? (
+          <NoElections />
         ) : (
           <table>
             <thead>

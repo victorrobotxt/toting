@@ -6,12 +6,17 @@ import withAuth from "../components/withAuth";
 import NavBar from "../components/NavBar";
 import { useAuth } from "../lib/AuthProvider";
 import { useToast } from "../lib/ToastProvider";
+import { NotEligible } from "../components/ZeroState";
+import HelpTip from "../components/HelpTip";
+import ProgressOverlay from "../components/ProgressOverlay";
 
 function VotePage() {
     const router = useRouter();
     const { token, eligibility, logout } = useAuth();
     const { showToast } = useToast();
     const [receipt, setReceipt] = useState<string>();
+    const [jobId, setJobId] = useState<string>();
+    const [loading, setLoading] = useState(false);
     const id = router.query.id as string | undefined;
 
     const cast = async (option: 0 | 1) => {
@@ -32,9 +37,13 @@ function VotePage() {
             return;
         }
         const job = await res.json();
+        setJobId(job.job_id);
+        setLoading(true);
         const out = await fetch(`http://localhost:8000/api/zk/voice/${job.job_id}`).then(r => r.json());
         if (out.status !== 'done') {
             showToast({ type: 'error', message: 'proof error' });
+            setLoading(false);
+            setJobId(undefined);
             return;
         }
         const vcProof = out.proof;
@@ -45,18 +54,36 @@ function VotePage() {
         } catch (e:any) {
             showToast({ type: 'error', message: e.message });
         }
+        setLoading(false);
+        setJobId(undefined);
     };
+
+    const overlay = jobId && loading ? (
+        <ProgressOverlay jobId={jobId} onDone={() => { setJobId(undefined); setLoading(false); }} />
+    ) : null;
 
     return (
         <>
             <NavBar />
             <div style={{padding:'1rem'}}>
-                <h2>Vote on election {id}</h2>
-                <button onClick={() => cast(0)} disabled={!eligibility}>Vote A</button>
-                <button onClick={() => cast(1)} disabled={!eligibility}>Vote B</button>
-                {!eligibility && <p style={{color:'red'}}>Not eligible to vote</p>}
+                <h2>Vote on election {id} <HelpTip content="Voice credits decide weight" /></h2>
+                {eligibility ? (
+                  <div style={{display:'flex',gap:'1rem'}}>
+                    <button
+                      onClick={() => cast(0)}
+                      style={{flex:1,minHeight:48,background:'#e5e7eb',borderRadius:8}}
+                    >Vote A</button>
+                    <button
+                      onClick={() => cast(1)}
+                      style={{flex:1,minHeight:48,background:'#e5e7eb',borderRadius:8}}
+                    >Vote B</button>
+                  </div>
+                ) : (
+                  <NotEligible />
+                )}
                 {receipt && <p>Your vote receipt: {receipt}</p>}
             </div>
+            {overlay}
         </>
     );
 }
