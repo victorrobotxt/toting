@@ -3,7 +3,8 @@ WORKDIR /app
 
 # Install dependencies first for better build caching
 COPY packages/backend/requirements.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir celery
 
 # Copy backend source and circuit manifest
 COPY packages/backend /app/packages/backend
