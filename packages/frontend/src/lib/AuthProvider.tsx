@@ -3,11 +3,14 @@ import { useRouter } from 'next/router';
 
 export type AuthMode = 'eid' | 'mock' | 'guest';
 
+export type Role = 'admin' | 'user' | 'verifier';
+
 interface AuthContextValue {
   token: string | null;
   eligibility: boolean;
   isLoggedIn: boolean;
   mode: AuthMode;
+  role: Role;
   setMode: (m: AuthMode) => void;
   login: (token: string, eligibility: boolean, mode: AuthMode) => void;
   logout: () => void;
@@ -18,6 +21,7 @@ const AuthContext = createContext<AuthContextValue>({
   eligibility: false,
   isLoggedIn: false,
   mode: 'guest',
+  role: 'user',
   setMode: () => {},
   login: () => {},
   logout: () => {},
@@ -45,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [eligibility, setEligibility] = useState<boolean>(false);
   const [mode, setMode] = useState<AuthMode>('guest');
+  const [role, setRole] = useState<Role>('user');
   const router = useRouter();
 
   useEffect(() => {
@@ -54,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (stored && !tokenExpired(stored)) {
       setToken(stored);
       setEligibility(localStorage.getItem('eligibility') === 'true');
+      const p = decodePayload(stored);
+      setRole(p?.role === 'admin' || p?.role === 'verifier' ? p.role : 'user');
     } else {
       localStorage.removeItem('id_token');
       localStorage.removeItem('eligibility');
@@ -76,6 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(tok);
     setEligibility(elig);
     setMode(m);
+    const p = decodePayload(tok);
+    setRole(p?.role === 'admin' || p?.role === 'verifier' ? p.role : 'user');
     localStorage.setItem('id_token', tok);
     localStorage.setItem('eligibility', String(elig));
     localStorage.setItem('auth_mode', m);
@@ -85,6 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setEligibility(false);
     setMode('guest');
+    setRole('user');
     localStorage.removeItem('id_token');
     localStorage.removeItem('eligibility');
     localStorage.removeItem('auth_mode');
@@ -94,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, eligibility, isLoggedIn: !!token, mode, setMode, login, logout }}>
+    <AuthContext.Provider value={{ token, eligibility, isLoggedIn: !!token, mode, role, setMode, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -6,7 +6,7 @@ import AuthChip from './AuthChip';
 import AccountMenu from './AccountMenu';
 
 export default function NavBar() {
-  const { isLoggedIn, eligibility, logout } = useAuth();
+  const { isLoggedIn, eligibility, logout, role } = useAuth();
   const [open, setOpen] = useState(false);
 
   const links = (
@@ -16,6 +16,9 @@ export default function NavBar() {
         <>
           <Link href="/dashboard">Dashboard</Link>
           {eligibility && <Link href="/eligibility">Eligibility</Link>}
+          {(role === 'admin' || role === 'verifier') && (
+            <Link href="/elections/create">Create Election</Link>
+          )}
         </>
       )}
     </>

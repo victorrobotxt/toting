@@ -24,6 +24,14 @@ The following product backlog items (PBIs) capture upcoming UI and UX work.
 | **UX-16** | **Contextual Help Popovers**      | Small `?` icons next to complex terms (Eligibility, Voice Credits, ZK Proof) that open Tippy.js popovers.                                                         |
 | **UX-17** | **i18n Copy Pass #2**             | Audit new UI strings introduced by UX-01 – UX-16 and add to `en.json` / `bg.json`; ensure plural rules.                                                           |
 
+| **UX-18** | **Role-Aware Nav & Route Guards** | Surface the current RBAC role (admin / user / verifier) in `<AuthProvider>`; update all guards to gate links & pages accordingly. |
+| **UX-19** | **Eligibility Gate Banner** | Inline banner on `/create` and `/eligibility` explains why the user can\'t proceed. |
+| **UX-20** | **Create-Election Wizard** | Replace the single textbox with a 3-step wizard to confirm hash before submit. |
+| **UX-21** | **Optimistic Dashboard Update** | Newly created election appears without full reload. |
+| **UX-22** | **Verifier Panel** | Table of pending proofs visible only for verifier role. |
+| **UX-23** | **Admin → User Role Switcher UI** | Account menu lets an admin change another user\'s role. |
+| **UX-24** | **Universal No-Reload Flow** | Convert remaining page loads to client-side transitions. |
+| **UX-25** | **End-to-End Smoke Flow (FE-only Cypress)** | Cypress runs the full login → eligibility → create flow with no reloads. |
 ## Detailed Acceptance-Criteria
 
 ### UX-01  Dual-Mode Auth Selector
