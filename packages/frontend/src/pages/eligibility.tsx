@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import withAuth from '../components/withAuth';
 import NavBar from '../components/NavBar';
 import { useAuth } from '../lib/AuthProvider';
+import GateBanner from '../components/GateBanner';
 import { useToast } from '../lib/ToastProvider';
 import ProgressOverlay from '../components/ProgressOverlay';
 import { NoProofs } from '../components/ZeroState';
 import HelpTip from '../components/HelpTip';
 
 function EligibilityPage() {
-  const { token } = useAuth();
+  const { token, isLoggedIn } = useAuth();
   const [country, setCountry] = useState('');
   const [dob, setDob] = useState('');
   const [residency, setResidency] = useState('');
@@ -58,6 +58,9 @@ function EligibilityPage() {
     <>
       <NavBar />
       <div style={{padding:'1rem'}}>
+        {!isLoggedIn && (
+          <GateBanner message="You must log in to prove eligibility." href="/login" label="Log in" />
+        )}
         <h2>Eligibility Proof <HelpTip content="Proves you meet the election rules" /></h2>
         <div>
           <label>Country: <input value={country} onChange={e => setCountry(e.target.value)} /></label>
@@ -68,7 +71,7 @@ function EligibilityPage() {
         <div>
           <label>Residency: <input value={residency} onChange={e => setResidency(e.target.value)} /></label>
         </div>
-        <button onClick={submit} disabled={loading}>Submit</button>
+        <button onClick={submit} disabled={loading || !isLoggedIn}>Submit</button>
         {proof ? <p>Proof: {proof}</p> : !loading && <NoProofs />}
         {loading && overlay}
       </div>
@@ -76,4 +79,4 @@ function EligibilityPage() {
   );
 }
 
-export default withAuth(EligibilityPage);
+export default EligibilityPage;
