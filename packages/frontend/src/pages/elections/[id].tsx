@@ -4,6 +4,7 @@ import { useState } from 'react';
 import NavBar from '../../components/NavBar';
 import withAuth from '../../components/withAuth';
 import { useAuth } from '../../lib/AuthProvider';
+import Skeleton from '../../components/Skeleton';
 
 interface Election {
   id: number;
@@ -55,7 +56,15 @@ function ElectionDetail() {
     <>
       <NavBar />
       <div style={{padding:'1rem'}}>
-        {!data ? <p>Loading...</p> : (
+        {!data ? (
+          <div>
+            <h2><Skeleton width={120} height={20} /></h2>
+            <p><Skeleton width={220} height={16} /></p>
+            <p><Skeleton width={180} height={16} /></p>
+            <p><Skeleton width={180} height={16} /></p>
+            <p><Skeleton width={180} height={16} /></p>
+          </div>
+        ) : (
           <div>
             <h2>Election {data.id}</h2>
             <p>Meta: {data.meta}</p>
