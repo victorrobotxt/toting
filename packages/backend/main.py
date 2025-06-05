@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Header
+from datetime import datetime
 from fastapi.responses import RedirectResponse, HTMLResponse
 from sqlalchemy.orm import Session
 from jose import jwt
@@ -8,14 +9,14 @@ from typing import Optional
 from web3 import Web3
 from eth_account import Account
 
-from .db import SessionLocal, Base, engine, Election
+from .db import SessionLocal, Base, engine, Election, ProofRequest
 from .schemas import (
     ElectionSchema,
     CreateElectionSchema,
     UpdateElectionSchema,
     EligibilityInput,
 )
-from .proof import celery_app, generate_proof
+from .proof import celery_app, generate_proof, cache_get
 
 app = FastAPI()
 
@@ -71,6 +72,21 @@ CLIENT_ID = os.getenv("GRAO_CLIENT_ID", "test-client")
 CLIENT_SEC = os.getenv("GRAO_CLIENT_SECRET", "test-secret")
 REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
+PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
+
+
+def get_user_id(authorization: str) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "missing auth")
+    token = authorization.split()[1]
+    try:
+        claims = jwt.decode(token, CLIENT_SEC, algorithms=["HS256"])
+    except Exception:
+        raise HTTPException(401, "invalid token")
+    user = claims.get("email")
+    if not user:
+        raise HTTPException(401, "invalid token")
+    return user
 
 @app.get("/auth/initiate")
 def initiate():
@@ -152,7 +168,27 @@ async def gas_estimate():
 
 
 @app.post("/api/zk/eligibility")
-def post_eligibility(payload: EligibilityInput):
+def post_eligibility(
+    payload: EligibilityInput,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db),
+):
+    user = get_user_id(authorization)
+    day = datetime.utcnow().strftime("%Y-%m-%d")
+    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
+    if pr:
+        if pr.count >= PROOF_QUOTA:
+            raise HTTPException(429, "proof quota exceeded")
+        pr.count += 1
+    else:
+        pr = ProofRequest(user=user, day=day, count=1)
+        db.add(pr)
+    db.commit()
+
+    cached = cache_get("eligibility", payload.dict())
+    if cached:
+        return {"status": "done", **cached}
+
     job = generate_proof.delay("eligibility", payload.dict())
     return {"job_id": job.id}
 
