@@ -96,7 +96,7 @@ def main():
     p.add_argument("-i", "--ignore", default=".myignore",
                    help="Ignore file in root")
     p.add_argument("-k", "--keep",
-                   help="Optional keep‑only file (one pattern per line)")
+                   help="Optional keep-only file (one pattern per line)")
     args = p.parse_args()
 
     ignore_file = os.path.join(args.folder, args.ignore)
