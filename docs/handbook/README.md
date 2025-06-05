@@ -11,6 +11,11 @@ proof orchestrator and relay):
 docker-compose up -d
 ```
 
+The orchestrator service connects to an EVM JSON‑RPC endpoint. When using
+`docker-compose` an instance of **anvil** starts automatically and the
+orchestrator will retry connecting for up to 20 attempts. Set `EVM_RPC` to a
+custom URL or use `EVM_MAX_RETRIES=0` to wait indefinitely.
+
 The frontend will be available on `http://localhost:3000`, the API on
 `http://localhost:8000` and Postgres on `localhost:5432`.
 
