@@ -73,3 +73,14 @@ class BatchTallyInput(BaseModel):
     class Config:
         extra = "forbid"
 
+
+class ProofAuditSchema(BaseModel):
+    id: int
+    circuit_hash: str
+    input_hash: str
+    proof_root: str
+    timestamp: str
+
+    class Config:
+        orm_mode = True
+

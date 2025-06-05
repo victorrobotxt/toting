@@ -30,6 +30,30 @@ describe('role based guards', () => {
     expect(getByText('Create Election')).toBeInTheDocument();
   });
 
+  test('verifier sees panel link', () => {
+    localStorage.setItem('id_token', makeToken('verifier'));
+    localStorage.setItem('eligibility', 'true');
+    localStorage.setItem('auth_mode', 'eid');
+    const { getByText } = render(
+      <AuthProvider>
+        <NavBar />
+      </AuthProvider>
+    );
+    expect(getByText('Verifier Panel')).toBeInTheDocument();
+  });
+
+  test('admin does not see panel link', () => {
+    localStorage.setItem('id_token', makeToken('admin'));
+    localStorage.setItem('eligibility', 'true');
+    localStorage.setItem('auth_mode', 'eid');
+    const { queryByText } = render(
+      <AuthProvider>
+        <NavBar />
+      </AuthProvider>
+    );
+    expect(queryByText('Verifier Panel')).toBeNull();
+  });
+
   test('user does not see create link', () => {
     localStorage.setItem('id_token', makeToken('user'));
     localStorage.setItem('eligibility', 'true');

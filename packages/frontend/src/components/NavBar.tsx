@@ -19,6 +19,7 @@ export default function NavBar() {
           {(role === 'admin' || role === 'verifier') && (
             <Link href="/elections/create">Create Election</Link>
           )}
+          {role === 'verifier' && <Link href="/verifier">Verifier Panel</Link>}
         </>
       )}
     </>
