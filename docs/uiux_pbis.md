@@ -106,3 +106,22 @@ UX-11–UX-17 can run once core flows (UX-01 … UX-10) are merged.
 ```
 
 
+### UX-24  Universal No-Reload Flow
+
+* **Scope**: Replace the remaining full page loads with client-side routing via `next/link` or `router.push`.
+* **Pages Affected**: `/`, `/dashboard`, `/elections/[id]`, `/elections/create`, `/eligibility`.
+* **Acceptance Criteria**
+  * Navigating between these pages does not create additional `navigation` entries in `window.performance`.
+  * All call-to-action buttons use client-side links.
+* **Dependencies**: UX-21.
+
+### UX-25  End-to-End Smoke Flow (FE-only Cypress)
+
+* **Tooling**: Cypress 13, executed in the frontend package via `yarn test:e2e`.
+* **Flow**:
+  1. Start from `/` and navigate to the Solana chart.
+  2. Use the navbar to open the login page.
+  3. Assert that `performance.getEntriesByType('navigation').length` remains `1` throughout.
+* **CI**: run the Cypress smoke test on pull requests.
+* **Dependencies**: UX-24 must be complete.
+

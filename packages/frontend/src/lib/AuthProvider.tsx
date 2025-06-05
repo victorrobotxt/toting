@@ -98,9 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('id_token');
     localStorage.removeItem('eligibility');
     localStorage.removeItem('auth_mode');
-    if (typeof window !== 'undefined') {
-      window.location.href = '/';
-    }
+    router.replace('/');
   };
 
   return (
