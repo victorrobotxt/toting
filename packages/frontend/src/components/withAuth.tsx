@@ -7,8 +7,8 @@ export default function withAuth(Component: React.ComponentType<any>): React.FC<
     const { isLoggedIn } = useAuth();
     const router = useRouter();
     useEffect(() => {
-      if (!isLoggedIn) router.replace('/');
-    }, [isLoggedIn]);
+      if (!isLoggedIn) router.replace('/login');
+    }, [isLoggedIn, router]);
     if (!isLoggedIn) return null;
     return <Component {...props} />;
   };

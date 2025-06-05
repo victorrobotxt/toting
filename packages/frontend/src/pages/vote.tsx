@@ -8,7 +8,7 @@ import { useAuth } from "../lib/AuthProvider";
 
 function VotePage() {
     const router = useRouter();
-    const { token, logout } = useAuth();
+    const { token, eligibility, logout } = useAuth();
     const [receipt, setReceipt] = useState<string>();
     const id = router.query.id as string | undefined;
 
@@ -50,8 +50,9 @@ function VotePage() {
             <NavBar />
             <div style={{padding:'1rem'}}>
                 <h2>Vote on election {id}</h2>
-                <button onClick={() => cast(0)}>Vote A</button>
-                <button onClick={() => cast(1)}>Vote B</button>
+                <button onClick={() => cast(0)} disabled={!eligibility}>Vote A</button>
+                <button onClick={() => cast(1)} disabled={!eligibility}>Vote B</button>
+                {!eligibility && <p style={{color:'red'}}>Not eligible to vote</p>}
                 {receipt && <p>Your vote receipt: {receipt}</p>}
             </div>
         </>
