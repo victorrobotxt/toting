@@ -41,7 +41,7 @@ contract FuzzTests is Test {
         vm.prank(caller);
         address wallet = factory.mintWallet(a, b, c, inputs, owner);
         assertTrue(wallet != address(0));
-        assertEq(factory.walletOf(caller), wallet);
+        assertEq(factory.walletOf(owner), wallet);
     }
 
     /// After a successful mint, a second mint must revert

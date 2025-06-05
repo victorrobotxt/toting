@@ -8,7 +8,7 @@ import "@account-abstraction/contracts/core/EntryPoint.sol";
 contract WalletFactory {
     EntryPoint public immutable entryPoint;
     Verifier public immutable verifier;
-    mapping(address => address) public walletOf;
+    mapping(address => address) public walletOf; // owner => wallet
 
     event WalletMinted(address indexed owner, address indexed wallet);
 
@@ -27,14 +27,14 @@ contract WalletFactory {
         uint256[7] calldata pubSignals,
         address owner
     ) external returns (address wallet) {
-        require(walletOf[msg.sender] == address(0), "Factory: already minted");
+        require(walletOf[owner] == address(0), "Factory: already minted");
         require(
             verifier.verifyProof(a, b, c, pubSignals),
             "Factory: invalid proof"
         );
         bytes32 salt = keccak256(abi.encodePacked(owner, msg.sender));
         wallet = address(new SmartWallet{salt: salt}(entryPoint, owner));
-        walletOf[msg.sender] = wallet;
+        walletOf[owner] = wallet;
         emit WalletMinted(owner, wallet);
     }
 }
