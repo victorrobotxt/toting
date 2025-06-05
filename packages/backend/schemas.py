@@ -17,8 +17,6 @@ class ElectionSchema(BaseModel):
 
 class CreateElectionSchema(BaseModel):
     meta_hash: str
-    start: int
-    end: int
 
     @validator("meta_hash")
     def validate_meta(cls, v):
@@ -26,12 +24,6 @@ class CreateElectionSchema(BaseModel):
             raise ValueError("meta_hash must be 0x-prefixed 32-byte hex string")
         return v
 
-    @validator("end")
-    def check_end(cls, v, values):
-        start = values.get("start")
-        if start is not None and v <= start:
-            raise ValueError("end must be greater than start")
-        return v
 
 
 class UpdateElectionSchema(BaseModel):

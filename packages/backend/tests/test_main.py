@@ -11,6 +11,7 @@ os.environ["USE_REAL_OAUTH"] = "false"
 # allow "packages" imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
+from backend import main
 from backend.main import app, get_db
 from backend.db import Base, engine, SessionLocal, Election
 
@@ -37,6 +38,11 @@ def setup_db():
     db.add(Election(id=1, meta="0x" + "a" * 64, start=0, end=10))
     db.commit()
     db.close()
+
+
+@pytest.fixture(autouse=True)
+def patch_chain(monkeypatch):
+    monkeypatch.setattr(main, "create_election_onchain", lambda meta: 100)
 
 
 def test_mock_login_and_list():
@@ -69,11 +75,13 @@ def test_mock_login_and_list():
 
 
 def test_create_and_update_election():
-    payload = {"meta_hash": "0x" + "b" * 64, "start": 5, "end": 15}
+    payload = {"meta_hash": "0x" + "b" * 64}
     r = client.post("/elections", json=payload)
     assert r.status_code == 201
     data = r.json()
     assert data["meta"] == payload["meta_hash"]
+    assert data["start"] == 100
+    assert data["end"] == 7300
     election_id = data["id"]
 
     r = client.patch(f"/elections/{election_id}", json={"status": "open"})

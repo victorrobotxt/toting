@@ -2,6 +2,6 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY packages/backend /app/packages/backend
 # pin uvicorn to avoid old apt versions that miss the Server class
-RUN pip install fastapi "uvicorn>=0.27" python-jose[cryptography] httpx sqlalchemy
+RUN pip install fastapi "uvicorn>=0.27" python-jose[cryptography] httpx sqlalchemy web3 eth-account
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "packages.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
