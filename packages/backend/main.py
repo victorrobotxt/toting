@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, Header, WebSocket
 from datetime import datetime
 from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from jose import jwt
 import httpx
@@ -22,6 +23,15 @@ from .schemas import (
 from .proof import celery_app, generate_proof, cache_get
 
 app = FastAPI()
+
+# Allow the frontend to access the API during local development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # On-chain ElectionManager config
 EVM_RPC = os.getenv("EVM_RPC", "http://127.0.0.1:8545")
