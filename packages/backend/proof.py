@@ -1,7 +1,10 @@
 import os
 import json
 import hashlib
+from datetime import datetime
 from celery import Celery
+
+from .db import SessionLocal, Circuit, ProofAudit
 
 # simple in-memory cache (used in tests when Redis unavailable)
 PROOF_CACHE: dict[str, dict] = {}
@@ -11,16 +14,25 @@ ELIGIBILITY_HASH = "58973d361f4b6fa0c9d9f7d52d8cd6b5d5be54473a7fa80638a44eb2e097
 VOICE_HASH = "250dc836c4654c537cbe8ca1b61a188d0fac62cba52295e31486cf32c6396aa8"
 BATCH_TALLY_HASH = "0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9"
 
-CIRCUIT_HASHES = {
+DEFAULT_HASHES = {
     "eligibility": ELIGIBILITY_HASH,
     "voice": VOICE_HASH,
     "batch_tally": BATCH_TALLY_HASH,
 }
 
 
+def get_circuit_hash(name: str) -> str:
+    db = SessionLocal()
+    row = db.query(Circuit).filter_by(name=name, active=1).first()
+    db.close()
+    if row:
+        return row.circuit_hash
+    return DEFAULT_HASHES[name]
+
+
 def cache_key(circuit: str, inputs: dict) -> str:
     data = json.dumps(inputs, sort_keys=True).encode()
-    return hashlib.sha256(data + CIRCUIT_HASHES[circuit].encode()).hexdigest()
+    return hashlib.sha256(data + get_circuit_hash(circuit).encode()).hexdigest()
 
 
 def cache_get(circuit: str, inputs: dict):
@@ -41,6 +53,23 @@ def generate_proof(circuit: str, inputs: dict):
     proof = f"proof-{h[:16]}"
     pub = [int(h[i:i+8], 16) for i in range(0, 32, 8)]
     result = {"proof": proof, "pubSignals": pub}
+    key = cache_key(circuit, inputs)
+    PROOF_CACHE[key] = result
 
-    PROOF_CACHE[cache_key(circuit, inputs)] = result
+    circuit_hash = get_circuit_hash(circuit)
+    input_hash = hashlib.sha256(data).hexdigest()
+    proof_root = hashlib.sha256(json.dumps(result).encode()).hexdigest()
+
+    db = SessionLocal()
+    db.add(
+        ProofAudit(
+            circuit_hash=circuit_hash,
+            input_hash=input_hash,
+            proof_root=proof_root,
+            timestamp=datetime.utcnow().isoformat(),
+        )
+    )
+    db.commit()
+    db.close()
+
     return result

@@ -42,3 +42,27 @@ class ProofRequest(Base):
         Index("idx_user_day", "user", "day", unique=True),
     )
 
+
+class Circuit(Base):
+    __tablename__ = "circuits"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False, index=True)
+    version = Column(Integer, nullable=False)
+    circuit_hash = Column(String, nullable=False)
+    ptau_version = Column(Integer, nullable=False)
+    zkey_version = Column(Integer, nullable=False)
+    active = Column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        Index("idx_circuit_name_version", "name", "version", unique=True),
+    )
+
+
+class ProofAudit(Base):
+    __tablename__ = "proof_audit"
+    id = Column(Integer, primary_key=True)
+    circuit_hash = Column(String, nullable=False)
+    input_hash = Column(String, nullable=False)
+    proof_root = Column(String, nullable=False, index=True)
+    timestamp = Column(String, nullable=False)
+

@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
@@ -40,6 +41,8 @@ def setup_db():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     db.add(Election(id=1, meta="0x" + "a" * 64, start=0, end=10))
+    from backend.db import Circuit
+    db.add(Circuit(name="eligibility", version=1, circuit_hash="hash_v1", ptau_version=1, zkey_version=1, active=1))
     db.commit()
     db.close()
 
@@ -107,7 +110,7 @@ def test_proof_cache_and_quota(monkeypatch):
     token = jwt.encode({"email": "bob@example.com"}, "test-secret", algorithm="HS256")
     headers = {"Authorization": f"Bearer {token}"}
 
-    payload = {"country": "US", "dob": "1990-01-01", "residency": "CA"}
+    payload = {"country": "US", "dob": "1970-01-01", "residency": "CA"}
 
     r = client.post("/api/zk/eligibility", json=payload, headers=headers)
     assert r.status_code == 200
@@ -160,3 +163,67 @@ def test_voice_and_batch_tally_and_ws():
     r = client.get(f"/api/zk/batch_tally/{jid}")
     assert r.status_code == 200
     assert r.json()["status"] == "done"
+
+def test_circuit_version_migration():
+    token = jwt.encode({"email": "migrator@example.com"}, "test-secret", algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"country": "US", "dob": "1990-01-01", "residency": "CA"}
+    r = client.post("/api/zk/eligibility", json=payload, headers=headers)
+    assert r.status_code == 200
+    jid1 = r.json()["job_id"]
+    r = client.get(f"/api/zk/eligibility/{jid1}")
+    assert r.json()["status"] == "done"
+
+    # flip to v2 while job1 completed
+    db = SessionLocal()
+    from backend.db import Circuit
+    c1 = db.query(Circuit).filter_by(name="eligibility", version=1).first()
+    c1.active = 0
+    db.add(Circuit(name="eligibility", version=2, circuit_hash="hash_v2", ptau_version=1, zkey_version=2, active=1))
+    db.commit()
+    db.close()
+
+    r = client.post("/api/zk/eligibility", json=payload | {"dob": "1990-01-02"}, headers=headers)
+    jid2 = r.json()["job_id"]
+    r = client.get(f"/api/zk/eligibility/{jid2}")
+    assert r.json()["status"] == "done"
+
+
+def test_proof_audit_cli():
+    token = jwt.encode({"email": "auditor@example.com"}, "test-secret", algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"country": "US", "dob": "1990-02-01", "residency": "CA"}
+    r = client.post("/api/zk/eligibility", json=payload, headers=headers)
+    jid = r.json()["job_id"]
+    r = client.get(f"/api/zk/eligibility/{jid}")
+    assert r.json()["status"] == "done"
+    db = SessionLocal()
+    from backend.db import ProofAudit
+    row = db.query(ProofAudit).first()
+    db.close()
+    import subprocess, json as js
+    env = os.environ.copy()
+    env["PYTHONPATH"] = os.path.join(os.getcwd(), "packages")
+    env["DATABASE_URL"] = os.environ["DATABASE_URL"]
+    result = subprocess.run(["python", "-m", "backend.cli", row.proof_root], capture_output=True, text=True, env=env)
+    assert result.returncode == 0
+    data = js.loads(result.stdout)
+    assert data["proof_root"] == row.proof_root
+
+
+def test_grpc_wrapper():
+    from backend import grpc_server
+    server = grpc_server.serve(50052)
+    import time
+    time.sleep(0.1)
+    import grpc
+    from backend.proto import proof_pb2, proof_pb2_grpc
+    channel = grpc.insecure_channel("localhost:50052")
+    stub = proof_pb2_grpc.ProofServiceStub(channel)
+    payload = {"country": "US", "dob": "1991-01-01", "residency": "CA"}
+    resp = stub.Generate(proof_pb2.GenerateRequest(circuit="eligibility", input_json=json.dumps(payload)))
+    status = stub.Status(proof_pb2.StatusRequest(job_id=resp.job_id))
+    assert status.state == "done"
+    assert status.proof
+    server.stop(0)
+

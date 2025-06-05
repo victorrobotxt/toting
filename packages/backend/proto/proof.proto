@@ -1,0 +1,26 @@
+syntax = "proto3";
+package proof;
+
+service ProofService {
+  rpc Generate (GenerateRequest) returns (GenerateResponse);
+  rpc Status (StatusRequest) returns (StatusResponse);
+}
+
+message GenerateRequest {
+  string circuit = 1;
+  string input_json = 2;
+}
+
+message GenerateResponse {
+  string job_id = 1;
+}
+
+message StatusRequest {
+  string job_id = 1;
+}
+
+message StatusResponse {
+  string state = 1;
+  string proof = 2;
+  repeated int64 pubSignals = 3;
+}

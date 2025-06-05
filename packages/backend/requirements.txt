@@ -7,4 +7,7 @@ web3
 eth-account
 celery
 redis
+grpcio
+grpcio-tools
+typer
 pytest
