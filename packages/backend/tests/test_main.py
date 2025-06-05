@@ -131,3 +131,32 @@ def test_proof_cache_and_quota(monkeypatch):
     bad = {"country": "USA", "dob": "19900101", "residency": "CA"}
     r = client.post("/api/zk/eligibility", json=bad, headers=headers)
     assert r.status_code == 422
+
+
+def test_voice_and_batch_tally_and_ws():
+    token = jwt.encode({"email": "carol@example.com"}, "test-secret", algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    voice_payload = {"credits": [1, 4, 9], "nonce": 1}
+    r = client.post("/api/zk/voice", json=voice_payload, headers=headers)
+    assert r.status_code == 200
+    jid = r.json()["job_id"]
+    with client.websocket_connect(f"/ws/proofs/{jid}") as ws:
+        msg = ws.receive_json()
+        assert msg["state"] in {"queued", "running", "done"}
+        if msg["state"] != "done":
+            msg = ws.receive_json()
+        assert msg["state"] == "done"
+        assert msg["progress"] == 100
+
+    r = client.get(f"/api/zk/voice/{jid}")
+    assert r.status_code == 200
+    assert r.json()["status"] == "done"
+
+    tally_payload = {"election_id": 1}
+    r = client.post("/api/zk/batch_tally", json=tally_payload, headers=headers)
+    assert r.status_code == 200
+    jid = r.json()["job_id"]
+    r = client.get(f"/api/zk/batch_tally/{jid}")
+    assert r.status_code == 200
+    assert r.json()["status"] == "done"
