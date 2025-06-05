@@ -32,7 +32,8 @@
     "jest-environment-jsdom": "^29.7.0",
     "babel-jest": "^29.7.0",
     "@babel/preset-env": "^7.24.5",
-    "@babel/preset-react": "^7.24.5"
+    "@babel/preset-react": "^7.24.5",
+    "@babel/preset-typescript": "^7.27.1"
   },
   "packageManager": "yarn@1.22.22"
 }
