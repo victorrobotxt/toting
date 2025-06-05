@@ -6,7 +6,12 @@ export default function NavBar() {
   return (
     <nav style={{display:'flex',gap:'1rem',padding:'1rem'}}>
       <Link href="/">Home</Link>
-      {isLoggedIn && <Link href="/dashboard">Dashboard</Link>}
+      {isLoggedIn && (
+        <>
+          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/eligibility">Eligibility</Link>
+        </>
+      )}
       {isLoggedIn ? (
         <button onClick={logout}>Logout</button>
       ) : (
