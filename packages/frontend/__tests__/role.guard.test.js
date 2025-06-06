@@ -14,14 +14,14 @@ function makeToken(role) {
 
 describe('role based guards', () => {
   beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
     router.setCurrentUrl('/');
   });
 
   test('admin sees create link', () => {
-    localStorage.setItem('id_token', makeToken('admin'));
-    localStorage.setItem('eligibility', 'true');
-    localStorage.setItem('auth_mode', 'eid');
+    sessionStorage.setItem('id_token', makeToken('admin'));
+    sessionStorage.setItem('eligibility', 'true');
+    sessionStorage.setItem('auth_mode', 'eid');
     const { getByText } = render(
       <AuthProvider>
         <NavBar />
@@ -31,9 +31,9 @@ describe('role based guards', () => {
   });
 
   test('verifier sees panel link', () => {
-    localStorage.setItem('id_token', makeToken('verifier'));
-    localStorage.setItem('eligibility', 'true');
-    localStorage.setItem('auth_mode', 'eid');
+    sessionStorage.setItem('id_token', makeToken('verifier'));
+    sessionStorage.setItem('eligibility', 'true');
+    sessionStorage.setItem('auth_mode', 'eid');
     const { getByText } = render(
       <AuthProvider>
         <NavBar />
@@ -43,9 +43,9 @@ describe('role based guards', () => {
   });
 
   test('admin does not see panel link', () => {
-    localStorage.setItem('id_token', makeToken('admin'));
-    localStorage.setItem('eligibility', 'true');
-    localStorage.setItem('auth_mode', 'eid');
+    sessionStorage.setItem('id_token', makeToken('admin'));
+    sessionStorage.setItem('eligibility', 'true');
+    sessionStorage.setItem('auth_mode', 'eid');
     const { queryByText } = render(
       <AuthProvider>
         <NavBar />
@@ -55,9 +55,9 @@ describe('role based guards', () => {
   });
 
   test('user does not see create link', () => {
-    localStorage.setItem('id_token', makeToken('user'));
-    localStorage.setItem('eligibility', 'true');
-    localStorage.setItem('auth_mode', 'eid');
+    sessionStorage.setItem('id_token', makeToken('user'));
+    sessionStorage.setItem('eligibility', 'true');
+    sessionStorage.setItem('auth_mode', 'eid');
     const { queryByText } = render(
       <AuthProvider>
         <NavBar />
@@ -67,9 +67,9 @@ describe('role based guards', () => {
   });
 
   test('forbidden route shows 403', () => {
-    localStorage.setItem('id_token', makeToken('user'));
-    localStorage.setItem('eligibility', 'true');
-    localStorage.setItem('auth_mode', 'eid');
+    sessionStorage.setItem('id_token', makeToken('user'));
+    sessionStorage.setItem('eligibility', 'true');
+    sessionStorage.setItem('auth_mode', 'eid');
     const Protected = withAuth(() => <p>secret</p>, ['verifier']);
     const { getByText } = render(
       <AuthProvider>

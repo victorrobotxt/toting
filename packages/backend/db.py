@@ -10,15 +10,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
-# Default to SQLite for local development, but require an explicit
-# `DATABASE_URL` when Celery is configured. Workers rely on Postgres features
-# like LISTEN/NOTIFY and will misbehave on SQLite.
+# Always require an explicit `DATABASE_URL`.  Using SQLite silently caused
+# Celery workers to crash under load, so we fail fast if the variable isn't
+# configured.
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
-    broker = os.getenv("CELERY_BROKER", "")
-    if broker and broker != "memory://":
-        raise RuntimeError("DATABASE_URL not set; refusing to use SQLite with Celery")
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./app.db"
+    raise RuntimeError("DATABASE_URL must be set")
 
 # SQLAlchemy expects the "postgresql" scheme; handle old "postgres" URLs too
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):

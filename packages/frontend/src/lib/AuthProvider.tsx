@@ -56,24 +56,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem('id_token');
-    const storedMode = (localStorage.getItem('auth_mode') as AuthMode) || 'guest';
+    const stored = sessionStorage.getItem('id_token');
+    const storedMode = (sessionStorage.getItem('auth_mode') as AuthMode) || 'guest';
     setMode(storedMode);
     if (stored && !tokenExpired(stored)) {
       setToken(stored);
-      setEligibility(localStorage.getItem('eligibility') === 'true');
+      setEligibility(sessionStorage.getItem('eligibility') === 'true');
       const p = decodePayload(stored);
       setRole(p?.role === 'admin' || p?.role === 'verifier' ? p.role : 'user');
     } else {
-      localStorage.removeItem('id_token');
-      localStorage.removeItem('eligibility');
+      sessionStorage.removeItem('id_token');
+      sessionStorage.removeItem('eligibility');
     }
 
     const handler = (e: MessageEvent) => {
       if (e.origin !== 'http://localhost:3000') return;
       const { id_token, eligibility: elig } = e.data || {};
       if (typeof id_token === 'string' && typeof elig === 'boolean') {
-        const m = (localStorage.getItem('auth_mode') as AuthMode) || 'eid';
+        const m = (sessionStorage.getItem('auth_mode') as AuthMode) || 'eid';
         login(id_token, elig, m);
         router.replace('/dashboard');
       }
@@ -89,9 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMode(m);
     const p = decodePayload(tok);
     setRole(p?.role === 'admin' || p?.role === 'verifier' ? p.role : 'user');
-    localStorage.setItem('id_token', tok);
-    localStorage.setItem('eligibility', String(elig));
-    localStorage.setItem('auth_mode', m);
+    sessionStorage.setItem('id_token', tok);
+    sessionStorage.setItem('eligibility', String(elig));
+    sessionStorage.setItem('auth_mode', m);
   };
 
   const logout = () => {
@@ -99,9 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setEligibility(false);
     setMode('guest');
     setRole('user');
-    localStorage.removeItem('id_token');
-    localStorage.removeItem('eligibility');
-    localStorage.removeItem('auth_mode');
+    sessionStorage.removeItem('id_token');
+    sessionStorage.removeItem('eligibility');
+    sessionStorage.removeItem('auth_mode');
     router.replace('/');
   };
 

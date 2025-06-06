@@ -13,7 +13,7 @@ function Dummy() {
 
 describe('postMessage login', () => {
   beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
     router.setCurrentUrl('/');
   });
 
@@ -30,8 +30,8 @@ describe('postMessage login', () => {
     await act(async () => {
       window.dispatchEvent(evt);
     });
-    await waitFor(() => expect(localStorage.getItem('id_token')).toBe('jwt'));
-    expect(localStorage.getItem('auth_mode')).toBe('eid');
+    await waitFor(() => expect(sessionStorage.getItem('id_token')).toBe('jwt'));
+    expect(sessionStorage.getItem('auth_mode')).toBe('eid');
     expect(router.asPath).toBe('/dashboard');
   });
 });

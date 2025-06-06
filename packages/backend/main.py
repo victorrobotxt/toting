@@ -128,16 +128,26 @@ REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
 PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 def increment_quota(db: Session, user: str, day: str) -> bool:
-    """Atomically increment daily proof counter, enforcing the quota."""
-    updated = (
-        db.query(ProofRequest)
-        .filter(
-            ProofRequest.user == user,
-            ProofRequest.day == day,
-            ProofRequest.count < PROOF_QUOTA,
+    """Atomically increment daily proof counter using ``INSERT ... ON CONFLICT``."""
+    if db.bind.dialect.name == "postgresql":
+        ins = pg_insert(ProofRequest)
+    elif db.bind.dialect.name == "sqlite":
+        ins = sqlite_insert(ProofRequest)
+    else:
+        ins = insert(ProofRequest)
+
+    stmt = (
+        ins.values(user=user, day=day, count=1)
+        .on_conflict_do_update(
+            index_elements=[ProofRequest.user, ProofRequest.day],
+            set_={ProofRequest.count: ProofRequest.count + 1},
+            where=ProofRequest.count < PROOF_QUOTA,
         )
         .update({ProofRequest.count: ProofRequest.count + 1}, synchronize_session=False)
     )

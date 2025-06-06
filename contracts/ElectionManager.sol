@@ -12,12 +12,12 @@ contract ElectionManager {
     TallyVerifier public tallyVerifier;
     bool public tallied;
 
-    event ElectionCreated(uint id, bytes32 meta);
+    event ElectionCreated(uint id, bytes32 indexed meta);
     event Tally(uint256 A, uint256 B);
 
     struct E {
-        uint start;
-        uint end;
+        uint128 start;
+        uint128 end;
     }
     mapping(uint => E) public elections;
     uint public nextId;
@@ -37,9 +37,14 @@ contract ElectionManager {
     }
 
     function createElection(bytes32 meta) external {
-        elections[nextId] = E(block.number, block.number + 7200);
+        elections[nextId] = E(
+            uint128(block.number),
+            uint128(block.number + 7200)
+        );
         emit ElectionCreated(nextId, meta);
-        nextId++;
+        unchecked {
+            nextId++;
+        }
     }
 
     function enqueueMessage(
