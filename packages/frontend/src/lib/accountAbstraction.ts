@@ -64,8 +64,19 @@ export async function bundleSubmitVote(
     const managerIface = new ethers.utils.Interface([
         "function enqueueMessage(uint256,uint256,bytes)"
     ]);
+
+    // The backend returns dummy proofs as strings like
+    // "proof-<hash>" which are not valid hex bytes. Convert any
+    // non-hex string proof to bytes so ethers can encode it.
+    const proofBytes =
+        typeof vcProof === "string" && !ethers.utils.isHexString(vcProof)
+            ? ethers.utils.toUtf8Bytes(vcProof)
+            : vcProof;
+
     const data = managerIface.encodeFunctionData("enqueueMessage", [
-        voteOption, nonce, vcProof,
+        voteOption,
+        nonce,
+        proofBytes,
     ]);
 
     const unsignedOp = await api.createSignedUserOp({
