@@ -14,7 +14,8 @@ contract QVManager is EIP712 {
     QVVerifier public qvVerifier;
     mapping(bytes32 => bool) public ballotSeen;
 
-    bytes32 private constant BALLOT_TYPEHASH = keccak256("Ballot(bytes32 ballotHash)");
+    bytes32 private constant BALLOT_TYPEHASH =
+        keccak256("Ballot(address voter, bytes32 ballotHash)");
 
     event BallotSubmitted(address indexed voter, bytes encryptedBallot);
 
@@ -42,7 +43,9 @@ contract QVManager is EIP712 {
             qvVerifier.verifyProof(a, b, c, pubSignals),
             "invalid voice credit proof"
         );
-        bytes32 h = keccak256(encryptedBallot);
+        bytes32 h = keccak256(
+            abi.encode(block.chainid, msg.sender, keccak256(encryptedBallot))
+        );
         require(!ballotSeen[h], "duplicate ballot");
         ballotSeen[h] = true;
         maci.publishMessage(encryptedBallot);
@@ -63,11 +66,19 @@ contract QVManager is EIP712 {
             "invalid voice credit proof"
         );
         bytes32 digest = _hashTypedDataV4(
-            keccak256(abi.encode(BALLOT_TYPEHASH, keccak256(encryptedBallot)))
+            keccak256(
+                abi.encode(
+                    BALLOT_TYPEHASH,
+                    msg.sender,
+                    keccak256(encryptedBallot)
+                )
+            )
         );
         address signer = ECDSA.recover(digest, signature);
         require(signer == msg.sender, "bad sig");
-        bytes32 h = keccak256(encryptedBallot);
+        bytes32 h = keccak256(
+            abi.encode(block.chainid, msg.sender, keccak256(encryptedBallot))
+        );
         require(!ballotSeen[h], "duplicate ballot");
         ballotSeen[h] = true;
         maci.publishMessage(encryptedBallot);
