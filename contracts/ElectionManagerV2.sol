@@ -5,10 +5,7 @@ import {UUPSUpgradeable} from "openzeppelin-contracts/contracts/proxy/utils/UUPS
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
 import "./TallyVerifier.sol";
-
-interface IMACI {
-    function publishMessage(bytes calldata) external;
-}
+import "./interfaces/IMACI.sol";
 
 /// @title Upgradeable ElectionManager
 /// @notice Version 2 of ElectionManager using UUPS proxy pattern
@@ -17,12 +14,22 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     TallyVerifier public tallyVerifier;
     bool public tallied; // slot from V1
 
+    constructor() {
+        _disableInitializers();
+    }
+
+    struct TallyResult {
+        bool tallied;
+        uint256[2] result;
+    }
+
     struct Election {
         uint128 start;
         uint128 end;
     }
 
     mapping(uint256 => Election) public elections;
+    mapping(uint256 => TallyResult) public tallies;
     uint256 public nextId;
     uint256[2] public result; // [A, B] tally result
 
@@ -38,7 +45,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
 
     modifier onlyDuringElection(uint256 id) {
         Election memory e = elections[id];
-        require(block.number >= e.start && block.number <= e.end, "closed");
+        require(block.number >= uint256(e.start) && block.number <= uint256(e.end), "closed");
         _;
     }
 
@@ -63,24 +70,28 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     }
 
     function tallyVotes(
+        uint256 id,
         uint256[2] calldata a,
         uint256[2][2] calldata b,
         uint256[2] calldata c,
         uint256[7] calldata pubSignals
     ) external onlyOwner {
-        require(!tallied, "already tallied");
+        require(!tallies[id].tallied, "already tallied");
         require(
             tallyVerifier.verifyProof(a, b, c, pubSignals),
             "invalid tally proof"
         );
         result[0] = pubSignals[0];
         result[1] = pubSignals[1];
-        emit Tally(pubSignals[0], pubSignals[1]);
+        tallies[id].result[0] = pubSignals[0];
+        tallies[id].result[1] = pubSignals[1];
+        emit Tally(id, pubSignals[0], pubSignals[1]);
+        tallies[id].tallied = true;
         tallied = true;
     }
 
     event ElectionCreated(uint256 id, bytes32 indexed meta);
-    event Tally(uint256 A, uint256 B);
+    event Tally(uint256 id, uint256 A, uint256 B);
 
     function upgradeTo(address newImplementation)
         external

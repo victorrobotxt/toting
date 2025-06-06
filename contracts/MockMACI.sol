@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./ElectionManager.sol"; // for the IMACI interface
+import "./interfaces/IMACI.sol"; // for the IMACI interface
 
 /// @dev A minimal MACI stub that simply records published messages so `enqueueMessage()` won’t revert.
 contract MockMACI is IMACI {
