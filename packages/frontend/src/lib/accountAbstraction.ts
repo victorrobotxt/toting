@@ -60,8 +60,6 @@ export async function bundleSubmitVote(
     nonce: number,
     vcProof: Uint8Array | string
 ): Promise<string> {
-    const api = await getAccountAPI(signer);
-
     const managerIface = new ethers.utils.Interface([
         "function enqueueMessage(uint256,uint256,uint256,bytes)"
     ]);
@@ -74,13 +72,35 @@ export async function bundleSubmitVote(
             ? ethers.utils.toUtf8Bytes(vcProof)
             : vcProof;
 
+    // If ENTRY_POINT_ADDRESS is unset (0x0), fall back to a direct transaction
+    // instead of going through the bundler. This is useful for local dev where
+    // no ERC-4337 infrastructure is running.
+    if (
+        ENTRY_POINT_ADDRESS === "0x" + "0".repeat(40) ||
+        !BUNDLER_RPC_URL
+    ) {
+        const manager = new ethers.Contract(
+            ELECTION_MANAGER_ADDR,
+            ["function enqueueMessage(uint256,uint256,uint256,bytes)"],
+            signer
+        );
+        const tx = await manager.enqueueMessage(
+            electionId,
+            voteOption,
+            nonce,
+            proofBytes
+        );
+        await tx.wait();
+        return tx.hash;
+    }
+
+    const api = await getAccountAPI(signer);
     const data = managerIface.encodeFunctionData("enqueueMessage", [
         electionId,
         voteOption,
         nonce,
         proofBytes,
     ]);
-
     const unsignedOp = await api.createSignedUserOp({
         target: ELECTION_MANAGER_ADDR,
         data,
