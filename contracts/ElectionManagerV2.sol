@@ -26,6 +26,9 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     uint256 public nextId;
     uint256[2] public result; // [A, B] tally result
 
+    /// @custom:storage-gap
+    uint256[50] private __gap;
+
     /// @dev initializer replaces constructor for upgradeable contracts
     function initialize(IMACI _maci) public initializer {
         __Ownable_init(msg.sender);
@@ -73,6 +76,14 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
 
     event ElectionCreated(uint256 id, bytes32 meta);
     event Tally(uint256 A, uint256 B);
+
+    function upgradeTo(address newImplementation)
+        external
+        onlyOwner
+        onlyProxy
+    {
+        upgradeToAndCall(newImplementation, bytes(""));
+    }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
 }

@@ -6,13 +6,13 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
 
   useEffect(() => {
     // Build a proper ws:// or wss:// URL from whatever apiUrl() returns
-    const httpUrl = apiUrl(`/ws/proofs/${jobId}`);          // e.g. "http://localhost:8000/ws/proofs/…"
+    const httpUrl = apiUrl(`/ws/proofs/${jobId}`); // e.g. "http://backend:8000/ws/proofs/..."
     const urlObj = new URL(httpUrl);
     // switch protocol from 'http:' → 'ws:' (or 'https:' → 'wss:')
-    if (urlObj.protocol === 'https:') {
-      urlObj.protocol = 'wss:';
-    } else {
-      urlObj.protocol = 'ws:';
+    urlObj.protocol = urlObj.protocol === 'https:' ? 'wss:' : 'ws:';
+    // when API_BASE uses an internal hostname (e.g. "backend"), use browser host
+    if (urlObj.hostname !== window.location.hostname) {
+      urlObj.hostname = window.location.hostname;
     }
     const ws = new WebSocket(urlObj.toString());
 

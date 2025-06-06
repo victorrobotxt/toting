@@ -13,9 +13,9 @@ Base.metadata.create_all(bind=engine)
 PROOF_CACHE: dict[str, dict] = {}
 
 # Load default hashes from the compiled circuit manifest
-MANIFEST_PATH = "/app/circuits/manifest.json"
+MANIFEST_PATH = os.getenv("CIRCUIT_MANIFEST", "/app/circuits/manifest.json")
 if not os.path.exists(MANIFEST_PATH):
-    alt = os.path.join(os.path.dirname(__file__), "..", "..", "artifacts", "manifest.json")
+    alt = os.path.join(os.getcwd(), "artifacts", "manifest.json")
     if os.path.exists(alt):
         MANIFEST_PATH = alt
 DEFAULT_HASHES = {}
