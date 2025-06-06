@@ -76,11 +76,11 @@ contract FuzzTests is Test {
     function testFuzz_RandomWindow(uint64 startOffset, uint64 duration) public {
         vm.assume(startOffset < 1000 && duration > 0 && duration < 1000);
         em.createElection(bytes32(uint256(0x42)));
-        bytes32 base = keccak256(abi.encode(uint256(0), uint256(2)));
-        uint start = block.number + startOffset;
-        uint end = start + duration;
-        vm.store(address(em), base, bytes32(start));
-        vm.store(address(em), bytes32(uint256(base) + 1), bytes32(end));
+        bytes32 base = keccak256(abi.encode(uint256(0), uint256(1)));
+        uint256 start = block.number + startOffset;
+        uint256 end = start + duration;
+        bytes32 packed = bytes32((uint256(end) << 128) | uint256(start));
+        vm.store(address(em), base, packed);
 
         vm.expectRevert("closed");
         em.enqueueMessage(0, 1, 0, new bytes(0));

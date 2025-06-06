@@ -18,8 +18,8 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     bool public tallied; // slot from V1
 
     struct Election {
-        uint256 start;
-        uint256 end;
+        uint128 start;
+        uint128 end;
     }
 
     mapping(uint256 => Election) public elections;
@@ -43,9 +43,14 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     }
 
     function createElection(bytes32 meta) external onlyOwner {
-        elections[nextId] = Election(block.number, block.number + 7200);
+        elections[nextId] = Election(
+            uint128(block.number),
+            uint128(block.number + 7200)
+        );
         emit ElectionCreated(nextId, meta);
-        nextId++;
+        unchecked {
+            nextId++;
+        }
     }
 
     function enqueueMessage(
@@ -74,7 +79,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         tallied = true;
     }
 
-    event ElectionCreated(uint256 id, bytes32 meta);
+    event ElectionCreated(uint256 id, bytes32 indexed meta);
     event Tally(uint256 A, uint256 B);
 
     function upgradeTo(address newImplementation)
