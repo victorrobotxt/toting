@@ -25,11 +25,13 @@ from .proof import celery_app, generate_proof, cache_get
 
 app = FastAPI()
 
-# Allow the frontend to access the API during local development
+FRONTEND_ORIGIN = os.getenv("NEXT_PUBLIC_API_BASE", "http://localhost:3000")
+LOCAL_MODE = "localhost" in FRONTEND_ORIGIN
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_origin_regex=".*",
+    allow_origins=[FRONTEND_ORIGIN],
+    allow_origin_regex=".*" if LOCAL_MODE else None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,7 +46,10 @@ async def add_cors_header(request: Request, call_next):
         # fall back to generic 500 response so CORS headers still apply
         print("handler error", exc)
         response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
-    response.headers.setdefault("access-control-allow-origin", "*")
+    if LOCAL_MODE:
+        response.headers.setdefault("access-control-allow-origin", "*")
+    else:
+        response.headers.setdefault("access-control-allow-origin", FRONTEND_ORIGIN)
     return response
 
 # On-chain ElectionManager config
