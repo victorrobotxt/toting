@@ -18,8 +18,10 @@ custom URL or use `EVM_MAX_RETRIES=0` to wait indefinitely.
 
 The backend uses Celery with Redis for proof generation. The Compose
 configuration sets `EVM_RPC` along with `CELERY_BROKER` and
-`CELERY_BACKEND` so it can talk to the `anvil` and `redis` services. If you
-run the backend on its own, provide these variables manually.
+`CELERY_BACKEND` so it can talk to the `anvil` and `redis` services. Both the
+API and worker processes also require a `DATABASE_URL` pointing to Postgres.
+Compose sets this automatically; when running the backend on its own, provide
+these variables manually.
 
 When running the frontend container, set `NEXT_PUBLIC_API_BASE` to
 `http://backend:8000` so the web UI can reach the API service within the

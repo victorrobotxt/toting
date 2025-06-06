@@ -125,6 +125,51 @@ JWT_SECRET = os.getenv("JWT_SECRET", "dev-jwt-secret")
 REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
 PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
+from sqlalchemy.exc import IntegrityError
+
+
+def increment_quota(db: Session, user: str, day: str) -> bool:
+    """Atomically increment daily proof counter, enforcing the quota."""
+    updated = (
+        db.query(ProofRequest)
+        .filter(
+            ProofRequest.user == user,
+            ProofRequest.day == day,
+            ProofRequest.count < PROOF_QUOTA,
+        )
+        .update({ProofRequest.count: ProofRequest.count + 1})
+    )
+    if updated:
+        db.commit()
+        return True
+    try:
+        db.add(ProofRequest(user=user, day=day, count=1))
+        db.commit()
+        return True
+    except IntegrityError:
+        db.rollback()
+        updated = (
+            db.query(ProofRequest)
+            .filter(
+                ProofRequest.user == user,
+                ProofRequest.day == day,
+                ProofRequest.count < PROOF_QUOTA,
+            )
+            .update({ProofRequest.count: ProofRequest.count + 1})
+        )
+        db.commit()
+        return bool(updated)
+
+if USE_REAL_OAUTH:
+    if CLIENT_SEC == "test-client-secret":
+        raise RuntimeError("GRAO_CLIENT_SECRET must be set")
+    if JWT_SECRET == "dev-jwt-secret":
+        raise RuntimeError("JWT_SECRET must be set")
+else:
+    print("WARNING: mock login has no CSRF protection; do not use in production")
+
+if PRIVATE_KEY == "0x" + "0" * 64:
+    raise RuntimeError("ORCHESTRATOR_KEY must be configured")
 
 if USE_REAL_OAUTH:
     if CLIENT_SEC == "test-client-secret":
@@ -174,8 +219,8 @@ def initiate():
     </html>
     """
         response = HTMLResponse(html)
+        print("HEIII")
 
-    print("HEIII")
     return response
 
 
@@ -249,15 +294,8 @@ def post_eligibility(
 ):
     user = get_user_id(authorization)
     day = datetime.utcnow().strftime("%Y-%m-%d")
-    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
-    if pr:
-        if pr.count >= PROOF_QUOTA:
-            raise HTTPException(429, "proof quota exceeded")
-        pr.count += 1
-    else:
-        pr = ProofRequest(user=user, day=day, count=1)
-        db.add(pr)
-    db.commit()
+    if not increment_quota(db, user, day):
+        raise HTTPException(429, "proof quota exceeded")
 
     curve = x_curve.lower() if x_curve else "bn254"
     cached = cache_get("eligibility", payload.dict(), curve)
@@ -287,15 +325,8 @@ def post_voice(
 ):
     user = get_user_id(authorization)
     day = datetime.utcnow().strftime("%Y-%m-%d")
-    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
-    if pr:
-        if pr.count >= PROOF_QUOTA:
-            raise HTTPException(429, "proof quota exceeded")
-        pr.count += 1
-    else:
-        pr = ProofRequest(user=user, day=day, count=1)
-        db.add(pr)
-    db.commit()
+    if not increment_quota(db, user, day):
+        raise HTTPException(429, "proof quota exceeded")
 
     curve = x_curve.lower() if x_curve else "bn254"
     cached = cache_get("voice", payload.dict(), curve)
@@ -325,15 +356,8 @@ def post_batch_tally(
 ):
     user = get_user_id(authorization)
     day = datetime.utcnow().strftime("%Y-%m-%d")
-    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
-    if pr:
-        if pr.count >= PROOF_QUOTA:
-            raise HTTPException(429, "proof quota exceeded")
-        pr.count += 1
-    else:
-        pr = ProofRequest(user=user, day=day, count=1)
-        db.add(pr)
-    db.commit()
+    if not increment_quota(db, user, day):
+        raise HTTPException(429, "proof quota exceeded")
 
     curve = x_curve.lower() if x_curve else "bn254"
     cached = cache_get("batch_tally", payload.dict(), curve)
