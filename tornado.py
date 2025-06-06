@@ -102,8 +102,10 @@ def main():
     ignore_file = os.path.join(args.folder, args.ignore)
     keep_file = os.path.join(args.folder, args.keep) if args.keep else None
 
+    # save to file and copy to clipboard
+
     with open(args.output, 'w', encoding='utf-8') as out:
-        out.write("Here is the code so far:\n\n")
+        out.write("Here is the code for my decentralized voting app so far:\n\n")
         
         process_folder(args.folder, out, ignore_file, keep_file)
 
