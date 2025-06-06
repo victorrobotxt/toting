@@ -126,39 +126,35 @@ REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
 PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 def increment_quota(db: Session, user: str, day: str) -> bool:
-    """Atomically increment daily proof counter, enforcing the quota."""
-    updated = (
-        db.query(ProofRequest)
-        .filter(
-            ProofRequest.user == user,
-            ProofRequest.day == day,
-            ProofRequest.count < PROOF_QUOTA,
+    """Atomically increment daily proof counter using ``INSERT ... ON CONFLICT``."""
+    if db.bind.dialect.name == "postgresql":
+        ins = pg_insert(ProofRequest)
+    elif db.bind.dialect.name == "sqlite":
+        ins = sqlite_insert(ProofRequest)
+    else:
+        ins = insert(ProofRequest)
+
+    stmt = (
+        ins.values(user=user, day=day, count=1)
+        .on_conflict_do_update(
+            index_elements=[ProofRequest.user, ProofRequest.day],
+            set_={ProofRequest.count: ProofRequest.count + 1},
+            where=ProofRequest.count < PROOF_QUOTA,
         )
-        .update({ProofRequest.count: ProofRequest.count + 1})
+        .returning(ProofRequest.count)
     )
-    if updated:
-        db.commit()
-        return True
-    try:
-        db.add(ProofRequest(user=user, day=day, count=1))
-        db.commit()
-        return True
-    except IntegrityError:
-        db.rollback()
-        updated = (
-            db.query(ProofRequest)
-            .filter(
-                ProofRequest.user == user,
-                ProofRequest.day == day,
-                ProofRequest.count < PROOF_QUOTA,
-            )
-            .update({ProofRequest.count: ProofRequest.count + 1})
-        )
-        db.commit()
-        return bool(updated)
+
+    result = db.execute(stmt)
+    new_count = result.scalar_one_or_none()
+    result.close()
+    db.commit()
+    return new_count is not None and new_count <= PROOF_QUOTA
 
 if USE_REAL_OAUTH:
     if CLIENT_SEC == "test-client-secret":
