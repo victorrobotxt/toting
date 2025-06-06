@@ -52,6 +52,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     environment:
+      NEXT_PUBLIC_API_BASE: http://backend:8000
       NEXT_PUBLIC_ENTRYPOINT: ${NEXT_PUBLIC_ENTRYPOINT:-0xYourEntryPointAddress}
       NEXT_PUBLIC_WALLET_FACTORY: ${NEXT_PUBLIC_WALLET_FACTORY:-0xYourFactoryAddress}
       NEXT_PUBLIC_ELECTION_MANAGER: ${NEXT_PUBLIC_ELECTION_MANAGER:-0x5FbDB2315678afecb367f032d93F642f64180aa3}

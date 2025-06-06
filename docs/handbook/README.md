@@ -21,6 +21,10 @@ configuration sets `EVM_RPC` along with `CELERY_BROKER` and
 `CELERY_BACKEND` so it can talk to the `anvil` and `redis` services. If you
 run the backend on its own, provide these variables manually.
 
+When running the frontend container, set `NEXT_PUBLIC_API_BASE` to
+`http://backend:8000` so the web UI can reach the API service within the
+Compose network.
+
 The frontend will be available on `http://localhost:3000`, the API on
 `http://localhost:8000` and Postgres on `localhost:5432`.
 
