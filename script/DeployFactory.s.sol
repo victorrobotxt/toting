@@ -5,7 +5,7 @@ import "../contracts/Verifier.sol";
 import "../contracts/WalletFactory.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
 
-contract VerifierStub is Verifier {
+contract UnsafeVerifierStub is Verifier {
     function verifyProof(
         uint256[2] calldata a,
         uint256[2][2] calldata b,
@@ -18,8 +18,9 @@ contract VerifierStub is Verifier {
 
 contract DeployFactory is Script {
     function run() external {
+        require(block.chainid == 31337, "Unsafe verifier on non-test chain");
         vm.startBroadcast();
-        VerifierStub vs = new VerifierStub();
+        UnsafeVerifierStub vs = new UnsafeVerifierStub();
         WalletFactory factory = new WalletFactory(
             EntryPoint(payable(address(0))),
             vs

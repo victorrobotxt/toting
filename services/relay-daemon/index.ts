@@ -16,7 +16,8 @@ let EVM_RPC = process.env.EVM_RPC || 'http://127.0.0.1:8545';
 // (Removed the “anvil → 127.0.0.1” rewrite because inside Docker that was pointing at loopback, causing ECONNREFUSED.)
 
 const SOLANA_RPC = process.env.SOLANA_RPC || 'http://localhost:8899';
-const POSTGRES_URL = process.env.POSTGRES_URL || 'postgres://postgres:pass@localhost:5432/postgres';
+const POSTGRES_URL = process.env.POSTGRES_URL as string;
+if (!POSTGRES_URL) throw new Error('POSTGRES_URL env var required');
 const ELECTION_MANAGER = process.env.ELECTION_MANAGER as string;
 const POLL_INTERVAL = Number(process.env.POLL_INTERVAL || '10000');
 const PROM_PORT = Number(process.env.PROM_PORT || '9300');

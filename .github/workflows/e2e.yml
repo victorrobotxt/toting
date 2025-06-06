@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       anvil:
-        image: ghcr.io/foundry-rs/foundry:latest
+        image: ghcr.io/foundry-rs/foundry:1.0.0
         options: >-
           --health-cmd "anvil --version" --health-interval 10s --health-timeout 5s --health-retries 5
         ports:

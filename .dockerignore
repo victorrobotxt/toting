@@ -27,3 +27,7 @@ proofs
 # Solana build output
 solana-programs/**/target
 !solana-programs/election/target/idl
+
+# Large source directories not needed for orchestrator image
+contracts
+circuits
