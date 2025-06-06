@@ -7,9 +7,9 @@ const ELECTION_MANAGER_ADDR = process.env.NEXT_PUBLIC_ELECTION_MANAGER!;
 const BUNDLER_RPC_URL = process.env.NEXT_PUBLIC_BUNDLER_URL!;
 
 async function getAccountAPI(signer: ethers.Signer) {
-    const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+    const provider = signer.provider ?? new ethers.providers.Web3Provider((window as any).ethereum);
     return new SimpleAccountAPI({
-        provider,
+        provider: provider as ethers.providers.Web3Provider,
         entryPointAddress: ENTRY_POINT_ADDRESS,
         owner: signer,
         factoryAddress: WALLET_FACTORY_ADDRESS,
