@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../lib/AuthProvider';
+import { apiUrl } from '../lib/api';
 
 export default function MockLoginModal({ onClose }: { onClose: () => void }) {
   const { login } = useAuth();
@@ -33,7 +34,7 @@ export default function MockLoginModal({ onClose }: { onClose: () => void }) {
 
   const submit = async () => {
     if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { setError('invalid email'); return; }
-    const res = await fetch(`http://localhost:8000/auth/callback?user=${encodeURIComponent(email)}`);
+    const res = await fetch(`${apiUrl('/auth/callback')}?user=${encodeURIComponent(email)}`);
     const data = await res.json();
     if (data.id_token) {
       login(data.id_token, data.eligibility, 'mock');

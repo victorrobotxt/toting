@@ -9,6 +9,7 @@ import { useToast } from "../lib/ToastProvider";
 import { NotEligible } from "../components/ZeroState";
 import HelpTip from "../components/HelpTip";
 import ProgressOverlay from "../components/ProgressOverlay";
+import { apiUrl } from "../lib/api";
 
 function VotePage() {
     const router = useRouter();
@@ -24,7 +25,7 @@ function VotePage() {
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
         const payload = { credits: [option], nonce: 1 };
-        const res = await fetch(`http://localhost:8000/api/zk/voice`, {
+        const res = await fetch(apiUrl('/api/zk/voice'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ function VotePage() {
         const job = await res.json();
         setJobId(job.job_id);
         setLoading(true);
-        const out = await fetch(`http://localhost:8000/api/zk/voice/${job.job_id}`).then(r => r.json());
+        const out = await fetch(`${apiUrl('/api/zk/voice/')}${job.job_id}`).then(r => r.json());
         if (out.status !== 'done') {
             showToast({ type: 'error', message: 'proof error' });
             setLoading(false);

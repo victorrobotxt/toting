@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import NavBar from '../components/NavBar';
 import { useAuth } from '../lib/AuthProvider';
+import { apiUrl } from '../lib/api';
 
 export default function DevPage() {
   const { token, mode, setMode } = useAuth();
@@ -8,7 +9,7 @@ export default function DevPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('http://localhost:8000/api/quota', {
+    fetch(apiUrl('/api/quota'), {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.ok ? r.json() : { left: 0 })

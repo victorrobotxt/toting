@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../lib/AuthProvider';
 import MockLoginModal from '../components/MockLoginModal';
 import { useI18n } from '../lib/I18nProvider';
+import { apiUrl } from '../lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function LoginPage() {
     setMode('eid');
     setFlowAborted(false);
     try {
-      const res = await fetch('http://localhost:8000/auth/initiate', { redirect: 'manual' });
+      const res = await fetch(apiUrl('/auth/initiate'), { redirect: 'manual' });
       const location = res.status >= 300 && res.status < 400 ? res.headers.get('Location') : undefined;
       if (res.ok && res.headers.get('content-type')?.includes('text/html') && !location) {
         const html = await res.text();
@@ -40,7 +41,7 @@ export default function LoginPage() {
         }
         return;
       }
-      const url = location || 'http://localhost:8000/auth/initiate';
+      const url = location || apiUrl('/auth/initiate');
       const popup = window.open(url, 'login', 'width=500,height=600');
       if (popup) {
         poll = window.setInterval(() => {

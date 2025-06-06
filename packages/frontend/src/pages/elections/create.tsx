@@ -6,6 +6,7 @@ import NavBar from '../../components/NavBar';
 import { useToast } from '../../lib/ToastProvider';
 import GateBanner from '../../components/GateBanner';
 import { useSWRConfig } from 'swr';
+import { apiUrl, jsonFetcher } from '../../lib/api';
 
 interface Election {
   id: number;
@@ -30,20 +31,35 @@ function CreateElectionPage() {
 
   const handleSubmit = async () => {
     setLoading(true);
-    const res = await fetch('http://localhost:8000/elections', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ meta_hash: hash }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(apiUrl('/elections'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ meta_hash: hash }),
+      });
+    } catch (e: any) {
+      showToast({ type: 'error', message: e.message || 'network error' });
+      setLoading(false);
+      return;
+    }
     if (res.ok) {
       const data: Election = await res.json();
-      mutate(['/elections', token] as any, (curr: Election[] = []) => [...curr, data], false);
+      mutate(['/elections', token] as any, async () => {
+        const fresh = await jsonFetcher(['/elections', token]);
+        return [...fresh, data];
+      });
       router.push(`/elections/${data.id}`);
     } else {
-      showToast({ type: 'error', message: 'Failed to create' });
+      try {
+        const err = await res.json();
+        showToast({ type: 'error', message: err.detail || 'Failed to create' });
+      } catch {
+        showToast({ type: 'error', message: 'Failed to create' });
+      }
     }
     setLoading(false);
   };

@@ -15,7 +15,7 @@ interface IMACI {
 contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     IMACI public maci;
     TallyVerifier public tallyVerifier;
-    bool public tallied;
+    bool public tallied; // slot from V1
 
     struct Election {
         uint256 start;
@@ -24,6 +24,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
 
     mapping(uint256 => Election) public elections;
     uint256 public nextId;
+    uint256[2] public result; // [A, B] tally result
 
     /// @dev initializer replaces constructor for upgradeable contracts
     function initialize(IMACI _maci) public initializer {
@@ -60,7 +61,12 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         uint256[7] calldata pubSignals
     ) external onlyOwner {
         require(!tallied, "already tallied");
-        require(tallyVerifier.verifyProof(a, b, c, pubSignals), "invalid tally proof");
+        require(
+            tallyVerifier.verifyProof(a, b, c, pubSignals),
+            "invalid tally proof"
+        );
+        result[0] = pubSignals[0];
+        result[1] = pubSignals[1];
         emit Tally(pubSignals[0], pubSignals[1]);
         tallied = true;
     }

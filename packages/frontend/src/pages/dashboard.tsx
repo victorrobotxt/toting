@@ -5,6 +5,7 @@ import NavBar from '../components/NavBar';
 import Link from 'next/link';
 import Skeleton from '../components/Skeleton';
 import { NoElections } from '../components/ZeroState';
+import { jsonFetcher } from '../lib/api';
 
 interface Election {
   id: number;
@@ -15,12 +16,8 @@ interface Election {
   tally?: string;
 }
 
-const fetcher = ([url, token]: [string, string]) => fetch(`http://localhost:8000${url}`, {
-  headers: { Authorization: `Bearer ${token}` }
-}).then(r => {
-  if (!r.ok) throw new Error(r.statusText);
-  return r.json();
-});
+const fetcher = ([url, token]: [string, string]) =>
+  jsonFetcher([url, token]);
 
 function DashboardPage() {
   const { token, logout, eligibility } = useAuth();
