@@ -39,10 +39,15 @@ contract QVManagerTypedTest is Test {
         uint256[2] memory c;
         uint256[7] memory inputs;
         bytes memory ballot = hex"deadbeef";
-        bytes32 digest = manager.hashTypedDataV4(keccak256(abi.encode(
-            keccak256("Ballot(bytes32 ballotHash)"),
-            keccak256(ballot)
-        )));
+        bytes32 digest = manager.hashTypedDataV4(
+            keccak256(
+                abi.encode(
+                    keccak256("Ballot(address voter, bytes32 ballotHash)"),
+                    vm.addr(1),
+                    keccak256(ballot)
+                )
+            )
+        );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, digest);
         bytes memory sig = abi.encodePacked(r, s, v);
         vm.prank(vm.addr(1));
