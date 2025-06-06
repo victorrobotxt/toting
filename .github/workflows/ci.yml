@@ -68,6 +68,17 @@ jobs:
       - name: Type-check frontend
         run: yarn --cwd packages/frontend type-check
 
+      - name: Cache PTAU file
+        id: cache-ptau
+        uses: actions/cache@v4
+        with:
+          path: pot12_final.ptau
+          key: ptau-v1
+
+      - name: Download PTAU file
+        if: steps.cache-ptau.outputs.cache-hit != 'true'
+        run: curl -L https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_12.ptau -o pot12_final.ptau
+
       # ─── Circom compilation ──────────────────────────────────────────────
       - name: Compile Circom circuits (multi-curve)
         run: |
