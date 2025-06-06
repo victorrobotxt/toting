@@ -14,14 +14,14 @@ function makeToken(role) {
 
 describe('account menu role switcher', () => {
   beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
     router.setCurrentUrl('/');
   });
 
   test('admin sees role switch option', () => {
-    localStorage.setItem('id_token', makeToken('admin'));
-    localStorage.setItem('eligibility', 'true');
-    localStorage.setItem('auth_mode', 'eid');
+    sessionStorage.setItem('id_token', makeToken('admin'));
+    sessionStorage.setItem('eligibility', 'true');
+    sessionStorage.setItem('auth_mode', 'eid');
     const { getByLabelText, getByText } = render(
       <I18nProvider>
         <AuthProvider>
@@ -34,9 +34,9 @@ describe('account menu role switcher', () => {
   });
 
   test('user does not see role switch option', () => {
-    localStorage.setItem('id_token', makeToken('user'));
-    localStorage.setItem('eligibility', 'true');
-    localStorage.setItem('auth_mode', 'eid');
+    sessionStorage.setItem('id_token', makeToken('user'));
+    sessionStorage.setItem('eligibility', 'true');
+    sessionStorage.setItem('auth_mode', 'eid');
     const { getByLabelText, queryByText } = render(
       <I18nProvider>
         <AuthProvider>

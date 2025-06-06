@@ -14,7 +14,7 @@ The following product backlog items (PBIs) capture upcoming UI and UX work.
 | **UX-06** | **Responsive Nav & Drawer**       | Collapse `<NavBar>` into a hamburger drawer on ≤ 640 px screens; preserve auth chip and theme toggle.                                                             |
 | **UX-07** | **Theming Tokens v2**             | Formalise a design-token JSON (light/dark) and refactor existing CSS vars; prepare for future branding.                                                           |
 | **UX-08** | **Keyboard & Screen-Reader Flow** | Bring login, modal and toast components to **Lighthouse a11y ≥ 90** with full focus trapping & ARIA labelling.                                                    |
-| **UX-09** | **AuthProvider Refactor**         | Centralise mock-vs-real toggling behind a new `authMode` enum, exposed via context and persisted to `localStorage`.                                               |
+| **UX-09** | **AuthProvider Refactor**         | Centralise mock-vs-real toggling behind a new `authMode` enum, exposed via context and persisted to `sessionStorage`.                                               |
 | **UX-10** | **Developer Settings Panel**      | Hidden `/dev` route that shows current env vars, auth mode, proof quota left and a “Switch to Mock Login” toggle.                                                 |
 | **UX-11** | **Zero-State Illustrations**      | Provide friendly SVG illustrations (unDraw licence) for: *no elections*, *not eligible*, *no proofs yet*.                                                         |
 | **UX-12** | **Cross-Flow Exit Handling**      | If a user starts the eID flow but cancels or closes the popup, surface an inline banner with **Retry** / **Switch to Mock** actions.                              |
@@ -40,7 +40,7 @@ The following product backlog items (PBIs) capture upcoming UI and UX work.
 * **Design**: Two equal buttons (primary = eID, secondary = Mock) with descriptive sub-text.
 * **Behaviour**
   * Clicking **eID** behaves exactly as today.
-  * Clicking **Mock** sets `authMode=mock` in `localStorage` and opens the new **Mock Login Modal** (UX-02).
+  * Clicking **Mock** sets `authMode=mock` in `sessionStorage` and opens the new **Mock Login Modal** (UX-02).
 * **Analytics**: emit `auth_mode_selected` event with `{ mode }`.
 * **Dependencies**: None explicit – first item to implement.
 
