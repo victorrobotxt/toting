@@ -74,7 +74,13 @@ function VotePage() {
         const vcProof = out.proof;
         const nonce = 1; // (the same nonce you passed above)
   
-        const userOpHash = await bundleSubmitVote(signer, /* option= */ out.pubSignals![0] /* or your stored option */, nonce, vcProof);
+        const userOpHash = await bundleSubmitVote(
+          signer,
+          Number(id!),
+          /* option= */ out.pubSignals![0] /* or your stored option */,
+          nonce,
+          vcProof
+        );
         setReceipt(userOpHash);
       } catch (err: any) {
         showToast({ type: 'error', message: err.message || 'proof error' });
