@@ -53,6 +53,9 @@ export default function NavBar() {
       )}
       <ThemeToggle />
       <AuthChip />
+      {(role === 'admin' || role === 'verifier') && (
+        <div style={{background:'red',color:'white',textAlign:'center',padding:'0.25rem'}}>frontend-only role, not enforced</div>
+      )}
     </>
   );
 }
