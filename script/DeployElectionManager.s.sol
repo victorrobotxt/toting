@@ -3,15 +3,21 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import "../contracts/ElectionManager.sol";
+import "../contracts/MockMACI.sol";
 
-/// @dev IMACI is the interface in ElectionManager.sol,
-/// but for event-emission we don't need a real implementation,
-/// so we can pass address(0).
+/// @dev Deploy a MockMACI and wire it into ElectionManager so that enqueueMessage() won't revert.
 contract DeployElectionManager is Script {
     function run() external {
         vm.startBroadcast();
-        ElectionManager mgr = new ElectionManager(IMACI(address(0)));
+
+        // Deploy the MACI stub first
+        MockMACI maci = new MockMACI();
+
+        // Pass the stub’s address into ElectionManager
+        ElectionManager mgr = new ElectionManager(maci);
+        console.log("MockMACI deployed to:", address(maci));
         console.log("ElectionManager deployed to:", address(mgr));
+
         vm.stopBroadcast();
     }
 }

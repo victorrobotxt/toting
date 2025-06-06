@@ -8,22 +8,13 @@ import { AnchorProvider, Program, setProvider } from '@coral-xyz/anchor';
 import fs from 'fs';
 import path from 'path';
 
-// Load the IDL at runtime so the path resolves correctly when the script
-// is executed from the compiled `dist` directory.
+// Load the IDL at runtime
 const idlPath = path.join(__dirname, '..', '..', '..', 'solana-programs', 'election', 'target', 'idl', 'election_mirror.json');
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8'));
 
 let EVM_RPC = process.env.EVM_RPC || 'http://127.0.0.1:8545';
-// Allow running outside docker by translating the default 'anvil' hostname
-try {
-  const url = new URL(EVM_RPC);
-  if (url.hostname === 'anvil') {
-    url.hostname = '127.0.0.1';
-    EVM_RPC = url.toString();
-  }
-} catch {
-  // ignore malformed URL and use as-is
-}
+// (Removed the “anvil → 127.0.0.1” rewrite because inside Docker that was pointing at loopback, causing ECONNREFUSED.)
+
 const SOLANA_RPC = process.env.SOLANA_RPC || 'http://localhost:8899';
 const POSTGRES_URL = process.env.POSTGRES_URL || 'postgres://postgres:pass@localhost:5432/postgres';
 const ELECTION_MANAGER = process.env.ELECTION_MANAGER as string;

@@ -29,7 +29,7 @@ function VotePage() {
       const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       await provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
-  
+
       // 1a) POST to /api/zk/voice
       const payload = { credits: [option], nonce: 1 };
       const res = await fetch(apiUrl('/api/zk/voice'), {
@@ -44,16 +44,14 @@ function VotePage() {
         showToast({ type: 'error', message: 'quota exceeded' });
         return;
       }
-  
-      const { job_id } = await res.json();      // { job_id: "…" }
+
+      const { job_id } = await res.json(); // { job_id: "…" }
       setJobId(job_id);
       setLoading(true);
-  
-      // At this point, `ProgressOverlay` will appear.  Once it signals onDone(), we'll fetch the result.
-      //
-      // NOTE: Do *not* fetch /api/zk/voice/{job_id} immediately here.  Wait for the WS to say "done".
+
+      // At this point, `ProgressOverlay` will appear. Once it signals onDone(), we'll fetch the result.
     };
-  
+
     // 2) Once ProgressOverlay calls onDone(), fetch final proof and do the wallet operation:
     const onProofDone = async () => {
       if (!jobId) return;
@@ -73,23 +71,25 @@ function VotePage() {
         const signer = provider.getSigner();
         const vcProof = out.proof;
         const nonce = 1; // (the same nonce you passed above)
-  
+
         const userOpHash = await bundleSubmitVote(
           signer,
           Number(id!),
-          /* option= */ out.pubSignals![0] /* or your stored option */,
+          /* option= */ out.pubSignals![0], // or your stored option
           nonce,
           vcProof
         );
         setReceipt(userOpHash);
       } catch (err: any) {
-        showToast({ type: 'error', message: err.message || 'proof error' });
+        // Extract revert reason when possible
+        const m = /reverted with reason string '([^']+)'/.exec(err.message || "");
+        showToast({ type: 'error', message: m ? m[1] : 'tx reverted' });
       } finally {
         setLoading(false);
         setJobId(null);
       }
     };
-  
+
     // 3) Render:
     const overlay = jobId && loading ? (
      <ProgressOverlay jobId={jobId} onDone={onProofDone} />
