@@ -5,6 +5,10 @@ import { bundleCreateWallet } from "../lib/accountAbstraction";
 export default function MintPage() {
     const [txHash, setTxHash] = useState<string>();
     const onMint = async () => {
+        if (!(window as any).ethereum) {
+            alert('No Ethereum wallet detected');
+            return;
+        }
         const provider = new ethers.providers.Web3Provider((window as any).ethereum);
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();

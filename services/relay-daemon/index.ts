@@ -24,7 +24,8 @@ const BRIDGE_SK = process.env.SOLANA_BRIDGE_SK as string;
 if (!ELECTION_MANAGER) throw new Error('ELECTION_MANAGER env var required');
 if (!BRIDGE_SK) throw new Error('SOLANA_BRIDGE_SK env var required');
 
-const ethProvider = new ethers.providers.JsonRpcProvider(EVM_RPC);
+const CHAIN_ID = Number(process.env.CHAIN_ID || '1337');
+const ethProvider = new ethers.providers.StaticJsonRpcProvider(EVM_RPC, { chainId: CHAIN_ID, name: 'local' });
 const iface = new ethers.utils.Interface(['event Tally(uint256,uint256)']);
 const pool = new Pool({ connectionString: POSTGRES_URL });
 

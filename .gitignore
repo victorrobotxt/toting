@@ -14,3 +14,4 @@ packages/frontend/.next
 artifacts/
 !artifacts/
 !artifacts/manifest.json
+services/relay-daemon/dist

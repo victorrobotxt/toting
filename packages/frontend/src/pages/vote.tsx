@@ -21,6 +21,10 @@ function VotePage() {
     const id = router.query.id as string | undefined;
 
     const cast = async (option: 0 | 1) => {
+        if (!(window as any).ethereum) {
+            showToast({ type: 'error', message: 'No Ethereum wallet detected' });
+            return;
+        }
         const provider = new ethers.providers.Web3Provider((window as any).ethereum);
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
