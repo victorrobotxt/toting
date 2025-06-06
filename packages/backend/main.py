@@ -1,3 +1,5 @@
+# packages/backend/main.py
+
 from fastapi import FastAPI, HTTPException, Depends, Header, WebSocket, Request
 from datetime import datetime
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
@@ -11,7 +13,8 @@ from typing import Optional
 import asyncio
 from web3 import Web3
 from eth_account import Account
-from web3.middleware import geth_poa_middleware
+# --- FIX: Update to the new middleware name and import path ---
+from web3.middleware.geth import geth_poa_middleware
 
 from .db import SessionLocal, Base, engine, Election, ProofRequest, ProofAudit
 from .schemas import (
@@ -24,6 +27,9 @@ from .schemas import (
     ProofAuditSchema,
 )
 from .proof import celery_app, generate_proof, cache_get
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
+
 
 app = FastAPI()
 
@@ -69,7 +75,7 @@ ELECTION_MANAGER = Web3.to_checksum_address(
 PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY", "0x" + "0" * 64)
 CHAIN_ID = int(os.getenv("CHAIN_ID", "31337"))
 
-# Minimal ABI for createElection function
+# --- FIX: Expanded ABI to include the ElectionCreated event ---
 EM_ABI = json.loads("""
 [
     {
@@ -78,6 +84,15 @@ EM_ABI = json.loads("""
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {"indexed": false, "internalType": "uint256", "name": "id", "type": "uint256"},
+            {"indexed": true, "internalType": "bytes32", "name": "meta", "type": "bytes32"}
+        ],
+        "name": "ElectionCreated",
+        "type": "event"
     }
 ]
 """)
@@ -101,7 +116,7 @@ def create_election_onchain(account, contract, meta_hash: bytes) -> str:
     signed_tx = account.sign_transaction(txn)
 
     # 3) Send using the new `.raw_transaction` field (Web3.py v6+)
-    tx_hash_bytes = web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    tx_hash_bytes = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
     # 4) Return the hex string of the tx hash
     return tx_hash_bytes.hex()
@@ -127,50 +142,37 @@ JWT_SECRET = os.getenv("JWT_SECRET", "dev-jwt-secret")
 REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
 PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import insert
-from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-
+# --- FIX: Correct and simplified quota increment function ---
 def increment_quota(db: Session, user: str, day: str) -> bool:
-    """Atomically increment daily proof counter using ``INSERT ... ON CONFLICT``."""
+    """Atomically increment daily proof counter."""
     if db.bind.dialect.name == "postgresql":
-        ins = pg_insert(ProofRequest)
-    elif db.bind.dialect.name == "sqlite":
-        ins = sqlite_insert(ProofRequest)
-    else:
-        ins = insert(ProofRequest)
-
-    stmt = (
-        ins.values(user=user, day=day, count=1)
-        .on_conflict_do_update(
-            index_elements=[ProofRequest.user, ProofRequest.day],
-            set_={ProofRequest.count: ProofRequest.count + 1},
-            where=ProofRequest.count < PROOF_QUOTA,
+        # Use native ON CONFLICT for Postgres for atomicity and performance
+        stmt = pg_insert(ProofRequest).values(user=user, day=day, count=1)
+        update_stmt = stmt.on_conflict_do_update(
+            index_elements=['user', 'day'],
+            set_=dict(count=ProofRequest.count + 1),
+            where=(ProofRequest.count < PROOF_QUOTA)
         )
-        .update({ProofRequest.count: ProofRequest.count + 1}, synchronize_session=False)
-    )
-    if updated:
+        result = db.execute(update_stmt)
         db.commit()
-        return True
-    try:
-        db.add(ProofRequest(user=user, day=day, count=1))
-        db.commit()
-        return True
-    except IntegrityError:
-        db.rollback()
-        updated = (
-            db.query(ProofRequest)
-            .filter(
+        # If the WHERE clause failed (quota exceeded), no row is updated.
+        return result.rowcount > 0
+    else:
+        # Fallback for SQLite (less atomic but sufficient for testing)
+        try:
+            db.add(ProofRequest(user=user, day=day, count=1))
+            db.commit()
+            return True
+        except IntegrityError:
+            db.rollback()
+            updated_rows = db.query(ProofRequest).filter(
                 ProofRequest.user == user,
                 ProofRequest.day == day,
-                ProofRequest.count < PROOF_QUOTA,
-            )
-            .update({ProofRequest.count: ProofRequest.count + 1}, synchronize_session=False)
-        )
-        db.commit()
-        return bool(updated)
+                ProofRequest.count < PROOF_QUOTA
+            ).update({"count": ProofRequest.count + 1}, synchronize_session=False)
+            db.commit()
+            return bool(updated_rows)
 
 if USE_REAL_OAUTH:
     if CLIENT_SEC == "test-client-secret":
@@ -248,17 +250,27 @@ def create_election(payload: CreateElectionSchema, db: Session = Depends(get_db)
     account = Account.from_key(PRIVATE_KEY)
     contract = web3.eth.contract(address=ELECTION_MANAGER, abi=EM_ABI)
     
-    # The contract expects bytes32, so we convert the hex string from the payload
     meta_bytes = Web3.to_bytes(hexstr=payload.meta_hash)
     
     tx_hash = create_election_onchain(account, contract, meta_bytes)
     
-    # Wait for the transaction receipt to get the block number
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    
+    # --- FIX: Process logs to get the real on-chain ID ---
+    logs = contract.events.ElectionCreated().process_receipt(receipt)
+    if not logs:
+        raise HTTPException(status_code=500, detail="ElectionCreated event not found in transaction")
+    
+    event_args = logs[0]['args']
+    on_chain_id = event_args.id
     start_block = receipt.blockNumber
     
+    # Use the on_chain_id from the event as the primary key
     election = Election(
-        meta=payload.meta_hash, start=start_block, end=start_block + 7200
+        id=on_chain_id,
+        meta=payload.meta_hash, 
+        start=start_block, 
+        end=start_block + 7200
     )
     db.add(election)
     db.commit()
@@ -303,8 +315,6 @@ def post_proof_generic(
     x_curve: str | None = Header("bn254", alias="x-curve"),
     db: Session = Depends(get_db),
 ):
-    # This is a generic handler, you might need more specific validation
-    # based on the circuit name. For now, it's a catch-all.
     user = get_user_id(authorization)
     day = datetime.utcnow().strftime("%Y-%m-%d")
     if not increment_quota(db, user, day):
@@ -312,7 +322,6 @@ def post_proof_generic(
 
     curve = x_curve.lower() if x_curve else "bn254"
     
-    # We need to parse the JSON body manually for the generic endpoint
     try:
         payload = asyncio.run(request.json())
     except json.JSONDecodeError:

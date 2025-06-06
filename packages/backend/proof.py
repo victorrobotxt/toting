@@ -3,11 +3,7 @@ import json
 import hashlib
 from datetime import datetime
 from celery import Celery
-
 from .db import SessionLocal, Circuit, ProofAudit, Base, engine
-
-# Ensure all tables (including `circuits`) exist before any tasks run
-Base.metadata.create_all(bind=engine)
 
 # simple in-memory cache (used in tests when Redis unavailable)
 PROOF_CACHE: dict[str, dict] = {}

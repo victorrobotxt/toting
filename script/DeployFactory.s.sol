@@ -1,3 +1,4 @@
+// script/DeployFactory.s.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
@@ -19,13 +20,23 @@ contract UnsafeVerifierStub is Verifier {
 contract DeployFactory is Script {
     function run() external {
         require(block.chainid == 31337, "Unsafe verifier on non-test chain");
-        vm.startBroadcast();
+
+        // Read the private key from the environment.
+        uint256 deployerPrivateKey = vm.envUint("ORCHESTRATOR_KEY");
+        if (deployerPrivateKey == 0) {
+            revert("ORCHESTRATOR_KEY environment variable not set or invalid.");
+        }
+
+        // Start broadcasting transactions signed with this specific private key.
+        vm.startBroadcast(deployerPrivateKey);
+
         UnsafeVerifierStub vs = new UnsafeVerifierStub();
         WalletFactory factory = new WalletFactory(
             EntryPoint(payable(address(0))),
             vs
         );
         console.log("Factory deployed at:", address(factory));
+        
         vm.stopBroadcast();
     }
 }

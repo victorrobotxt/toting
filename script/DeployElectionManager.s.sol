@@ -1,3 +1,4 @@
+// script/DeployElectionManager.s.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -8,7 +9,12 @@ import "../contracts/MockMACI.sol";
 /// @dev Deploy a MockMACI and wire it into ElectionManager so that enqueueMessage() won't revert.
 contract DeployElectionManager is Script {
     function run() external {
-        vm.startBroadcast();
+        uint256 deployerPrivateKey = vm.envUint("ORCHESTRATOR_KEY");
+        if (deployerPrivateKey == 0) {
+            revert("ORCHESTRATOR_KEY environment variable not set or invalid.");
+        }
+        
+        vm.startBroadcast(deployerPrivateKey);
 
         // Deploy the MACI stub first
         MockMACI maci = new MockMACI();

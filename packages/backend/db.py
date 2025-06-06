@@ -30,7 +30,8 @@ Base = declarative_base()
 
 class Election(Base):
     __tablename__ = "elections"
-    id = Column(Integer, primary_key=True, index=True)
+    # --- FIX: Disable autoincrement as the on-chain ID is the source of truth ---
+    id = Column(Integer, primary_key=True, index=True, autoincrement=False)
     meta = Column(String, nullable=False, unique=True)
     start = Column(BigInteger, nullable=False)
     end = Column(BigInteger, nullable=False)
@@ -76,4 +77,3 @@ class ProofAudit(Base):
     input_hash = Column(String, nullable=False)
     proof_root = Column(String, nullable=False, index=True)
     timestamp = Column(String, nullable=False)
-

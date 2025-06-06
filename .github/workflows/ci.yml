@@ -24,9 +24,6 @@ jobs:
       - name: Install Foundry toolchain
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Init Git submodules
-        run: git submodule update --init --recursive
-
       # ─── Forge tests: unit + fuzz (skip invariants) ────────────────────────
       - name: Run unit & fuzz tests
         run: forge test --no-match-contract InvariantTests --use ${{ matrix.solc }}
@@ -80,6 +77,11 @@ jobs:
         run: curl -L https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_12.ptau -o pot12_final.ptau
 
       # ─── Circom compilation ──────────────────────────────────────────────
+      - name: Install Python for build scripts
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
       - name: Compile Circom circuits (multi-curve)
         run: |
           for curve in bn254 bls12-381; do
@@ -152,8 +154,8 @@ jobs:
           python-version: 3.11
       - uses: foundry-rs/foundry-toolchain@v1
       - run: git submodule update --init --recursive
-      - name: Install Python deps
-        run: pip install web3 requests eth-account fastapi uvicorn sqlalchemy
+      - name: Install Python dependencies
+        run: pip install -r packages/backend/requirements.txt
       - name: Deploy factory
         run: |
           forge script script/DeployFactory.s.sol:DeployFactory \
@@ -207,4 +209,3 @@ jobs:
         with:
           token: ${{ secrets.PERCY_TOKEN }}
           command: percy snapshot packages/frontend --allowed-diff-percentage=0.1
-

@@ -59,33 +59,36 @@ services:
       EVM_RPC: http://anvil:8545
       CELERY_BROKER: redis://redis:6379/0
       CELERY_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgres://postgres:pass@db:5432/postgres
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
     ports:
       - "8000:8000"
     depends_on:
-      - redis
-      - db
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
 
   worker:
     build:
       context: .
       dockerfile: Dockerfile
-      target: backend
-    command: celery -A packages.backend.proof.celery_app worker --loglevel=info
+      target: worker
     environment:
       CELERY_BROKER: redis://redis:6379/0
       CELERY_BACKEND: redis://redis:6379/0
-      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
     depends_on:
-      - redis
-      - db
+      redis:
+        condition: service_started
+      db:
+        condition: service_healthy
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
     env_file:
-      - .env.deployed # <-- ADD THIS
+      - .env.deployed
     environment:
       # Keep non-contract specific vars here
       NEXT_PUBLIC_API_BASE: http://backend:8000
@@ -99,14 +102,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: orchestrator
     env_file:
-      - .env.deployed # <-- ADD THIS
+      - .env.deployed
     environment:
       EVM_RPC: http://anvil:8545
       EVM_MAX_RETRIES: "0"
-      # ELECTION_MANAGER is now in the env_file
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
     volumes:
+      - ./out/ElectionManagerV2.sol/ElectionManagerV2.json:/app/orchestrator/ElectionManagerV2.json:ro
       - ./circuits:/app/circuits:ro
     depends_on:
       - anvil
@@ -117,12 +121,11 @@ services:
       dockerfile: services/relay-daemon/Dockerfile
     restart: always
     env_file:
-      - .env.deployed # <-- ADD THIS
+      - .env.deployed
     environment:
       EVM_RPC: http://anvil:8545
       SOLANA_RPC: http://solana:8899
-      POSTGRES_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
-      # ELECTION_MANAGER is now in the env_file
+      POSTGRES_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
       SOLANA_BRIDGE_SK: ${SOLANA_BRIDGE_SK}
     ports:
       - "9300:9300"

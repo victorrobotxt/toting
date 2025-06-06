@@ -5,16 +5,15 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // Build a proper ws:// or wss:// URL from whatever apiUrl() returns
-    const httpUrl = apiUrl(`/ws/proofs/${jobId}`); // e.g. "http://backend:8000/ws/proofs/..."
-    const urlObj = new URL(httpUrl);
-    // switch protocol from 'http:' → 'ws:' (or 'https:' → 'wss:')
-    urlObj.protocol = urlObj.protocol === 'https:' ? 'wss:' : 'ws:';
-    // when API_BASE uses an internal hostname (e.g. "backend"), use browser host
-    if (urlObj.hostname !== window.location.hostname) {
-      urlObj.hostname = window.location.hostname;
-    }
-    const ws = new WebSocket(urlObj.toString());
+    // FIX: Simpler and more robust WebSocket URL construction
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Use the API base host if defined, otherwise fall back to the window's host.
+    // This correctly handles Docker's internal networking vs. local dev.
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE;
+    const host = apiBase ? new URL(apiBase).host : window.location.host;
+    const wsUrl = `${protocol}//${host}/ws/proofs/${jobId}`;
+    
+    const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (ev) => {
       const msg = JSON.parse(ev.data);
@@ -35,7 +34,9 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
     };
 
     return () => {
-      ws.close();
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
     };
   }, [jobId, onDone]);
 
