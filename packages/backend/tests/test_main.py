@@ -12,6 +12,7 @@ os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
 os.environ["CELERY_BROKER"] = "memory://"
 os.environ["CELERY_BACKEND"] = "cache+memory://"
 os.environ["PROOF_QUOTA"] = "3"
+os.environ["CIRCUIT_MANIFEST"] = os.path.join(os.path.dirname(__file__), "..", "..", "artifacts", "manifest.json")
 
 # allow "packages" imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
