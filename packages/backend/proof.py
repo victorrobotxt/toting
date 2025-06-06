@@ -4,7 +4,10 @@ import hashlib
 from datetime import datetime
 from celery import Celery
 
-from .db import SessionLocal, Circuit, ProofAudit
+from .db import SessionLocal, Circuit, ProofAudit, Base, engine
+
+# Ensure all tables (including `circuits`) exist before any tasks run
+Base.metadata.create_all(bind=engine)
 
 # simple in-memory cache (used in tests when Redis unavailable)
 PROOF_CACHE: dict[str, dict] = {}
@@ -24,7 +27,6 @@ DEFAULT_HASHES = {
     "batch_tally": {"bn254": BATCH_TALLY_HASH_BN254, "bls12-381": BATCH_TALLY_HASH_BLS},
 }
 
-
 def get_circuit_hash(name: str, curve: str = "bn254") -> str:
     db = SessionLocal()
     row = db.query(Circuit).filter_by(name=name, active=1).first()
@@ -33,13 +35,11 @@ def get_circuit_hash(name: str, curve: str = "bn254") -> str:
         return row.circuit_hash
     return DEFAULT_HASHES[name][curve]
 
-
 def cache_key(circuit: str, inputs: dict, curve: str) -> str:
     data = json.dumps(inputs, sort_keys=True).encode()
     return hashlib.sha256(
         data + get_circuit_hash(circuit, curve).encode()
     ).hexdigest()
-
 
 def cache_get(circuit: str, inputs: dict, curve: str):
     return PROOF_CACHE.get(cache_key(circuit, inputs, curve))

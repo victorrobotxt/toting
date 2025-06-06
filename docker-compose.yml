@@ -1,3 +1,4 @@
+version: "3.8"
 services:
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
@@ -45,6 +46,20 @@ services:
     ports:
       - "8000:8000"
     depends_on:
+      - redis
+      - db
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: celery -A packages.backend.proof.celery_app worker --loglevel=info
+    environment:
+      CELERY_BROKER: redis://redis:6379/0
+      CELERY_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgres://postgres:pass@db:5432/postgres
+    depends_on:
+      - redis
       - db
 
   frontend:
@@ -70,7 +85,7 @@ services:
       EVM_RPC: http://anvil:8545
       EVM_MAX_RETRIES: "0"
       ELECTION_MANAGER: ${ELECTION_MANAGER:-0x0000000000000000000000000000000000000000}
-      ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY:-0x0000000000000000000000000100000000000000000000000000000000000000}
+      ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY:-0x0000000000000000000100000000000000000000000000000000000000000000}
     volumes:
       - ./circuits:/app/circuits
     depends_on:
@@ -92,5 +107,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      anvil:
+        condition: service_started
       solana:
         condition: service_started
