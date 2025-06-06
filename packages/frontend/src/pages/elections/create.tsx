@@ -49,7 +49,7 @@ function CreateElectionPage() {
     if (res.ok) {
       const data: Election = await res.json();
       mutate(['/elections', token] as any, async () => {
-        const fresh = await jsonFetcher(['/elections', token]);
+        const fresh = await jsonFetcher(['/elections', token!]);
         return [...fresh, data];
       });
       router.push(`/elections/${data.id}`);
