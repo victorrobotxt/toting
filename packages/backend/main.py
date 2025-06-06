@@ -37,6 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Always expose CORS header even without Origin
 @app.middleware("http")
 async def add_cors_header(request: Request, call_next):
@@ -52,10 +53,13 @@ async def add_cors_header(request: Request, call_next):
         response.headers.setdefault("access-control-allow-origin", FRONTEND_ORIGIN)
     return response
 
+
 # On-chain ElectionManager config
 EVM_RPC = os.getenv("EVM_RPC", "http://127.0.0.1:8545")
-ELECTION_MANAGER = Web3.to_checksum_address(os.getenv("ELECTION_MANAGER", "0x" + "0"*40))
-PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY", "0x" + "0"*64)
+ELECTION_MANAGER = Web3.to_checksum_address(
+    os.getenv("ELECTION_MANAGER", "0x" + "0" * 40)
+)
+PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY", "0x" + "0" * 64)
 CHAIN_ID = int(os.getenv("CHAIN_ID", "1337"))
 EM_ABI = [
     {
@@ -66,6 +70,7 @@ EM_ABI = [
         "type": "function",
     }
 ]
+
 
 def create_election_onchain(meta: str) -> int:
     """Call the ElectionManager contract and return the start block number.
@@ -97,10 +102,12 @@ def create_election_onchain(meta: str) -> int:
         except Exception:
             return 0
 
+
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
 
 # Dependency to get DB session
+
 
 def get_db():
     db = SessionLocal()
@@ -109,13 +116,26 @@ def get_db():
     finally:
         db.close()
 
+
 # OAuth2 config (real GRAO or fallback to a mock login form)
 IDP_BASE = os.getenv("GRAO_BASE_URL", "https://demo-oauth.example")
 CLIENT_ID = os.getenv("GRAO_CLIENT_ID", "test-client")
-CLIENT_SEC = os.getenv("GRAO_CLIENT_SECRET", "test-secret")
+CLIENT_SEC = os.getenv("GRAO_CLIENT_SECRET", "test-client-secret")
+JWT_SECRET = os.getenv("JWT_SECRET", "dev-jwt-secret")
 REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
 PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
+
+if USE_REAL_OAUTH:
+    if CLIENT_SEC == "test-client-secret":
+        raise RuntimeError("GRAO_CLIENT_SECRET must be set")
+    if JWT_SECRET == "dev-jwt-secret":
+        raise RuntimeError("JWT_SECRET must be set")
+else:
+    print("WARNING: mock login has no CSRF protection; do not use in production")
+
+if PRIVATE_KEY == "0x" + "0" * 64:
+    raise RuntimeError("ORCHESTRATOR_KEY must be configured")
 
 
 def get_user_id(authorization: str) -> str:
@@ -123,13 +143,14 @@ def get_user_id(authorization: str) -> str:
         raise HTTPException(401, "missing auth")
     token = authorization.split()[1]
     try:
-        claims = jwt.decode(token, CLIENT_SEC, algorithms=["HS256"])
+        claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
     except Exception:
         raise HTTPException(401, "invalid token")
     user = claims.get("email")
     if not user:
         raise HTTPException(401, "invalid token")
     return user
+
 
 @app.get("/auth/initiate")
 def initiate():
@@ -157,6 +178,7 @@ def initiate():
     print("HEIII")
     return response
 
+
 @app.get("/auth/callback")
 async def callback(code: Optional[str] = None, user: Optional[str] = None):
     """Exchange code for a (dummy) ID token or handle mock logins."""
@@ -167,8 +189,9 @@ async def callback(code: Optional[str] = None, user: Optional[str] = None):
 
     email = user or "tester@example.com"
     claims = {"email": email}
-    fake_jwt = jwt.encode(claims, CLIENT_SEC, algorithm="HS256")
+    fake_jwt = jwt.encode(claims, JWT_SECRET, algorithm="HS256")
     return {"id_token": fake_jwt, "eligibility": True}
+
 
 @app.get("/elections", response_model=list[ElectionSchema])
 def list_elections(db: Session = Depends(get_db)):
@@ -178,11 +201,14 @@ def list_elections(db: Session = Depends(get_db)):
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
 def create_election(payload: CreateElectionSchema, db: Session = Depends(get_db)):
     start_block = create_election_onchain(payload.meta_hash)
-    election = Election(meta=payload.meta_hash, start=start_block, end=start_block + 7200)
+    election = Election(
+        meta=payload.meta_hash, start=start_block, end=start_block + 7200
+    )
     db.add(election)
     db.commit()
     db.refresh(election)
     return election
+
 
 @app.get("/elections/{election_id}", response_model=ElectionSchema)
 def get_election(election_id: int, db: Session = Depends(get_db)):
@@ -206,6 +232,7 @@ def update_election(
     db.commit()
     db.refresh(election)
     return election
+
 
 @app.get("/api/gas")
 async def gas_estimate():
@@ -333,7 +360,9 @@ async def ws_proofs(websocket: WebSocket, job_id: str):
     while True:
         async_result = celery_app.AsyncResult(job_id)
         if async_result.state in {"PENDING", "STARTED"}:
-            await websocket.send_json({"state": async_result.state.lower(), "progress": 0})
+            await websocket.send_json(
+                {"state": async_result.state.lower(), "progress": 0}
+            )
         elif async_result.state == "SUCCESS":
             await websocket.send_json({"state": "done", "progress": 100})
             break
