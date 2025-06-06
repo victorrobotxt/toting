@@ -55,6 +55,7 @@ export async function bundleCreateWallet(
 
 export async function bundleSubmitVote(
     signer: ethers.Signer,
+    electionId: number,
     voteOption: number,
     nonce: number,
     vcProof: Uint8Array | string
@@ -62,7 +63,7 @@ export async function bundleSubmitVote(
     const api = await getAccountAPI(signer);
 
     const managerIface = new ethers.utils.Interface([
-        "function enqueueMessage(uint256,uint256,bytes)"
+        "function enqueueMessage(uint256,uint256,uint256,bytes)"
     ]);
 
     // The backend returns dummy proofs as strings like
@@ -74,6 +75,7 @@ export async function bundleSubmitVote(
             : vcProof;
 
     const data = managerIface.encodeFunctionData("enqueueMessage", [
+        electionId,
         voteOption,
         nonce,
         proofBytes,
