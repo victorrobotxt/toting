@@ -12,20 +12,21 @@ Base.metadata.create_all(bind=engine)
 # simple in-memory cache (used in tests when Redis unavailable)
 PROOF_CACHE: dict[str, dict] = {}
 
-# circuit hashes for compiled circuits
-ELIGIBILITY_HASH_BN254 = "58973d361f4b6fa0c9d9f7d52d8cd6b5d5be54473a7fa80638a44eb2e0975bf2"
-VOICE_HASH_BN254 = "250dc836c4654c537cbe8ca1b61a188d0fac62cba52295e31486cf32c6396aa8"
-BATCH_TALLY_HASH_BN254 = "0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9"
+# Load default hashes from the compiled circuit manifest
+MANIFEST_PATH = "/app/circuits/manifest.json"
+DEFAULT_HASHES = {}
 
-ELIGIBILITY_HASH_BLS = "487b33a46e5f8f873fea36eb05142f4da0ee9f5e39668273a4c8be047bb360ff"
-VOICE_HASH_BLS = "c86ac2fe0421ee20f433ba93b48ef44516046067e4f19fc9bf93d75000268cce"
-BATCH_TALLY_HASH_BLS = "60b61e0692334033d3e68078dd495fd388cc0292f93d64119ac44b0ece7863c6"
-
-DEFAULT_HASHES = {
-    "eligibility": {"bn254": ELIGIBILITY_HASH_BN254, "bls12-381": ELIGIBILITY_HASH_BLS},
-    "voice": {"bn254": VOICE_HASH_BN254, "bls12-381": VOICE_HASH_BLS},
-    "batch_tally": {"bn254": BATCH_TALLY_HASH_BN254, "bls12-381": BATCH_TALLY_HASH_BLS},
-}
+if os.path.exists(MANIFEST_PATH):
+    with open(MANIFEST_PATH) as f:
+        manifest_data = json.load(f)
+        for name, curves in manifest_data.items():
+            # Standardize names from manifest (e.g., "voice_check") to API names (e.g., "voice")
+            api_name = name.replace("_check", "")
+            DEFAULT_HASHES.setdefault(api_name, {})
+            for curve, data in curves.items():
+                DEFAULT_HASHES[api_name][curve] = data["hash"]
+else:
+    print(f"Warning: Circuit manifest not found at {MANIFEST_PATH}. Using empty defaults.")
 
 def get_circuit_hash(name: str, curve: str = "bn254") -> str:
     db = SessionLocal()
@@ -33,16 +34,22 @@ def get_circuit_hash(name: str, curve: str = "bn254") -> str:
     db.close()
     if row:
         return row.circuit_hash
-    return DEFAULT_HASHES[name][curve]
+    # Fallback to the loaded manifest defaults
+    return DEFAULT_HASHES.get(name, {}).get(curve, "")
 
 def cache_key(circuit: str, inputs: dict, curve: str) -> str:
     data = json.dumps(inputs, sort_keys=True).encode()
-    return hashlib.sha256(
-        data + get_circuit_hash(circuit, curve).encode()
-    ).hexdigest()
+    circuit_hash = get_circuit_hash(circuit, curve)
+    if not circuit_hash:
+        raise ValueError(f"Could not find hash for circuit '{circuit}' on curve '{curve}'")
+    return hashlib.sha256(data + circuit_hash.encode()).hexdigest()
 
 def cache_get(circuit: str, inputs: dict, curve: str):
-    return PROOF_CACHE.get(cache_key(circuit, inputs, curve))
+    try:
+        key = cache_key(circuit, inputs, curve)
+        return PROOF_CACHE.get(key)
+    except ValueError:
+        return None
 
 BROKER_URL = os.getenv("CELERY_BROKER", "redis://localhost:6379/0")
 BACKEND_URL = os.getenv("CELERY_BACKEND", "redis://localhost:6379/0")
@@ -59,6 +66,7 @@ def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):
     proof = f"proof-{h[:16]}"
     pub = [int(h[i:i+8], 16) for i in range(0, 32, 8)]
     result = {"proof": proof, "pubSignals": pub}
+    
     key = cache_key(circuit, inputs, curve)
     PROOF_CACHE[key] = result
 

@@ -7,6 +7,7 @@ res.txt
 .yarn
 .yarnrc.yml
 packages/frontend/.next
+packages/frontend/.env.local
 
 # Yarn Plug'n'Play artefacts
 .pnp.cjs
