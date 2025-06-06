@@ -13,7 +13,17 @@ import path from 'path';
 const idlPath = path.join(__dirname, '..', '..', '..', 'solana-programs', 'election', 'target', 'idl', 'election_mirror.json');
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8'));
 
-const EVM_RPC = process.env.EVM_RPC || 'http://127.0.0.1:8545';
+let EVM_RPC = process.env.EVM_RPC || 'http://127.0.0.1:8545';
+// Allow running outside docker by translating the default 'anvil' hostname
+try {
+  const url = new URL(EVM_RPC);
+  if (url.hostname === 'anvil') {
+    url.hostname = '127.0.0.1';
+    EVM_RPC = url.toString();
+  }
+} catch {
+  // ignore malformed URL and use as-is
+}
 const SOLANA_RPC = process.env.SOLANA_RPC || 'http://localhost:8899';
 const POSTGRES_URL = process.env.POSTGRES_URL || 'postgres://postgres:pass@localhost:5432/postgres';
 const ELECTION_MANAGER = process.env.ELECTION_MANAGER as string;
