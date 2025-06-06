@@ -55,7 +55,8 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
+      target: backend
     environment:
       GRAO_BASE_URL: ${GRAO_BASE_URL}
       GRAO_CLIENT_ID: ${GRAO_CLIENT_ID}
@@ -76,7 +77,8 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile
+      target: backend
     command: celery -A packages.backend.proof.celery_app worker --loglevel=info
     environment:
       CELERY_BROKER: redis://redis:6379/0
@@ -103,15 +105,16 @@ services:
 
   orchestrator:
     build:
-      context: services/orchestrator
+      context: .
       dockerfile: Dockerfile
+      target: orchestrator
     environment:
       EVM_RPC: http://anvil:8545
       EVM_MAX_RETRIES: "0"
       ELECTION_MANAGER: ${ELECTION_MANAGER}
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
     volumes:
-      - ./circuits:/app/circuits
+      - ./circuits:/app/circuits:ro
     depends_on:
       - anvil
 

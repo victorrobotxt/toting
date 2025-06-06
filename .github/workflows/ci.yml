@@ -87,14 +87,14 @@ jobs:
           exit-code: "1"
           severity: "HIGH,CRITICAL"
 
-      - name: Trivy scan (medium severity)
+      - name: Trivy scan (full report)
         uses: aquasecurity/trivy-action@v0.19.0
         with:
           image-ref: app
           format: "sarif"
           output: "trivy.sarif"
           exit-code: "0"
-          severity: "MEDIUM"
+          severity: "LOW,MEDIUM,HIGH,CRITICAL"
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
