@@ -25,9 +25,26 @@ if (!ELECTION_MANAGER) throw new Error('ELECTION_MANAGER env var required');
 if (!BRIDGE_SK) throw new Error('SOLANA_BRIDGE_SK env var required');
 
 const CHAIN_ID = Number(process.env.CHAIN_ID || '1337');
-const ethProvider = new ethers.providers.StaticJsonRpcProvider(EVM_RPC, { chainId: CHAIN_ID, name: 'local' });
+const ethProvider = new ethers.providers.StaticJsonRpcProvider(EVM_RPC, {
+  chainId: CHAIN_ID,
+  name: 'local'
+});
 const iface = new ethers.utils.Interface(['event Tally(uint256,uint256)']);
 const pool = new Pool({ connectionString: POSTGRES_URL });
+
+async function waitForEvm() {
+  let delay = 1000;
+  while (true) {
+    try {
+      await ethProvider.getBlockNumber();
+      return;
+    } catch (err) {
+      console.error('EVM RPC not reachable, retrying', err);
+      await new Promise(res => setTimeout(res, delay));
+      delay = Math.min(delay * 2, 30000);
+    }
+  }
+}
 
 async function waitForDb() {
   let delay = 1000;
@@ -81,6 +98,7 @@ async function bridgeTally(A: bigint, B: bigint, blockHash: string) {
 }
 
 async function main() {
+  await waitForEvm();
   await waitForDb();
   let last = await getLastBlock();
   console.log('starting from block', last);
