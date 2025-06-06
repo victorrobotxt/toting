@@ -2,30 +2,32 @@
 pragma solidity ^0.8.24;
 
 import "./TallyVerifier.sol";
-
-interface IMACI {
-    function publishMessage(bytes calldata) external;
-}
+import "./interfaces/IMACI.sol";
 
 contract ElectionManager {
     IMACI public immutable maci;
     TallyVerifier public tallyVerifier;
-    bool public tallied;
+
+    struct TallyResult {
+        bool tallied;
+        uint256[2] result;
+    }
 
     event ElectionCreated(uint id, bytes32 indexed meta);
-    event Tally(uint256 A, uint256 B);
+    event Tally(uint256 id, uint256 A, uint256 B);
 
     struct E {
         uint128 start;
         uint128 end;
     }
     mapping(uint => E) public elections;
+    mapping(uint => TallyResult) public tallies;
     uint public nextId;
 
     modifier onlyDuringElection(uint id) {
         E memory e = elections[id];
         require(
-            block.number >= e.start && block.number <= e.end,
+            block.number >= uint256(e.start) && block.number <= uint256(e.end),
             "closed"
         );
         _;
@@ -57,18 +59,20 @@ contract ElectionManager {
     }
 
     function tallyVotes(
+        uint id,
         uint256[2] calldata a,
         uint256[2][2] calldata b,
         uint256[2] calldata c,
         uint256[7] calldata pubSignals
     ) external {
-        require(!tallied, "already tallied");
+        require(!tallies[id].tallied, "already tallied");
         require(
             tallyVerifier.verifyProof(a, b, c, pubSignals),
             "invalid tally proof"
         );
-        (uint256 A, uint256 B) = (pubSignals[0], pubSignals[1]);
-        emit Tally(A, B);
-        tallied = true;
+        tallies[id].result[0] = pubSignals[0];
+        tallies[id].result[1] = pubSignals[1];
+        emit Tally(id, pubSignals[0], pubSignals[1]);
+        tallies[id].tallied = true;
     }
 }

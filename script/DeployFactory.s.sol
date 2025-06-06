@@ -13,6 +13,7 @@ contract UnsafeVerifierStub is Verifier {
         uint256[2] calldata c,
         uint256[7] calldata pubSignals
     ) public view override returns (bool) {
+        require(block.chainid == 31337, "unsafe verifier");
         return true;
     }
 }
