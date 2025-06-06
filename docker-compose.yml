@@ -3,7 +3,7 @@ services:
   # Anvil (Foundry local blockchain)
   # ----------------------------------------
   anvil:
-    image: ghcr.io/foundry-rs/foundry:latest
+    image: ghcr.io/foundry-rs/foundry:1.0.0
     user: "0"
     # CHANGE: Switched from a list to a multi-line string for the command.
     # This is more robust and avoids parsing issues.
@@ -101,7 +101,7 @@ services:
 
   orchestrator:
     build:
-      context: .
+      context: services/orchestrator
       dockerfile: Dockerfile
     environment:
       EVM_RPC: http://anvil:8545
