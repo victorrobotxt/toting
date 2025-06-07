@@ -12,10 +12,9 @@ FACTORY_ADDRESS = os.getenv("FACTORY_ADDRESS")
 if not FACTORY_ADDRESS:
     print("❌ please set FACTORY_ADDRESS")
     sys.exit(1)
-try:
-    FACTORY_ADDRESS = Web3.to_checksum_address(FACTORY_ADDRESS)
-except Exception:
-    FACTORY_ADDRESS = Web3.toChecksumAddress(FACTORY_ADDRESS)  # older versions
+
+FACTORY_ADDRESS = Web3.to_checksum_address(FACTORY_ADDRESS)
+
 print(f"Using factory address (checksummed): {FACTORY_ADDRESS}")
 
 # Use Anvil's default first private key so it's funded out of the box
@@ -81,7 +80,7 @@ b = [[0, 0], [0, 0]]
 c = [0, 0]
 pubSignals = []
 
-gas_price = w3.to_wei("1", "gwei")          # helper renamed
+gas_price = w3.to_wei("1", "gwei")
 tx = factory.functions.mintWallet(a, b, c, pubSignals, acct.address).build_transaction(
     {"from": acct.address,
      "nonce": w3.eth.get_transaction_count(acct.address),
@@ -89,7 +88,7 @@ tx = factory.functions.mintWallet(a, b, c, pubSignals, acct.address).build_trans
      "gasPrice": gas_price}
 )
 signed  = acct.sign_transaction(tx)
-tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)  # snake‑case
+tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
 print("  tx hash", tx_hash.hex())
 rcpt = w3.eth.wait_for_transaction_receipt(tx_hash)
 print("  receipt status", rcpt.status)

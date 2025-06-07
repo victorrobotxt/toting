@@ -31,7 +31,7 @@ Base = declarative_base()
 class Election(Base):
     __tablename__ = "elections"
     # --- FIX: Disable autoincrement as the on-chain ID is the source of truth ---
-    id = Column(Integer, primary_key=True, index=True, autoincrement=False)
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=False)
     meta = Column(String, nullable=False, unique=True)
     start = Column(BigInteger, nullable=False)
     end = Column(BigInteger, nullable=False)

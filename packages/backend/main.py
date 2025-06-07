@@ -13,8 +13,8 @@ from typing import Optional
 import asyncio
 from web3 import Web3
 from eth_account import Account
-# --- FIX: Update to the new middleware name and import path ---
-from web3.middleware.geth import geth_poa_middleware
+# FIX: Use the correct import path for web3.py v6.x
+from web3.middleware import geth_poa_middleware
 
 from .db import SessionLocal, Base, engine, Election, ProofRequest, ProofAudit
 from .schemas import (
@@ -74,8 +74,7 @@ ELECTION_MANAGER = Web3.to_checksum_address(
 )
 PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY", "0x" + "0" * 64)
 CHAIN_ID = int(os.getenv("CHAIN_ID", "31337"))
-
-# --- FIX: Expanded ABI to include the ElectionCreated event ---
+# ABI expanded to include the ElectionCreated event for reliable ID parsing
 EM_ABI = json.loads("""
 [
     {
@@ -88,7 +87,7 @@ EM_ABI = json.loads("""
     {
         "anonymous": false,
         "inputs": [
-            {"indexed": false, "internalType": "uint256", "name": "id", "type": "uint256"},
+            {"indexed": true, "internalType": "uint256", "name": "id", "type": "uint256"},
             {"indexed": true, "internalType": "bytes32", "name": "meta", "type": "bytes32"}
         ],
         "name": "ElectionCreated",
@@ -143,7 +142,6 @@ REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
 PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
 
-# --- FIX: Correct and simplified quota increment function ---
 def increment_quota(db: Session, user: str, day: str) -> bool:
     """Atomically increment daily proof counter."""
     if db.bind.dialect.name == "postgresql":
@@ -181,6 +179,9 @@ if USE_REAL_OAUTH:
         raise RuntimeError("JWT_SECRET must be set")
 else:
     print("WARNING: mock login has no CSRF protection; do not use in production")
+
+if ELECTION_MANAGER == Web3.to_checksum_address("0x" + "0" * 40):
+    print("Warning: ELECTION_MANAGER is not set, defaulting to zero address.")
 
 if PRIVATE_KEY == "0x" + "0" * 64:
     raise RuntimeError("ORCHESTRATOR_KEY must be configured")
@@ -252,17 +253,25 @@ def create_election(payload: CreateElectionSchema, db: Session = Depends(get_db)
     
     meta_bytes = Web3.to_bytes(hexstr=payload.meta_hash)
     
+    # This now returns a tx_hash string
     tx_hash = create_election_onchain(account, contract, meta_bytes)
     
-    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    # FIX: Wait for the receipt and parse the event to get the true on-chain ID.
+    # This synchronizes the backend's state with the blockchain's state.
+    try:
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transaction timed out or failed: {e}")
+
+    if receipt.status == 0:
+        raise HTTPException(status_code=500, detail="Transaction reverted on-chain")
     
-    # --- FIX: Process logs to get the real on-chain ID ---
     logs = contract.events.ElectionCreated().process_receipt(receipt)
     if not logs:
-        raise HTTPException(status_code=500, detail="ElectionCreated event not found in transaction")
+        raise HTTPException(status_code=500, detail="ElectionCreated event not found in transaction logs")
     
     event_args = logs[0]['args']
-    on_chain_id = event_args.id
+    on_chain_id = event_args['id']
     start_block = receipt.blockNumber
     
     # Use the on_chain_id from the event as the primary key
@@ -270,10 +279,16 @@ def create_election(payload: CreateElectionSchema, db: Session = Depends(get_db)
         id=on_chain_id,
         meta=payload.meta_hash, 
         start=start_block, 
-        end=start_block + 7200
+        end=start_block + 7200,
+        status="pending"
     )
     db.add(election)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=f"Election with ID {on_chain_id} already exists.")
+
     db.refresh(election)
     return election
 

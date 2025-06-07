@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {UUPSUpgradeable} from "openzeppelin-contracts/contracts/proxy/utils/UUPSUpgradeable.sol";
-import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+// FIX: Use the remapped path '@openzeppelin/contracts/...'
+import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
 import "./TallyVerifier.sol";
 import "./interfaces/IMACI.sol";

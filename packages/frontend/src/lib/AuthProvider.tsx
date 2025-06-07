@@ -1,118 +1,117 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+// packages/frontend/src/lib/AuthProvider.tsx
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/router';
+import { jwtDecode } from 'jwt-decode';
 
+export type Role = 'admin' | 'user' | 'verifier' | 'guest';
 export type AuthMode = 'eid' | 'mock' | 'guest';
 
-export type Role = 'admin' | 'user' | 'verifier';
-
-interface AuthContextValue {
-  token: string | null;
-  eligibility: boolean;
+interface AuthContextType {
   isLoggedIn: boolean;
-  mode: AuthMode;
+  token: string | null;
   role: Role;
+  eligibility: boolean;
+  mode: AuthMode;
   ready: boolean;
-  setMode: (m: AuthMode) => void;
   login: (token: string, eligibility: boolean, mode: AuthMode) => void;
   logout: () => void;
+  setMode: (mode: AuthMode) => void;
 }
 
-const AuthContext = createContext<AuthContextValue>({
-  token: null,
-  eligibility: false,
-  isLoggedIn: false,
-  mode: 'guest',
-  role: 'user',
-  ready: false,
-  setMode: () => {},
-  login: () => {},
-  logout: () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function decodePayload(token: string): any {
+function getRoleFromToken(token: string | null): Role {
+  if (!token) return 'guest';
   try {
-    const base64 = token.split('.')[1];
-    const json = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(json);
-  } catch {
-    return null;
+    const decoded: { role?: Role } = jwtDecode(token);
+    return decoded.role || 'user';
+  } catch (e) {
+    console.error("Failed to decode token", e);
+    return 'guest';
   }
 }
 
-function tokenExpired(token: string): boolean {
-  const payload = decodePayload(token);
-  if (payload && payload.exp) {
-    return Date.now() / 1000 > payload.exp;
-  }
-  return false;
-}
-
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [eligibility, setEligibility] = useState<boolean>(false);
-  const [mode, setMode] = useState<AuthMode>('guest');
-  const [role, setRole] = useState<Role>('user');
+  const [mode, setModeState] = useState<AuthMode>('guest');
   const [ready, setReady] = useState<boolean>(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const stored = sessionStorage.getItem('id_token');
-    const storedMode = (sessionStorage.getItem('auth_mode') as AuthMode) || 'guest';
-    setMode(storedMode);
-    if (stored && !tokenExpired(stored)) {
-      setToken(stored);
-      setEligibility(sessionStorage.getItem('eligibility') === 'true');
-      const p = decodePayload(stored);
-      setRole(p?.role === 'admin' || p?.role === 'verifier' ? p.role : 'user');
-    } else {
-      sessionStorage.removeItem('id_token');
-      sessionStorage.removeItem('eligibility');
+  const login = useCallback((newToken: string, newEligibility: boolean, newMode: AuthMode) => {
+    sessionStorage.setItem('id_token', newToken);
+    sessionStorage.setItem('eligibility', String(newEligibility));
+    sessionStorage.setItem('auth_mode', newMode);
+    setToken(newToken);
+    setEligibility(newEligibility);
+    setModeState(newMode);
+    router.push('/dashboard');
+  }, [router]);
+
+  const handleMessage = useCallback((event: MessageEvent) => {
+    // Ensure the message is from a trusted origin
+    if (event.origin !== window.location.origin) return;
+
+    const { id_token, eligibility: elig } = event.data;
+    if (id_token) {
+      // Assuming 'eid' mode for popup-based flows
+      login(id_token, !!elig, 'eid');
     }
+  }, [login]);
 
-    const handler = (e: MessageEvent) => {
-      if (e.origin !== 'http://localhost:3000') return;
-      const { id_token, eligibility: elig } = e.data || {};
-      if (typeof id_token === 'string' && typeof elig === 'boolean') {
-        const m = (sessionStorage.getItem('auth_mode') as AuthMode) || 'eid';
-        login(id_token, elig, m);
-        router.replace('/dashboard');
-      }
+  useEffect(() => {
+    window.addEventListener('message', handleMessage);
+
+    const storedToken = sessionStorage.getItem('id_token');
+    const storedEligibility = sessionStorage.getItem('eligibility') === 'true';
+    const storedMode = (sessionStorage.getItem('auth_mode') as AuthMode) || 'guest';
+
+    if (storedToken) {
+      setToken(storedToken);
+      setEligibility(storedEligibility);
+      setModeState(storedMode);
+    }
+    setReady(true); // Signal that initial state is loaded
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
     };
-    window.addEventListener('message', handler);
-    setReady(true);
-    return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [handleMessage]);
 
-  const login = (tok: string, elig: boolean, m: AuthMode) => {
-    setToken(tok);
-    setEligibility(elig);
-    setMode(m);
-    const p = decodePayload(tok);
-    setRole(p?.role === 'admin' || p?.role === 'verifier' ? p.role : 'user');
-    sessionStorage.setItem('id_token', tok);
-    sessionStorage.setItem('eligibility', String(elig));
-    sessionStorage.setItem('auth_mode', m);
-  };
-
-  const logout = () => {
-    setToken(null);
-    setEligibility(false);
-    setMode('guest');
-    setRole('user');
+  const logout = useCallback(() => {
     sessionStorage.removeItem('id_token');
     sessionStorage.removeItem('eligibility');
     sessionStorage.removeItem('auth_mode');
-    router.replace('/');
+    setToken(null);
+    setEligibility(false);
+    setModeState('guest');
+    router.push('/login');
+  }, [router]);
+  
+  const setMode = useCallback((newMode: AuthMode) => {
+    sessionStorage.setItem('auth_mode', newMode);
+    setModeState(newMode);
+  }, []);
+
+  const value = {
+    isLoggedIn: !!token,
+    token,
+    role: getRoleFromToken(token),
+    eligibility,
+    mode,
+    ready,
+    login,
+    logout,
+    setMode,
   };
 
-  return (
-    <AuthContext.Provider value={{ token, eligibility, isLoggedIn: !!token, mode, role, ready, setMode, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
-
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

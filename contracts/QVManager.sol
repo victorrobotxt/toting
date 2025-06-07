@@ -6,8 +6,9 @@ import "./ElectionManager.sol";
 
 /// @title Manager for Quadratic Voting ballots
 /// @notice Verifies private credit proofs and forwards encrypted ballots to MACI
-import {EIP712} from "openzeppelin-contracts/contracts/utils/cryptography/EIP712.sol";
-import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+// FIX: Use the remapped path '@openzeppelin/contracts/...'
+import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract QVManager is EIP712 {
     IMACI public immutable maci;

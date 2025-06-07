@@ -1,21 +1,33 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+// packages/frontend/src/lib/I18nProvider.tsx
+import React, { createContext, useContext, useMemo, ReactNode } from 'react';
+import { useRouter } from 'next/router';
 import en from '../translations/en.json';
 import bg from '../translations/bg.json';
 
-type Lang = 'en' | 'bg';
-const dict: Record<Lang, Record<string,string>> = { en, bg };
+const translations: Record<string, any> = { en, bg };
 
-const I18nContext = createContext<{ t:(k:string)=>string; lang:Lang; setLang:(l:Lang)=>void}>({ t:(k)=>k, lang:'en', setLang:()=>{} });
-
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>('en');
-  useEffect(() => {
-    const l = localStorage.getItem('lang') as Lang | null;
-    if (l) setLang(l);
-  }, []);
-  const change = (l:Lang) => { setLang(l); localStorage.setItem('lang', l); };
-  const t = (k:string) => dict[lang][k] || k;
-  return <I18nContext.Provider value={{ t, lang, setLang: change }}>{children}</I18nContext.Provider>;
+interface I18nContextType {
+  t: (key: string) => string;
 }
 
-export function useI18n() { return useContext(I18nContext); }
+const I18nContext = createContext<I18nContextType | undefined>(undefined);
+
+export const I18nProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { locale } = useRouter();
+  const currentLocale = locale || 'en';
+
+  const t = useMemo(() => (key: string): string => {
+    // Simple key lookup, can be expanded for nested objects
+    return translations[currentLocale]?.[key] || key;
+  }, [currentLocale]);
+
+  return <I18nContext.Provider value={{ t }}>{children}</I18nContext.Provider>;
+};
+
+export const useI18n = () => {
+  const context = useContext(I18nContext);
+  if (context === undefined) {
+    throw new Error('useI18n must be used within an I18nProvider');
+  }
+  return context;
+};

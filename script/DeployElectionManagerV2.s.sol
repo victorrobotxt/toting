@@ -38,8 +38,7 @@ contract DeployElectionManagerV2Script is Script {
         // 3. Prepare the initialization calldata
         bytes memory callData = abi.encodeWithSelector(
             ElectionManagerV2.initialize.selector,
-            maciInterface,
-            deployer
+            maciInterface // The 'deployer' argument was incorrect; owner is set via msg.sender in initialize()
         );
         
         // 4. Deploy the UUPS proxy pointing to the implementation

@@ -16,8 +16,9 @@ WORKDIR /app/packages/frontend
 # Copy the already-installed node_modules from the deps stage
 COPY --from=deps /app/packages/frontend/node_modules ./node_modules
 
-# Copy the rest of the frontend files
-COPY packages/frontend ./
+# --- FIX: Add a trailing slash to copy the CONTENTS of the directory ---
+# This ensures src/, public/, etc. are copied directly into the WORKDIR.
+COPY packages/frontend/ ./
 
 # Run Next.js build (now "next" is in node_modules/.bin)
 RUN yarn build

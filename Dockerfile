@@ -23,7 +23,8 @@ CMD ["python", "-m", "uvicorn", "packages.backend.main:app", "--host", "0.0.0.0"
 # --- STAGE 3: Final Worker Image (reuses the same env) ---
 FROM python-env AS worker
 USER appuser
-CMD ["celery", "-A", "packages.backend.proof.celery_app", "worker", "--loglevel=info"]
+# FIX: The Celery -A argument should point to the module and the app instance, separated by a colon.
+CMD ["celery", "-A", "packages.backend.proof:celery_app", "worker", "--loglevel=info"]
 
 # --- STAGE 4: Final Orchestrator Image ---
 FROM python-env AS orchestrator

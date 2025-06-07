@@ -15,12 +15,10 @@ export default function CallbackPage() {
     fetch(`${apiUrl('/auth/callback')}${query}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
       .then(data => {
-        // FIX: Use the opener's origin to work in any environment
         window.opener.postMessage({ id_token: data.id_token, eligibility: data.eligibility }, window.opener.location.origin);
         window.close();
       })
       .catch(() => {
-        // FIX: Use the opener's origin to work in any environment
         window.opener.postMessage({ error: true }, window.opener.location.origin);
         window.close();
       });

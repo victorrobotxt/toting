@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
+// FIX: Use the remapped path '@openzeppelin/contracts/...'
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /// @title Minimal OwnableUpgradeable
 /// @notice Simplified version of OpenZeppelin's OwnableUpgradeable for demos

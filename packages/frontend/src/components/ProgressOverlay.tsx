@@ -5,14 +5,13 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    // FIX: Simpler and more robust WebSocket URL construction
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Use the API base host if defined, otherwise fall back to the window's host.
-    // This correctly handles Docker's internal networking vs. local dev.
+    // Use the API base host from env vars, otherwise fall back to the window's host.
+    // This correctly handles Docker's internal networking vs. local dev where ports differ.
     const apiBase = process.env.NEXT_PUBLIC_API_BASE;
     const host = apiBase ? new URL(apiBase).host : window.location.host;
     const wsUrl = `${protocol}//${host}/ws/proofs/${jobId}`;
-    
+
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (ev) => {

@@ -1,12 +1,21 @@
 #!/bin/bash
 set -eo pipefail
 
-# --- Pre-flight Check ---
+# --- Pre-flight Check: Ensure running inside container ---
+if [ ! -d "/app" ]; then
+    echo "🛑 Error: This script must be run inside the 'anvil' Docker container." >&2
+    echo "Please use the following command from your project root on your host machine:" >&2
+    echo "docker-compose exec anvil /app/scripts/setup_env.sh" >&2
+    exit 1
+fi
+
+# --- Pre-flight Check: Submodules ---
 if [ ! -d "/app/lib/openzeppelin-contracts/contracts" ]; then
-    echo "🛑 Error: OpenZeppelin contracts not found in /app/lib/."
-    echo "This usually means the Docker volume mount is incorrect or you forgot a step."
-    echo "Please run 'git submodule update --init --recursive' on your host machine from the project root,"
-    echo "then restart the 'anvil' container with 'docker-compose down -v && docker-compose up -d --force-recreate anvil'."
+    echo "🛑 Error: Git submodules not found in /app/lib/. The Docker volume mount seems to be stale or empty." >&2
+    echo "This is common on Docker Desktop for Windows/Mac." >&2
+    echo "1. Run 'git submodule update --init --recursive' on your host machine." >&2
+    echo "2. Run 'docker-compose down -v' to remove the old container and its volume." >&2
+    echo "3. Run 'docker-compose up -d anvil' to create a fresh one." >&2
     exit 1
 fi
 
@@ -19,9 +28,7 @@ export $(grep -v '^#' /app/.env | xargs)
 
 echo "📦 Deploying contracts..."
 
-# FIX: Removed the redundant --root /app flag and use relative paths.
-# The working directory is already /app, so forge will find everything correctly.
-MGR_ADDR=$(forge script script/DeployElectionManagerV2.s.sol:DeployElectionManagerV2Script --rpc-url http://localhost:8545 --broadcast --sig "run() returns (address)" | grep "proxy deployed to:" | awk '{print $NF}')
+MGR_ADDR=$(forge script script/DeployElectionManagerV2.s.sol:DeployElectionManagerV2Script --rpc-url http://localhost:8545 --broadcast --sig "run() returns (address)" | grep "ElectionManagerV2 proxy deployed to:" | awk '{print $NF}')
 if [ -z "$MGR_ADDR" ]; then
     echo "🛑 Failed to deploy ElectionManagerV2."
     exit 1
