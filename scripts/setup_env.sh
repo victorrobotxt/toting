@@ -7,6 +7,13 @@ if [ ! -d "/app" ] || [ ! -f "/app/foundry.toml" ]; then
     exit 1
 fi
 
+# --- Forceful Cleanup Step ---
+# This is a robust fix for stale volume mounts or leftover artifacts.
+# It ensures the 'out' directory is completely clean before forge tries to write to it.
+echo "🧹 Forcefully cleaning up previous build artifacts from within the container..."
+rm -rf /app/out
+echo "✅ Artifact cleanup complete."
+
 # --- Pre-flight Check: Submodules ---
 if [ ! -d "/app/lib/openzeppelin-contracts/contracts" ]; then
     echo "🛑 Error: Git submodules not found in /app/lib/. The Docker volume mount seems to be stale or empty." >&2

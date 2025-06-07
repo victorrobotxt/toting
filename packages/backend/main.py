@@ -15,7 +15,8 @@ from web3 import Web3
 from eth_account import Account
 from web3.middleware import geth_poa_middleware
 
-from .db import SessionLocal, Base, engine, Election, ProofRequest, ProofAudit
+# FIX: Import the correct database model name
+from .db import SessionLocal, Base, engine, Election as DbElection, ProofRequest, ProofAudit
 from .schemas import (
     ElectionSchema,
     CreateElectionSchema,
@@ -67,6 +68,14 @@ EVM_RPC = os.getenv("EVM_RPC", "http://localhost:8545")
 CHAIN_ID = int(os.getenv("CHAIN_ID", "31337"))
 PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY")
 ELECTION_MANAGER = Web3.to_checksum_address(os.getenv("ELECTION_MANAGER"))
+
+
+# --- FIX: Instantiate the Web3 object ---
+# This was the cause of the "name 'web3' is not defined" error.
+web3 = Web3(Web3.HTTPProvider(EVM_RPC))
+# Add Proof-of-Authority middleware, which is often required for testnets like Goerli or local Geth.
+# It doesn't hurt to have it for Anvil.
+web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
 # Load full ABI from the compiled artifact to ensure event parsing is robust.
@@ -146,7 +155,7 @@ else:
 if ELECTION_MANAGER == Web3.to_checksum_address("0x" + "0" * 40):
     print("Warning: ELECTION_MANAGER is not set, defaulting to zero address.")
 
-if PRIVATE_KEY == "0x" + "0" * 64:
+if not PRIVATE_KEY:
     raise RuntimeError("ORCHESTRATOR_KEY must be configured")
 
 
@@ -206,7 +215,8 @@ async def callback(code: Optional[str] = None, user: Optional[str] = None):
 
 @app.get("/elections", response_model=list[ElectionSchema])
 def list_elections(db: Session = Depends(get_db)):
-    return db.query(Election).all()
+    # FIX: Use the correct model name (DbElection) as aliased during import
+    return db.query(DbElection).all()
 
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
 def create_election(
@@ -224,7 +234,7 @@ def create_election(
             "from": account.address,
             "chainId": CHAIN_ID,
             "gas": 3_000_000,
-            "gasPrice": web3.eth.get_gas_price(),
+            "gasPrice": web3.eth.gas_price,
             "nonce": web3.eth.get_transaction_count(account.address),
         })
         signed = account.sign_transaction(tx)
@@ -243,8 +253,7 @@ def create_election(
 
     # 2) Parse the ElectionCreated event
     try:
-        # NOTE: v6+ web3.py uses processReceipt (camelCase)
-        events = contract.events.ElectionCreated().processReceipt(receipt)
+        events = contract.events.ElectionCreated().process_receipt(receipt)
         if not events:
             raise ValueError("ElectionCreated event not found in transaction logs")
         on_chain_id = events[0].args.id
@@ -253,7 +262,8 @@ def create_election(
 
     # 3) Read the start/end from the contract
     try:
-        start_block, end_block = contract.functions.elections(on_chain_id).call()
+        election_data = contract.functions.elections(on_chain_id).call()
+        start_block, end_block = election_data[0], election_data[1]
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -271,14 +281,17 @@ def create_election(
     db.add(db_election)
     try:
         db.commit()
-    except Exception:
+    except IntegrityError: # FIX: Be specific about the exception
         db.rollback()
-        existing = db.query(DbElection).get(on_chain_id)
+        # The record might already exist due to a race condition (e.g., from an indexer).
+        # In that case, we can just fetch and return it.
+        existing = db.query(DbElection).filter_by(id=on_chain_id).first()
         if existing:
             return existing
+        # If it doesn't exist after a rollback, something else went wrong.
         raise HTTPException(
-            status_code=409,
-            detail=f"Election with ID {on_chain_id} already exists."
+            status_code=500,
+            detail=f"Database commit failed for election ID {on_chain_id}."
         )
 
     db.refresh(db_election)
@@ -286,7 +299,7 @@ def create_election(
 
 @app.get("/elections/{election_id}", response_model=ElectionSchema)
 def get_election(election_id: int, db: Session = Depends(get_db)):
-    election = db.query(Election).filter(Election.id == election_id).first()
+    election = db.query(DbElection).filter(DbElection.id == election_id).first()
     if not election:
         raise HTTPException(404, "election not found")
     return election
@@ -296,7 +309,7 @@ def get_election(election_id: int, db: Session = Depends(get_db)):
 def update_election(
     election_id: int, payload: UpdateElectionSchema, db: Session = Depends(get_db)
 ):
-    election = db.query(Election).filter(Election.id == election_id).first()
+    election = db.query(DbElection).filter(DbElection.id == election_id).first()
     if not election:
         raise HTTPException(404, "election not found")
     data_to_update = payload.model_dump(exclude_unset=True)

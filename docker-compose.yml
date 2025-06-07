@@ -28,7 +28,6 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    # FIX: Add a healthcheck to ensure Redis is ready before other services connect.
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 1s
@@ -58,6 +57,9 @@ services:
       - .:/app
     environment:
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
+    # --- FIX: Add DNS to allow downloading solc ---
+    dns:
+      - 8.8.8.8
     depends_on:
       anvil: { condition: service_healthy }
 
@@ -83,9 +85,9 @@ services:
       GRAO_REDIRECT_URI: ${GRAO_REDIRECT_URI}
       USE_REAL_OAUTH: ${USE_REAL_OAUTH}
 
-      # EVM settings
-      EVM_RPC: ${EVM_RPC}
-      CHAIN_ID: ${CHAIN_ID}
+      # EVM settings (hardcoded for inter-service communication)
+      EVM_RPC: http://anvil:8545
+      CHAIN_ID: 31337
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
 
       # Celery & Database
@@ -94,6 +96,10 @@ services:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
     ports:
       - "8000:8000"
+    dns: # Added for consistency
+      - 8.8.8.8
+    volumes:
+      - ./out/ElectionManagerV2.sol/ElectionManagerV2.json:/app/out/ElectionManagerV2.sol/ElectionManagerV2.json:ro
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -107,18 +113,26 @@ services:
       context: .
       dockerfile: Dockerfile
       target: worker
-    # FIX: Add env_file to load deployed contract addresses.
     env_file:
       - .env.deployed
     environment:
+      # EVM settings (hardcoded for inter-service communication)
+      EVM_RPC: http://anvil:8545
+      CHAIN_ID: 31337
+      ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
+      
+      # Celery & Database
       CELERY_BROKER: redis://redis:6379/0
       CELERY_BACKEND: redis://redis:6379/0
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+    dns: # Added for consistency
+      - 8.8.8.8
+    volumes:
+      - ./out/ElectionManagerV2.sol/ElectionManagerV2.json:/app/out/ElectionManagerV2.sol/ElectionManagerV2.json:ro
     depends_on:
       setup:
         condition: service_completed_successfully
       redis:
-        # FIX: Wait for Redis to be healthy, not just started.
         condition: service_healthy
       db:
         condition: service_healthy
@@ -130,13 +144,29 @@ services:
     env_file:
       - .env.deployed
     environment:
-      # Keep non-contract specific vars here
-      # FIX: This URL is used by the client-side browser, which cannot resolve 'backend'.
-      # It must point to the backend's publicly exposed address from the host.
       NEXT_PUBLIC_API_BASE: http://localhost:8000
       NEXT_PUBLIC_BUNDLER_URL: ${NEXT_PUBLIC_BUNDLER_URL:-http://localhost:3001}
     ports:
       - "3000:3000"
+    dns: # Added for consistency
+      - 8.8.8.8
+    volumes:
+      - .:/app
+      - frontend_node_modules:/app/packages/frontend/node_modules
+      - frontend_next:/app/packages/frontend/.next
+    working_dir: /app/packages/frontend
+    command: >
+      sh -c "
+        echo 'Waiting for contract artifact...' &&
+        until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done &&
+        echo 'Found artifact. Preparing frontend build...' &&
+        mkdir -p src/contracts &&
+        cp /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ./src/contracts/ElectionManagerV2.json &&
+        echo 'ABI copied to src/contracts. Building Next.js app...' &&
+        yarn build &&
+        echo 'Build complete. Starting server...' &&
+        yarn start
+      "
     depends_on:
       backend:
         condition: service_started
@@ -154,9 +184,10 @@ services:
       EVM_RPC: http://anvil:8545
       EVM_MAX_RETRIES: "0"
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
+    dns: # Added for consistency
+      - 8.8.8.8
     volumes:
       - ./out/ElectionManagerV2.sol/ElectionManagerV2.json:/app/orchestrator/ElectionManagerV2.json:ro
-      # FIX: Mount the 'artifacts' directory, not 'circuits', to provide the compiled .wasm and .zkey files.
       - ./artifacts:/app/artifacts:ro
     depends_on:
       anvil:
@@ -178,6 +209,8 @@ services:
       SOLANA_BRIDGE_SK: ${SOLANA_BRIDGE_SK}
     ports:
       - "9300:9300"
+    dns: # Added for consistency
+      - 8.8.8.8
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -186,3 +219,7 @@ services:
       solana:
         condition: service_started
       anvil: { condition: service_healthy }
+
+volumes:
+  frontend_node_modules:
+  frontend_next:

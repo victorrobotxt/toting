@@ -1,46 +1,24 @@
-# 1) Install dependencies inside packages/frontend directly
-
+# 1) Install dependencies inside a dedicated layer for caching
 FROM node:20-alpine AS deps
 WORKDIR /app/packages/frontend
-
-# Copy only the package.json + yarn.lock of the frontend
 COPY packages/frontend/package.json packages/frontend/yarn.lock ./
-
-# Install into /app/packages/frontend/node_modules
 RUN yarn install --frozen-lockfile
 
-# 2) Build using those exact node_modules
-FROM node:20-alpine AS build
-WORKDIR /app/packages/frontend
-
-# Copy the already-installed node_modules from the deps stage
-COPY --from=deps /app/packages/frontend/node_modules ./node_modules
-
-# --- FIX: Add a trailing slash to copy the CONTENTS of the directory ---
-# This ensures src/, public/, etc. are copied directly into the WORKDIR.
-COPY packages/frontend/ ./
-
-# --- FIX: Copy the contract ABI into the frontend's source tree ---
-# This makes the full ABI available for ethers.js.
-RUN mkdir -p src/contracts
-COPY out/ElectionManagerV2.sol/ElectionManagerV2.json ./src/contracts/
-
-# Run Next.js build (now "next" is in node_modules/.bin)
-RUN yarn build
-
-# 3) Final image to run the production server
+# 2) Create the final image
 FROM node:20-alpine AS runner
-WORKDIR /app/packages/frontend
+WORKDIR /app
 
-# Copy only the built output and production node_modules
-COPY --from=build /app/packages/frontend/node_modules ./node_modules
-COPY --from=build /app/packages/frontend/.next ./.next
-COPY --from=build /app/packages/frontend/package.json ./
-# --- FIX: Copy the contract ABI into the final runner image ---
-COPY --from=build /app/packages/frontend/src/contracts/ ./src/contracts/
+# Copy the source code for the entire frontend application
+COPY packages/frontend ./packages/frontend
+
+# Copy the pre-installed node_modules from the 'deps' stage
+COPY --from=deps /app/packages/frontend/node_modules ./packages/frontend/node_modules
+
+WORKDIR /app/packages/frontend
 
 ENV NODE_ENV=production
 EXPOSE 3000
 
-# Use `next start` to serve the build
-CMD ["yarn", "start"]
+# The command to build and start will be specified in docker-compose.yml.
+# This CMD is a fallback and will be overridden.
+CMD ["sh", "-c", "yarn build && yarn start"]

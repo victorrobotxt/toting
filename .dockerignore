@@ -14,7 +14,6 @@ packages/backend/.venv
 
 # Local build caches and artifacts
 out
-!out/ElectionManagerV2.sol/ElectionManagerV2.json
 cache
 broadcast
 proofs
