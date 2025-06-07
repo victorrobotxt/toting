@@ -4,7 +4,6 @@ import time
 import subprocess
 import json
 from web3 import Web3
-# FIX: Correct import path for web3.py v6+
 from web3.middleware import geth_poa_middleware
 from eth_account import Account
 
@@ -23,7 +22,7 @@ MANIFEST_PATH = "/app/artifacts/manifest.json"
 ABI_PATH = os.path.join(os.path.dirname(__file__), 'ElectionManagerV2.json')
 print(f"Attempting to load ABI from {ABI_PATH}")
 if not os.path.exists(ABI_PATH):
-    print(f"❌ ABI file not found at {ABI_PATH}. Make sure the volume is mounted and the setup script ran successfully.")
+    print(f"❌ ABI file not found at {ABI_PATH}. Make sure the volume is mounted.")
     exit(1)
 
 with open(ABI_PATH) as f:
@@ -46,15 +45,23 @@ def connect_w3() -> Web3:
     return w3
 
 def wait_for_election_zero(w3: Web3, mgr) -> int | None:
-    """Polls for ElectionCreated(id=0) and returns its end block number."""
+    """Polls efficiently for ElectionCreated(id=0) and returns its end block number."""
     print("Watching for ElectionCreated(id=0)...")
+    last_scanned_block = 0
     while True:
         try:
-            event_filter = mgr.events.ElectionCreated.create_filter(fromBlock=0)
+            # More efficient polling: start from the block after the last one checked.
+            current_head = w3.eth.block_number
+            if current_head <= last_scanned_block:
+                time.sleep(POLL_INTERVAL_S)
+                continue
+
+            event_filter = mgr.events.ElectionCreated.create_filter(fromBlock=last_scanned_block + 1)
             logs = event_filter.get_all_entries()
 
             if not logs:
-                print(f"... no 'ElectionCreated' events found yet. Retrying in {POLL_INTERVAL_S}s.")
+                last_scanned_block = current_head
+                print(f"... no 'ElectionCreated' events found up to block #{last_scanned_block}. Retrying in {POLL_INTERVAL_S}s.")
                 time.sleep(POLL_INTERVAL_S)
                 continue
 
@@ -62,22 +69,48 @@ def wait_for_election_zero(w3: Web3, mgr) -> int | None:
                 try:
                     processed_log = mgr.events.ElectionCreated().process_log(raw_log)
                     if processed_log.args.id == 0:
+                        # Assuming a fixed duration of 7200 blocks for the election
                         end_block = processed_log.blockNumber + 7200
                         print(f"🎯 Found election #0 in block {processed_log.blockNumber}. Voting ends at block #{end_block}")
                         return end_block
                 except Exception:
                     continue
-
-            print(f"... all events processed, but election #0 not found. Retrying in {POLL_INTERVAL_S}s.")
-            time.sleep(POLL_INTERVAL_S)
+            
+            # Update last scanned block to the latest log processed
+            last_scanned_block = logs[-1].blockNumber
 
         except Exception as e:
             print(f"⚠️ An unexpected error occurred while polling for events: {e}")
             time.sleep(POLL_INTERVAL_S)
 
 
-def run_snarkjs_proof(wasm_path, zkey_path):
-    """Generates the ZK proof using snarkjs."""
+def get_tally_input(w3: Web3, mgr, election_id: int) -> dict:
+    """
+    Fetches all votes for an election and aggregates them for the tally circuit.
+    
+    TODO: This is a critical function to implement correctly.
+    You must:
+    1. Define a `VoteCast` event in your smart contract. e.g., `event VoteCast(uint256 indexed electionId, bool vote);`
+    2. Filter for all instances of that event for the given `election_id`.
+    3. Count the 'yes' and 'no' votes.
+    4. Return a dictionary that matches the input format of your `qv_tally.circom` circuit.
+    
+    For now, this returns dummy data.
+    """
+    print("⚠️ Using DUMMY data for tally input. Implement `get_tally_input` for production.")
+    # Example: fetch all `VoteCast` events from block 0 to 'latest'
+    # event_filter = mgr.events.VoteCast.create_filter(fromBlock=0, argument_filters={'electionId': election_id})
+    # all_votes = event_filter.get_all_entries()
+    # yes_votes = sum(1 for vote in all_votes if vote.args.vote)
+    # no_votes = len(all_votes) - yes_votes
+    # return {"yes_votes": str(yes_votes), "no_votes": str(no_votes)}
+
+    # Using dummy data that matches a potential circuit input structure
+    return {"in": ["1", "2"]}
+
+
+def run_snarkjs_proof(wasm_path, zkey_path, tally_input: dict):
+    """Generates the ZK proof using snarkjs based on the provided input."""
     temp_dir = "/tmp/orchestrator_run"
     os.makedirs(temp_dir, exist_ok=True)
     
@@ -86,8 +119,9 @@ def run_snarkjs_proof(wasm_path, zkey_path):
     public_file = os.path.join(temp_dir, "public.json")
     wtns_file = os.path.join(temp_dir, "tally.wtns")
 
+    print(f"📝 Writing tally input to file: {json.dumps(tally_input)}")
     with open(tally_input_file, "w") as f:
-        f.write('{"in": [1, 2]}')  # Dummy input, replace with real data logic
+        json.dump(tally_input, f)
 
     print("🧠 Generating witness...")
     subprocess.run(
@@ -103,7 +137,9 @@ def run_snarkjs_proof(wasm_path, zkey_path):
     out = subprocess.check_output(
         ["snarkjs", "groth16", "exportsoliditycalldata", public_file, proof_file]
     )
-    params_str = out.decode().replace(' ', '').replace('\n', '')
+    # The output is not valid JSON, it's a series of comma-separated stringified arrays.
+    # We need to wrap it in brackets to make it a valid JSON array.
+    params_str = out.decode().strip()
     params = json.loads(f"[{params_str}]")
     return (params[0], params[1], params[2], params[3])
 
@@ -114,28 +150,35 @@ def submit_tally(w3: Web3, mgr, acct, proof_data, election_id: int):
     tx = mgr.functions.tallyVotes(election_id, a, b, c, pub).build_transaction({
         "from": acct.address,
         "nonce": w3.eth.get_transaction_count(acct.address),
-        "gas": 4_000_000,
-        "gasPrice": w3.to_wei("1", "gwei"),
+        "gas": 4_000_000, # Tallying can be gas-intensive
+        "gasPrice": w3.eth.gas_price,
         "chainId": CHAIN_ID,
     })
     signed = acct.sign_transaction(tx)
-    txh = w3.eth.send_raw_transaction(signed.raw_transaction)
-    print("📤 Submitted tallyVotes tx:", txh.hex())
-    w3.eth.wait_for_transaction_receipt(txh)
-    print("✅ Tally successfully recorded on-chain!")
+    txh = w3.eth.send_raw_transaction(signed.rawTransaction)
+    print(f"📤 Submitted tallyVotes tx: {txh.hex()}")
+    receipt = w3.eth.wait_for_transaction_receipt(txh)
+    print(f"✅ Tally successfully recorded on-chain! Status: {receipt.status}")
+    if receipt.status == 0:
+        print("❌ Transaction reverted! Check contract logic and proof.")
+        exit(1)
 
 def main():
     w3 = connect_w3()
     mgr = w3.eth.contract(address=ELECTION_MANAGER_ADDR, abi=ELECTION_MANAGER_ABI)
     acct = w3.eth.account.from_key(PRIVATE_KEY)
+    print(f"Orchestrator address: {acct.address}")
 
     end_block = wait_for_election_zero(w3, mgr)
+    if end_block is None:
+      print("❌ Could not find election #0. Exiting.")
+      return
 
     while (current_block := w3.eth.block_number) < end_block:
-        print(f"⏳ Election is open. Waiting for block {end_block}. (Current: {current_block})")
+        print(f"⏳ Election is open. Waiting for block {end_block}. (Current: {current_block}, {end_block - current_block} blocks left)")
         time.sleep(15)
 
-    print("🗳️ Election ended. Generating ZK proof for tally...")
+    print("🗳️ Election ended. Preparing to tally votes...")
     
     print(f"Loading manifest from {MANIFEST_PATH} for curve {CURVE}...")
     if not os.path.exists(MANIFEST_PATH):
@@ -154,13 +197,19 @@ def main():
     zkey_path = os.path.join("/app", circuit_paths["zkey"])
 
     if not os.path.exists(wasm_path) or not os.path.exists(zkey_path):
-        print(f"❌ Missing proof artifacts. Checked for WASM at {wasm_path} and ZKEY at {zkey_path}.")
-        print("Ensure you have run the circuit build process and the artifacts volume is mounted correctly.")
+        print(f"❌ Missing proof artifacts at {wasm_path} or {zkey_path}.")
         exit(1)
 
     try:
-        proof_data = run_snarkjs_proof(wasm_path, zkey_path)
+        # Fetch real vote data to generate the proof for
+        tally_input_data = get_tally_input(w3, mgr, 0)
+        
+        # Generate the proof
+        proof_data = run_snarkjs_proof(wasm_path, zkey_path, tally_input_data)
+        
+        # Submit proof on-chain
         submit_tally(w3, mgr, acct, proof_data, 0)
+
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"❌ Failed to generate or submit proof: {e}")
         if isinstance(e, subprocess.CalledProcessError):

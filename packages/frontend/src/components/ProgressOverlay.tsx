@@ -1,13 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { apiUrl } from '../lib/api';
 
 export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDone: () => void }) {
   const [progress, setProgress] = useState(0);
+  const onDoneCalled = useRef(false);
 
   useEffect(() => {
+    const handleDone = () => {
+      if (!onDoneCalled.current) {
+        onDoneCalled.current = true;
+        onDone();
+      }
+    };
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Use the API base host from env vars, otherwise fall back to the window's host.
-    // This correctly handles Docker's internal networking vs. local dev where ports differ.
     const apiBase = process.env.NEXT_PUBLIC_API_BASE;
     const host = apiBase ? new URL(apiBase).host : window.location.host;
     const wsUrl = `${protocol}//${host}/ws/proofs/${jobId}`;
@@ -15,25 +21,31 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (ev) => {
-      const msg = JSON.parse(ev.data);
-      setProgress(msg.progress || 0);
-      // once backend says "done" or "error", close the socket and call onDone()
-      if (msg.state === 'done' || msg.state === 'error') {
-        onDone();
+      try {
+        const msg = JSON.parse(ev.data);
+        setProgress(msg.progress || 0);
+        if (msg.state === 'done' || msg.state === 'error') {
+          handleDone();
+          ws.close();
+        }
+      } catch (e) {
+        console.error("Failed to parse WebSocket message:", e);
+        handleDone();
         ws.close();
       }
     };
-    ws.onerror = () => {
-      // If WebSocket fails immediately, we still want to call onDone
-      onDone();
+
+    ws.onerror = (err) => {
+      console.error("WebSocket error:", err);
+      handleDone();
     };
+
     ws.onclose = () => {
-      // just in case onDone hasn't been called yet
-      onDone();
+      handleDone();
     };
 
     return () => {
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close();
       }
     };

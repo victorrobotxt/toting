@@ -13,11 +13,12 @@ interface AuditRow {
   timestamp: string;
 }
 
-const fetcher = (url: string) => jsonFetcher(url);
+// FIX: Pass the URL and token as an array to match the jsonFetcher's expected signature.
+const fetcher = ([url, token]: [string, string]) => jsonFetcher([url, token]);
 
 function VerifierPage() {
-  const { isLoggedIn } = useAuth();
-  const { data, error } = useSWR<AuditRow[]>(isLoggedIn ? '/proofs' : null, fetcher);
+  const { token } = useAuth();
+  const { data, error } = useSWR<AuditRow[]>(token ? ['/proofs', token] as [string, string] : null, fetcher);
 
   return (
     <>

@@ -13,7 +13,6 @@ from typing import Optional
 import asyncio
 from web3 import Web3
 from eth_account import Account
-# FIX: Use the correct import path for web3.py v6.x
 from web3.middleware import geth_poa_middleware
 
 from .db import SessionLocal, Base, engine, Election, ProofRequest, ProofAudit
@@ -65,60 +64,24 @@ async def add_cors_header(request: Request, call_next):
 # Initialize Web3 provider (pointing at your Anvil / local RPC).
 # -----------------------------------------------------------------------------
 EVM_RPC = os.getenv("EVM_RPC", "http://localhost:8545")
-web3 = Web3(Web3.HTTPProvider(EVM_RPC))
-# If you're on a Proof‐of‐Authority chain (like Anvil/Hardhat), inject this:
-web3.middleware_onion.inject(geth_poa_middleware, layer=0)
-
-ELECTION_MANAGER = Web3.to_checksum_address(
-    os.getenv("ELECTION_MANAGER", "0x" + "0" * 40)
-)
-PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY", "0x" + "0" * 64)
 CHAIN_ID = int(os.getenv("CHAIN_ID", "31337"))
-# ABI expanded to include the ElectionCreated event for reliable ID parsing
-EM_ABI = json.loads("""
-[
-    {
-        "inputs": [{"internalType":"bytes32", "name": "meta", "type": "bytes32"}],
-        "name": "createElection",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {"indexed": true, "internalType": "uint256", "name": "id", "type": "uint256"},
-            {"indexed": true, "internalType": "bytes32", "name": "meta", "type": "bytes32"}
-        ],
-        "name": "ElectionCreated",
-        "type": "event"
-    }
-]
-""")
+PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY")
+ELECTION_MANAGER = Web3.to_checksum_address(os.getenv("ELECTION_MANAGER"))
 
 
-def create_election_onchain(account, contract, meta_hash: bytes) -> str:
-    """
-    Signs and broadcasts a `createElection(meta)` transaction.
-    Returns the hex‐encoded transaction hash on success.
-    """
-    # 1) Build transaction payload
-    txn = contract.functions.createElection(meta_hash).build_transaction({
-        "from": account.address,
-        "chainId": CHAIN_ID,
-        "gas": 3_000_000,
-        "gasPrice": web3.to_wei("1", "gwei"),
-        "nonce": web3.eth.get_transaction_count(account.address),
-    })
+# Load full ABI from the compiled artifact to ensure event parsing is robust.
+# The Dockerfile must copy this file into the image.
+ABI_PATH = "/app/out/ElectionManagerV2.sol/ElectionManagerV2.json"
+try:
+    with open(ABI_PATH) as f:
+        EM_ARTIFACT = json.load(f)
+        EM_ABI = EM_ARTIFACT["abi"]
+except FileNotFoundError:
+    raise RuntimeError(f"Could not load contract ABI from {ABI_PATH}")
 
-    # 2) Sign the transaction with the account's private key
-    signed_tx = account.sign_transaction(txn)
-
-    # 3) Send using the new `.raw_transaction` field (Web3.py v6+)
-    tx_hash_bytes = web3.eth.send_raw_transaction(signed_tx.raw_transaction)
-
-    # 4) Return the hex string of the tx hash
-    return tx_hash_bytes.hex()
+def get_manager_contract():
+    """Helper to create a contract instance."""
+    return web3.eth.contract(address=ELECTION_MANAGER, abi=EM_ABI)
 
 
 # Create tables on startup
@@ -245,53 +208,81 @@ async def callback(code: Optional[str] = None, user: Optional[str] = None):
 def list_elections(db: Session = Depends(get_db)):
     return db.query(Election).all()
 
-
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
-def create_election(payload: CreateElectionSchema, db: Session = Depends(get_db)):
+def create_election(
+    payload: CreateElectionSchema,
+    db: Session = Depends(get_db),
+):
+    # 1) Build & send the on-chain transaction
     account = Account.from_key(PRIVATE_KEY)
-    contract = web3.eth.contract(address=ELECTION_MANAGER, abi=EM_ABI)
-    
+    contract = get_manager_contract()
     meta_bytes = Web3.to_bytes(hexstr=payload.meta_hash)
-    
-    # This now returns a tx_hash string
-    tx_hash = create_election_onchain(account, contract, meta_bytes)
-    
-    # FIX: Wait for the receipt and parse the event to get the true on-chain ID.
-    # This synchronizes the backend's state with the blockchain's state.
-    try:
-        receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Transaction timed out or failed: {e}")
 
-    if receipt.status == 0:
-        raise HTTPException(status_code=500, detail="Transaction reverted on-chain")
-    
-    logs = contract.events.ElectionCreated().process_receipt(receipt)
-    if not logs:
-        raise HTTPException(status_code=500, detail="ElectionCreated event not found in transaction logs")
-    
-    event_args = logs[0]['args']
-    on_chain_id = event_args['id']
-    start_block = receipt.blockNumber
-    
-    # Use the on_chain_id from the event as the primary key
-    election = Election(
+    try:
+        # build → sign → send
+        tx = contract.functions.createElection(meta_bytes).build_transaction({
+            "from": account.address,
+            "chainId": CHAIN_ID,
+            "gas": 3_000_000,
+            "gasPrice": web3.eth.get_gas_price(),
+            "nonce": web3.eth.get_transaction_count(account.address),
+        })
+        signed = account.sign_transaction(tx)
+        tx_hash = web3.eth.send_raw_transaction(signed.rawTransaction)
+        receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+
+        # ensure it didn’t revert
+        if receipt.status != 1:
+            raise HTTPException(status_code=500, detail="On-chain transaction reverted")
+
+    except HTTPException:
+        # re-raise our own HTTPExceptions
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"On-chain transaction failed: {e}")
+
+    # 2) Parse the ElectionCreated event
+    try:
+        # NOTE: v6+ web3.py uses processReceipt (camelCase)
+        events = contract.events.ElectionCreated().processReceipt(receipt)
+        if not events:
+            raise ValueError("ElectionCreated event not found in transaction logs")
+        on_chain_id = events[0].args.id
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Event parsing failed: {e}")
+
+    # 3) Read the start/end from the contract
+    try:
+        start_block, end_block = contract.functions.elections(on_chain_id).call()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not read election state from contract: {e}"
+        )
+
+    # 4) Persist in Postgres
+    db_election = DbElection(
         id=on_chain_id,
-        meta=payload.meta_hash, 
-        start=start_block, 
-        end=start_block + 7200,
-        status="pending"
+        meta=payload.meta_hash,
+        start=start_block,
+        end=end_block,
+        status="pending",
     )
-    db.add(election)
+    db.add(db_election)
     try:
         db.commit()
-    except IntegrityError:
+    except Exception:
         db.rollback()
-        raise HTTPException(status_code=409, detail=f"Election with ID {on_chain_id} already exists.")
+        existing = db.query(DbElection).get(on_chain_id)
+        if existing:
+            return existing
+        raise HTTPException(
+            status_code=409,
+            detail=f"Election with ID {on_chain_id} already exists."
+        )
 
-    db.refresh(election)
-    return election
-
+    db.refresh(db_election)
+    return db_election
 
 @app.get("/elections/{election_id}", response_model=ElectionSchema)
 def get_election(election_id: int, db: Session = Depends(get_db)):

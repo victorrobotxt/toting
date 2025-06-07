@@ -3,13 +3,16 @@ pragma solidity ^0.8.24;
 
 import "./interfaces/IMACI.sol"; // for the IMACI interface
 
-/// @dev A minimal MACI stub that simply records published messages so `enqueueMessage()` won’t revert.
+/// @dev A minimal MACI stub that simply emits a Message event so `enqueueMessage()` won’t revert.
+///      The state-changing array push has been removed to prevent gas estimation issues.
 contract MockMACI is IMACI {
     event Message(bytes data);
-    bytes[] public inbox;
+    
+    // The `inbox` array has been removed.
 
     function publishMessage(bytes calldata data) external override {
-        inbox.push(data);
+        // We no longer push to an array, just emit the event.
+        // This makes the gas cost predictable and low.
         emit Message(data);
     }
 }

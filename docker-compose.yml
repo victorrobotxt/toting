@@ -11,11 +11,15 @@ services:
       anvil
       --port 8545
       --chain-id 31337
-      --base-fee 0
-      --gas-price 0
       --gas-limit 30000000
     ports:
       - "8545:8545"
+    # Add a healthcheck to Anvil so other services can reliably wait for it.
+    healthcheck:
+      test: ["CMD", "cast", "chain-id", "--rpc-url", "http://localhost:8545"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
     volumes:
       - .:/app
     working_dir: /app
@@ -43,6 +47,20 @@ services:
       timeout: 2s
       retries: 10
 
+  # This new service runs the deployment scripts after Anvil is healthy.
+  # Other services will depend on this completing successfully.
+  setup:
+    image: ghcr.io/foundry-rs/foundry:latest
+    user: "0"
+    command: ["/app/scripts/setup_env.sh"]
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
+    depends_on:
+      anvil: { condition: service_healthy }
+
   solana:
     image: solanalabs/solana:v1.18.3
     command: ["solana-test-validator", "--quiet"]
@@ -54,28 +72,32 @@ services:
       context: .
       dockerfile: Dockerfile
       target: backend
-    # FIX: Add env_file to load deployed contract addresses.
     env_file:
       - .env.deployed
     environment:
-      # Keep non-contract specific vars here
+      # contract & OAuth config (non‐chain specific)
       GRAO_BASE_URL: ${GRAO_BASE_URL}
       GRAO_CLIENT_ID: ${GRAO_CLIENT_ID}
       GRAO_CLIENT_SECRET: ${GRAO_CLIENT_SECRET}
       JWT_SECRET: ${JWT_SECRET}
       GRAO_REDIRECT_URI: ${GRAO_REDIRECT_URI}
       USE_REAL_OAUTH: ${USE_REAL_OAUTH}
-      EVM_RPC: http://anvil:8545
+
+      # EVM settings
+      EVM_RPC: ${EVM_RPC}
+      CHAIN_ID: ${CHAIN_ID}
+      ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
+
+      # Celery & Database
       CELERY_BROKER: redis://redis:6379/0
       CELERY_BACKEND: redis://redis:6379/0
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
-      # --- FIX: Add the orchestrator key so the backend can sign transactions ---
-      ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
     ports:
       - "8000:8000"
     depends_on:
+      setup:
+        condition: service_completed_successfully
       redis:
-        # FIX: Wait for Redis to be healthy, not just started.
         condition: service_healthy
       db:
         condition: service_healthy
@@ -93,6 +115,8 @@ services:
       CELERY_BACKEND: redis://redis:6379/0
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
     depends_on:
+      setup:
+        condition: service_completed_successfully
       redis:
         # FIX: Wait for Redis to be healthy, not just started.
         condition: service_healthy
@@ -114,7 +138,10 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+      setup:
+        condition: service_completed_successfully
 
   orchestrator:
     build:
@@ -132,7 +159,10 @@ services:
       # FIX: Mount the 'artifacts' directory, not 'circuits', to provide the compiled .wasm and .zkey files.
       - ./artifacts:/app/artifacts:ro
     depends_on:
-      - anvil
+      anvil:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
 
   relay:
     build:
@@ -149,9 +179,10 @@ services:
     ports:
       - "9300:9300"
     depends_on:
+      setup:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
-      anvil:
-        condition: service_started
       solana:
         condition: service_started
+      anvil: { condition: service_healthy }

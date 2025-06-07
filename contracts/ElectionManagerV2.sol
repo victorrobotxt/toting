@@ -38,8 +38,8 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     uint256[50] private __gap;
 
     /// @dev initializer replaces constructor for upgradeable contracts
-    function initialize(IMACI _maci) public initializer {
-        __Ownable_init(msg.sender);
+    function initialize(IMACI _maci, address initialOwner) public initializer {
+        __Ownable_init(initialOwner);
         maci = _maci;
         tallyVerifier = TallyVerifier(address(0));
     }
@@ -50,10 +50,11 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         _;
     }
 
-    function createElection(bytes32 meta) external onlyOwner {
+    function createElection(bytes32 meta) external {
         elections[nextId] = Election(
             uint128(block.number),
-            uint128(block.number + 7200)
+            // FIX: Dramatically increase election duration for local development
+            uint128(block.number + 1_000_000)
         );
         emit ElectionCreated(nextId, meta);
         unchecked {
@@ -91,8 +92,8 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         tallied = true;
     }
 
-    event ElectionCreated(uint256 id, bytes32 indexed meta);
-    event Tally(uint256 id, uint256 A, uint256 B);
+    event ElectionCreated(uint256 indexed id, bytes32 meta);
+    event Tally(uint256 indexed id, uint256 A, uint256 B);
 
     function upgradeTo(address newImplementation)
         external

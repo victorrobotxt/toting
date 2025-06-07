@@ -11,6 +11,7 @@ RUN groupadd -r app && useradd -r -g app appuser
 FROM base AS python-env
 COPY packages/backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
+COPY out/ElectionManagerV2.sol/ElectionManagerV2.json /app/out/ElectionManagerV2.sol/ElectionManagerV2.json
 COPY packages/backend /app/packages/backend
 COPY artifacts/manifest.json /app/circuits/manifest.json
 

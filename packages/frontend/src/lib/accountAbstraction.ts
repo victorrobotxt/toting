@@ -1,5 +1,7 @@
+// packages/frontend/src/lib/accountAbstraction.ts
 import { SimpleAccountAPI } from "@account-abstraction/sdk";
 import { ethers } from "ethers";
+import ElectionManagerV2 from "../contracts/ElectionManagerV2.json";
 
 const ENTRY_POINT_ADDRESS = process.env.NEXT_PUBLIC_ENTRYPOINT!;
 const WALLET_FACTORY_ADDRESS = process.env.NEXT_PUBLIC_WALLET_FACTORY!;
@@ -17,9 +19,7 @@ async function getAccountAPI(signer: ethers.Signer) {
 }
 
 async function sendUserOpToBundler(userOp: any): Promise<string> {
-    // Use a pure JsonRpcProvider pointed at your bundler
     const bundler = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
-    // eth_sendUserOperation takes [UserOperation, EntryPointAddress] and returns the hash
     const userOpHash: string = await bundler.send(
         "eth_sendUserOperation",
         [userOp, ENTRY_POINT_ADDRESS]
@@ -42,14 +42,12 @@ export async function bundleCreateWallet(
         proof.a, proof.b, proof.c, pubSignals, owner
     ]);
 
-    // 1) build & sign the UserOp
     const unsignedOp = await api.createSignedUserOp({
         target: WALLET_FACTORY_ADDRESS,
         data: initData,
     });
     const signedOp = await api.signUserOp(unsignedOp);
 
-    // 2) send it to your bundler via eth_sendUserOperation
     return sendUserOpToBundler(signedOp);
 }
 
@@ -60,41 +58,55 @@ export async function bundleSubmitVote(
     nonce: number,
     vcProof: Uint8Array | string
 ): Promise<string> {
-    const managerIface = new ethers.utils.Interface([
-        "function enqueueMessage(uint256,uint256,uint256,bytes)"
-    ]);
-
-    // The backend returns dummy proofs as strings like
-    // "proof-<hash>" which are not valid hex bytes. Convert any
-    // non-hex string proof to bytes so ethers can encode it.
     const proofBytes =
         typeof vcProof === "string" && !ethers.utils.isHexString(vcProof)
             ? ethers.utils.toUtf8Bytes(vcProof)
             : vcProof;
 
-    // If ENTRY_POINT_ADDRESS is unset (0x0), fall back to a direct transaction
-    // instead of going through the bundler. This is useful for local dev where
-    // no ERC-4337 infrastructure is running.
     if (
-        ENTRY_POINT_ADDRESS === "0x" + "0".repeat(40) ||
+        !ENTRY_POINT_ADDRESS || ENTRY_POINT_ADDRESS === "0x" + "0".repeat(40) ||
         !BUNDLER_RPC_URL
     ) {
+        // --- DIRECT TRANSACTION PATH (for local dev) ---
         const manager = new ethers.Contract(
             ELECTION_MANAGER_ADDR,
-            ["function enqueueMessage(uint256,uint256,uint256,bytes)"],
+            ElectionManagerV2.abi,
             signer
         );
-        const tx = await manager.enqueueMessage(
-            electionId,
-            voteOption,
-            nonce,
-            proofBytes
-        );
-        await tx.wait();
-        return tx.hash;
+
+        console.log("Submitting vote via direct transaction (legacy gas)...");
+        
+        // FIX: Explicitly set a legacy gasPrice to avoid EIP-1559 estimation issues on local testnets.
+        // This is a much more reliable method for development environments like Anvil.
+        try {
+            const tx = await manager.enqueueMessage(
+                electionId,
+                voteOption,
+                nonce,
+                proofBytes,
+                {
+                    gasLimit: 500_000,
+                    // Use a hardcoded or fetched legacy gas price.
+                    gasPrice: await signer.provider!.getGasPrice(),
+                }
+            );
+            
+            console.log("Transaction sent to wallet:", tx.hash);
+            const receipt = await tx.wait();
+            console.log("Transaction confirmed in block:", receipt.blockNumber);
+            return tx.hash;
+
+        } catch (error) {
+            console.error("Error sending direct transaction:", error);
+            // Re-throw the error so the UI toast can display it.
+            throw error;
+        }
     }
 
+    // --- ACCOUNT ABSTRACTION PATH ---
+    console.log("Submitting vote via Account Abstraction UserOp...");
     const api = await getAccountAPI(signer);
+    const managerIface = new ethers.utils.Interface(ElectionManagerV2.abi);
     const data = managerIface.encodeFunctionData("enqueueMessage", [
         electionId,
         voteOption,

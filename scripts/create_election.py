@@ -27,6 +27,6 @@ tx = mgr.functions.createElection(meta).build_transaction({
     "gasPrice": w3.to_wei("1", "gwei"),
 })
 signed = acct.sign_transaction(tx)
-txh = w3.eth.send_raw_transaction(signed.raw_transaction)
+txh = w3.eth.send_raw_transaction(signed.rawTransaction)
 rcpt = w3.eth.wait_for_transaction_receipt(txh)
 print("✅ createElection tx:", txh.hex(), "block", rcpt.blockNumber)

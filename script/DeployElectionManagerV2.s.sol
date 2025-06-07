@@ -30,15 +30,12 @@ contract DeployElectionManagerV2Script is Script {
         ElectionManagerV2 implementation = new ElectionManagerV2();
         console.log("ElectionManagerV2 implementation deployed to:", address(implementation));
 
-        // FIX: The Solidity parser can be picky about complex inline expressions.
-        //      Assigning the casted interface to a variable first is more robust
-        //      and resolves the "Expected primary expression" error.
-        IMACI maciInterface = IMACI(address(maci));
-
         // 3. Prepare the initialization calldata
+        // We pass both the MACI dependency and the initial owner address.
         bytes memory callData = abi.encodeWithSelector(
-            ElectionManagerV2.initialize.selector,
-            maciInterface // The 'deployer' argument was incorrect; owner is set via msg.sender in initialize()
+            ElectionManagerV2.initialize.selector, // This resolves to initialize(IMACI,address)
+            IMACI(address(maci)),
+            deployer
         );
         
         // 4. Deploy the UUPS proxy pointing to the implementation

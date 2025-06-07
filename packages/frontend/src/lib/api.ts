@@ -1,46 +1,48 @@
 // packages/frontend/src/lib/api.ts
 
 /**
- * Prepends the backend API base URL to a given path.
- * @param path The relative path of the API endpoint (e.g., '/elections').
- * @returns The full URL for the API endpoint.
+ * Constructs a full URL to the backend API.
+ * @param path The path to the API endpoint (e.g., '/elections').
+ * @returns The full URL.
  */
-export function apiUrl(path: string): string {
-  const base = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
-  return `${base}${path}`;
-}
+export const apiUrl = (path: string): string => {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
+    return `${apiBase}${path}`;
+};
 
 /**
- * A fetcher function for use with SWR that handles JSON responses and auth tokens.
- * @param args An array where the first element is the path and the optional second is a JWT.
- * @returns The JSON response from the API.
- * @throws An error if the fetch response is not ok.
+ * A generic JSON fetcher for use with SWR.
+ * Handles authentication headers and throws an error on non-ok responses.
+ * @param url The API endpoint path.
+ * @param token The JWT for authorization.
+ * @returns The JSON response data.
  */
-export async function jsonFetcher([path, token]: [string, string?]): Promise<any> {
-  const url = apiUrl(path);
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+export const jsonFetcher = async ([url, token]: [string, string?]): Promise<any> => {
+    const fullUrl = url.startsWith('http') ? url : apiUrl(url);
 
-  const res = await fetch(url, { headers });
-
-  if (!res.ok) {
-    const error = new Error(
-      res.status === 401
-        ? 'Unauthorized'
-        : 'An error occurred while fetching the data.'
-    );
-    try {
-      (error as any).info = await res.json();
-    } catch (e) {
-      (error as any).info = { detail: res.statusText };
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
     }
-    (error as any).status = res.status;
-    throw error;
-  }
 
-  return res.json();
-}
+    const res = await fetch(fullUrl, { headers });
+
+    if (!res.ok) {
+        const error = new Error('An error occurred while fetching the data.');
+        // Attach extra info to the error object.
+        try {
+            const info = await res.json();
+            (error as any).info = info;
+            error.message = info.detail || res.statusText;
+        } catch (e) {
+            // The response was not JSON.
+            error.message = res.statusText;
+        }
+        (error as any).status = res.status;
+        throw error;
+    }
+
+    return res.json();
+};

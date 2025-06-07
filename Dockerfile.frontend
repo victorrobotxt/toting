@@ -20,6 +20,11 @@ COPY --from=deps /app/packages/frontend/node_modules ./node_modules
 # This ensures src/, public/, etc. are copied directly into the WORKDIR.
 COPY packages/frontend/ ./
 
+# --- FIX: Copy the contract ABI into the frontend's source tree ---
+# This makes the full ABI available for ethers.js.
+RUN mkdir -p src/contracts
+COPY out/ElectionManagerV2.sol/ElectionManagerV2.json ./src/contracts/
+
 # Run Next.js build (now "next" is in node_modules/.bin)
 RUN yarn build
 
@@ -31,6 +36,8 @@ WORKDIR /app/packages/frontend
 COPY --from=build /app/packages/frontend/node_modules ./node_modules
 COPY --from=build /app/packages/frontend/.next ./.next
 COPY --from=build /app/packages/frontend/package.json ./
+# --- FIX: Copy the contract ABI into the final runner image ---
+COPY --from=build /app/packages/frontend/src/contracts/ ./src/contracts/
 
 ENV NODE_ENV=production
 EXPOSE 3000

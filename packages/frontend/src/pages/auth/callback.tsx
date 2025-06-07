@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { apiUrl } from '../lib/api';
+import { apiUrl } from '../../lib/api';
 
 export default function CallbackPage() {
   const router = useRouter();

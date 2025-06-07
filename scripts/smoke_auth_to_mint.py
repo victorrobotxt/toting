@@ -88,7 +88,7 @@ tx = factory.functions.mintWallet(a, b, c, pubSignals, acct.address).build_trans
      "gasPrice": gas_price}
 )
 signed  = acct.sign_transaction(tx)
-tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
 print("  tx hash", tx_hash.hex())
 rcpt = w3.eth.wait_for_transaction_receipt(tx_hash)
 print("  receipt status", rcpt.status)

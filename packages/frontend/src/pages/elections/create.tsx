@@ -6,7 +6,7 @@ import NavBar from '../../components/NavBar';
 import { useToast } from '../../lib/ToastProvider';
 import GateBanner from '../../components/GateBanner';
 import { useSWRConfig } from 'swr';
-import { apiUrl, jsonFetcher } from '../../lib/api';
+import { apiUrl } from '../../lib/api';
 
 interface Election {
   id: number;
@@ -48,10 +48,9 @@ function CreateElectionPage() {
     }
     if (res.ok) {
       const data: Election = await res.json();
-      mutate(['/elections', token] as any, async () => {
-        const fresh = await jsonFetcher(['/elections', token!]);
-        return [...fresh, data];
-      });
+      // Simply revalidate the list of elections. SWR will automatically
+      // re-fetch from the backend, ensuring the UI is perfectly in sync.
+      mutate(['/elections', token]);
       router.push(`/elections/${data.id}`);
     } else {
       try {
