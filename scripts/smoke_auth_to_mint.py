@@ -1,3 +1,4 @@
+# scripts/smoke_auth_to_mint.py
 #!/usr/bin/env python3
 import os
 import sys
@@ -29,7 +30,9 @@ FACTORY_ABI = [
             {"internalType":"uint256[2][2]","name":"b","type":"uint256[2][2]"},
             {"internalType":"uint256[2]","name":"c","type":"uint256[2]"},
             {"internalType":"uint256[7]","name":"pubSignals","type":"uint256[7]"},
-            {"internalType":"address","name":"owner","type":"address"}
+            {"internalType":"address","name":"owner","type":"address"},
+            # --- FIX: Add the missing salt parameter to the ABI ---
+            {"internalType":"uint256","name":"salt","type":"uint256"}
         ],
         "name":"mintWallet",
         "outputs":[{"internalType":"address","name":"wallet","type":"address"}],
@@ -74,14 +77,16 @@ print("Using account", acct.address)
 # 4. Instantiate factory contract
 factory = w3.eth.contract(address=FACTORY_ADDRESS, abi=FACTORY_ABI)
 
-# 5. Dummy proof inputs
+# 5. Dummy proof inputs and a salt
 a = [0, 0]
 b = [[0, 0], [0, 0]]
 c = [0, 0]
 pubSignals = [0, 0, 0, 0, 0, 0, 0] # Must be length 7
+salt = 0 # The salt used for the first wallet
 
 gas_price = w3.to_wei("1", "gwei")
-tx = factory.functions.mintWallet(a, b, c, pubSignals, acct.address).build_transaction(
+# --- FIX: Pass the salt to the function call ---
+tx = factory.functions.mintWallet(a, b, c, pubSignals, acct.address, salt).build_transaction(
     {"from": acct.address,
      "nonce": w3.eth.get_transaction_count(acct.address),
      "gas": 5_000_000,

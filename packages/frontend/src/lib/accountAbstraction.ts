@@ -72,6 +72,20 @@ export async function bundleUserOp(
         target,
         data,
     });
+    
+    // --- FIX: Await the initCode before checking its properties ---
+    const initCode = await unsignedOp.initCode;
+    
+    // Check if this is a wallet-creation UserOp (it will have a non-empty initCode).
+    if (initCode && initCode !== '0x' && initCode.length > 2) {
+      // Bundler gas estimation for wallet creation is often too low.
+      // We'll set a higher, fixed verificationGasLimit to ensure the
+      // initCode (which deploys the contract) has enough gas to execute.
+      // This is a common and necessary workaround for AA wallet creation.
+      console.log('Wallet creation detected. Overriding verificationGasLimit.');
+      unsignedOp.verificationGasLimit = 500_000;
+    }
+    // --- END FIX ---
 
     const signedOp = await api.signUserOp(unsignedOp);
     

@@ -44,11 +44,6 @@ contract DeployElectionManagerV2Script is Script {
         proxyAddr = address(proxy);
         console.log("ElectionManagerV2 proxy deployed to:", proxyAddr);
 
-        // 5. Create election #0 so the orchestrator has a task to watch
-        bytes32 meta = "Initial Demo Election";
-        ElectionManagerV2(payable(proxyAddr)).createElection(meta);
-        console.log("Created initial election #0.");
-
         vm.stopBroadcast();
     }
 }

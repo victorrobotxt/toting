@@ -41,44 +41,43 @@ export class ProofWalletAPI extends SimpleAccountAPI {
   }
 
   /**
-   * Overrides the SimpleAccountAPI method to provide the custom initCode.
-   * This is the only method we need to override for our specific factory logic.
+   * --- FIX ---
+   * Overrides the base `getAccountInitCode` to work with our custom factory.
+   * It constructs a nested calldata: the outer call is `createAccount(bytes)`, and the
+   * inner `bytes` payload contains the encoded arguments for our `mintWallet` logic.
+   * This is the pattern required by the EntryPoint v0.6.0 contract.
    */
   async getAccountInitCode(): Promise<string> {
-    // If the wallet is already deployed, SimpleAccountAPI will have found the
-    // accountContract instance, and we should return "0x".
-    if (this.accountContract) {
-        return "0x";
-    }
-
-    // For the first transaction (wallet creation), proof and signals are required.
     if (!this.zkProof || !this.pubSignals) {
       throw new Error("ProofWalletAPI: ZK proof and public signals are required for the first transaction.");
     }
 
-    // The interface for our factory's mintWallet function
-    const factoryIface = new ethers.utils.Interface([
-      "function mintWallet(uint256[2] a, uint256[2][2] b, uint256[2] c, uint256[7] pubSignals, address owner)"
-    ]);
-    
     const ownerAddress = await this.owner.getAddress();
     
-    // Encode the calldata for the mintWallet function
-    const calldata = factoryIface.encodeFunctionData("mintWallet", [
-        this.zkProof.a,
-        this.zkProof.b,
-        this.zkProof.c,
-        this.pubSignals,
-        ownerAddress
-    ]);
+    // 1. ABI-encode the arguments for our internal minting logic. This becomes the `data` parameter.
+    const innerCreationData = ethers.utils.defaultAbiCoder.encode(
+        ['uint256[2]', 'uint256[2][2]', 'uint256[2]', 'uint256[7]', 'address', 'uint256'],
+        [
+            this.zkProof.a,
+            this.zkProof.b,
+            this.zkProof.c,
+            this.pubSignals,
+            ownerAddress,
+            this.index // Pass the account's salt (index)
+        ]
+    );
 
-    // Add a runtime check to ensure factoryAddress is defined.
-    // This satisfies TypeScript and provides a clear error if configuration is missing.
+    // 2. The interface for the factory's public function that EntryPoint will call.
+    const factoryIface = new ethers.utils.Interface(["function createAccount(bytes data)"]);
+    
+    // 3. Encode the full calldata for the `createAccount` function.
+    const calldata = factoryIface.encodeFunctionData("createAccount", [innerCreationData]);
+
     if (!this.factoryAddress) {
       throw new Error("ProofWalletAPI: factoryAddress is undefined. Check your environment variables and configuration.");
     }
     
-    // The initCode is the factory address concatenated with the calldata
+    // The initCode is the factory address concatenated with the calldata for `createAccount`.
     return hexConcat([this.factoryAddress, calldata]);
   }
 }
