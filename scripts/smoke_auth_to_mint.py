@@ -17,7 +17,7 @@ FACTORY_ADDRESS = Web3.to_checksum_address(FACTORY_ADDRESS)
 
 print(f"Using factory address (checksummed): {FACTORY_ADDRESS}")
 
-# Use Anvil's default first private key so it's funded out of the box
+# Use Anvil's default second private key so it's funded and distinct from the deployer
 PRIVATE_KEY = os.getenv("PRIVATE_KEY",
     "0x59c6995e998f97a5a0044966f0945382fdbd5656656b4e3934e658449e610ba3"
 )
@@ -28,7 +28,7 @@ FACTORY_ABI = [
             {"internalType":"uint256[2]","name":"a","type":"uint256[2]"},
             {"internalType":"uint256[2][2]","name":"b","type":"uint256[2][2]"},
             {"internalType":"uint256[2]","name":"c","type":"uint256[2]"},
-            {"internalType":"uint256[]","name":"pubSignals","type":"uint256[]"},
+            {"internalType":"uint256[7]","name":"pubSignals","type":"uint256[7]"},
             {"internalType":"address","name":"owner","type":"address"}
         ],
         "name":"mintWallet",
@@ -78,7 +78,7 @@ factory = w3.eth.contract(address=FACTORY_ADDRESS, abi=FACTORY_ABI)
 a = [0, 0]
 b = [[0, 0], [0, 0]]
 c = [0, 0]
-pubSignals = []
+pubSignals = [0, 0, 0, 0, 0, 0, 0] # Must be length 7
 
 gas_price = w3.to_wei("1", "gwei")
 tx = factory.functions.mintWallet(a, b, c, pubSignals, acct.address).build_transaction(
@@ -92,6 +92,10 @@ tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
 print("  tx hash", tx_hash.hex())
 rcpt = w3.eth.wait_for_transaction_receipt(tx_hash)
 print("  receipt status", rcpt.status)
+if rcpt.status == 0:
+    print("❌ Transaction reverted. Check Anvil logs for the reason.")
+    sys.exit(1)
+
 
 # 7. Decode the WalletMinted event
 events = factory.events.WalletMinted().process_receipt(rcpt)

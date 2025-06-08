@@ -22,6 +22,15 @@ contract SmartWallet is BaseAccount {
         return _entryPoint;
     }
 
+    /**
+     * @notice Returns the nonce of the account for a given sender and key.
+     * @dev The key is used to allow for multiple nonces per account (e.g., for parallel execution).
+     *      The EntryPoint will always use a key of 0 for sequential nonces.
+     */
+    function getNonce() public view override returns (uint256) {
+        return _entryPoint.getNonce(address(this), 0);
+    }
+
     /// @notice Hook called by BaseAccount.validateUserOp(...)
     /// @dev Must return 0 if valid, SIG_VALIDATION_FAILED otherwise.
     function _validateSignature(

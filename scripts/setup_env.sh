@@ -50,6 +50,16 @@ echo "✅ Anvil RPC is ready."
 
 echo "📦 Deploying contracts..."
 
+# --- Deploy EntryPoint contract first and parse its logged address ---
+echo "Deploying EntryPoint..."
+ENTRYPOINT_ADDR=$(forge script script/DeployEntryPoint.s.sol:DeployEntryPoint --rpc-url "$RPC_URL" --broadcast | grep "EntryPoint deployed at:" | awk '{print $NF}')
+if [ -z "$ENTRYPOINT_ADDR" ]; then
+    echo "🛑 Failed to deploy EntryPoint."
+    exit 1
+fi
+echo "✅ EntryPoint deployed at: $ENTRYPOINT_ADDR"
+
+
 MGR_ADDR=$(forge script script/DeployElectionManagerV2.s.sol:DeployElectionManagerV2Script --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "ElectionManagerV2 proxy deployed to:" | awk '{print $NF}')
 if [ -z "$MGR_ADDR" ]; then
     echo "🛑 Failed to deploy ElectionManagerV2."
@@ -57,7 +67,9 @@ if [ -z "$MGR_ADDR" ]; then
 fi
 echo "✅ ElectionManagerV2 proxy deployed at: $MGR_ADDR"
 
-FACTORY_ADDR=$(forge script script/DeployFactory.s.sol:DeployFactory --rpc-url "$RPC_URL" --broadcast | grep "Factory deployed at:" | awk '{print $NF}')
+# --- Pass EntryPoint address to Factory deployment script and parse its logged address ---
+echo "Deploying WalletFactory..."
+FACTORY_ADDR=$(ENTRYPOINT_ADDRESS=$ENTRYPOINT_ADDR forge script script/DeployFactory.s.sol:DeployFactory --rpc-url "$RPC_URL" --broadcast | grep "Factory deployed at:" | awk '{print $NF}')
 if [ -z "$FACTORY_ADDR" ]; then
     echo "🛑 Failed to deploy WalletFactory."
     exit 1
@@ -70,9 +82,10 @@ echo "📝 Generating environment file at $ENV_FILE"
 echo "ELECTION_MANAGER=$MGR_ADDR" > $ENV_FILE
 echo "NEXT_PUBLIC_ELECTION_MANAGER=$MGR_ADDR" >> $ENV_FILE
 echo "NEXT_PUBLIC_WALLET_FACTORY=$FACTORY_ADDR" >> $ENV_FILE
-echo "NEXT_PUBLIC_ENTRYPOINT=0x0000000000000000000000000000000000000000" >> $ENV_FILE
+echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR" >> $ENV_FILE
 
-# FIX: Automatically generate the .env.local file for the frontend
+
+# Automatically generate the .env.local file for the frontend
 # This ensures that when running `yarn dev` on the host, it uses the
 # contract addresses from this specific `docker-compose` session.
 FRONTEND_LOCAL_ENV_FILE="/app/packages/frontend/.env.local"
@@ -85,7 +98,7 @@ echo "📝 Generating/updating frontend local environment file at $FRONTEND_LOCA
     echo "NEXT_PUBLIC_BUNDLER_URL=http://localhost:3001"
     echo "NEXT_PUBLIC_ELECTION_MANAGER=$MGR_ADDR"
     echo "NEXT_PUBLIC_WALLET_FACTORY=$FACTORY_ADDR"
-    echo "NEXT_PUBLIC_ENTRYPOINT=0x0000000000000000000000000000000000000000"
+    echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR"
 } > "$FRONTEND_LOCAL_ENV_FILE"
 echo "✅ Frontend .env.local created."
 

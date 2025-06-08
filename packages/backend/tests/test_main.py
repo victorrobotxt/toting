@@ -1,3 +1,4 @@
+# packages/backend/tests/test_main.py
 import os
 import sys
 import json
@@ -12,6 +13,7 @@ os.environ["USE_REAL_OAUTH"] = "false"
 os.environ["GRAO_CLIENT_SECRET"] = "test-client-secret"
 os.environ["JWT_SECRET"] = "test-secret"
 os.environ["ORCHESTRATOR_KEY"] = "0x" + "1" * 64
+os.environ["ELECTION_MANAGER"] = "0x" + "a" * 40
 os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
 os.environ["CELERY_BROKER"] = "memory://"
 os.environ["CELERY_BACKEND"] = "cache+memory://"
@@ -72,27 +74,25 @@ def mock_web3():
 
         # Mock the event log that should be in the receipt
         mock_event_log = {
-            'args': {'id': 99, 'meta': '0x' + 'b' * 64},
+            'args': {'id': 99, 'meta': b'\xbb' * 32},
             'event': 'ElectionCreated',
             'logIndex': 0,
             'transactionIndex': 0,
-            'transactionHash': '0x' + 'c' * 64,
+            'transactionHash': b'\xcc' * 32,
             'address': main.ELECTION_MANAGER,
-            'blockHash': '0x' + 'd' * 64,
+            'blockHash': b'\xdd' * 32,
             'blockNumber': 123
         }
-
+        
         # Configure the contract mock
         mock_contract = MagicMock()
-        # Make `process_receipt` return the log we created
-        mock_contract.events.ElectionCreated().process_receipt.return_value = [mock_event_log]
-        # Make the `elections(id)` call return the state
+        mock_contract.events.ElectionCreated().process_receipt.return_value = [MagicMock(**mock_event_log)]
         mock_contract.functions.elections().call.return_value = (123, 123 + 1_000_000)
         
         # Configure the web3 instance mock
         mock_web3_instance.eth.contract.return_value = mock_contract
         mock_web3_instance.eth.get_transaction_count.return_value = 1
-        mock_web3_instance.eth.get_gas_price.return_value = 10**9 # 1 gwei
+        mock_web3_instance.eth.gas_price = 10**9 # 1 gwei
         mock_web3_instance.eth.send_raw_transaction.return_value = b'\xcc' * 32
         mock_web3_instance.eth.wait_for_transaction_receipt.return_value = mock_receipt
         
@@ -115,6 +115,7 @@ def test_mock_login_and_list():
 
     claims = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
     assert claims["email"] == "alice@example.com"
+    assert claims["role"] == "user"
 
     # list elections
     r = client.get("/elections")
@@ -131,13 +132,18 @@ def test_mock_login_and_list():
 
 # Use the new robust mock_web3 fixture for this test.
 def test_create_and_update_election(mock_web3):
+    # This test requires an admin token to pass the new security check
+    admin_token = jwt.encode({"email": "admin@example.com", "role": "admin"}, os.environ["JWT_SECRET"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    
     # The mock_web3 fixture now correctly simulates the contract call and event
     mock_contract = mock_web3.eth.contract.return_value
     # Configure the mock to return the correct start/end blocks for the `elections(id)` call
     mock_contract.functions.elections(99).call.return_value = (123, 123 + 1_000_000)
 
     payload = {"meta_hash": "0x" + "b" * 64}
-    r = client.post("/elections", json=payload)
+    # Pass the admin headers with the request
+    r = client.post("/elections", json=payload, headers=headers)
     
     assert r.status_code == 201, f"API failed with: {r.text}"
     data = r.json()
@@ -156,6 +162,17 @@ def test_create_and_update_election(mock_web3):
     assert r.status_code == 200
     assert r.json()["tally"] == "A:1,B:0"
 
+def test_create_election_fails_for_non_admin(mock_web3):
+    """Verify that a user without the 'admin' role cannot create an election."""
+    user_token = jwt.encode({"email": "user@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {user_token}"}
+    
+    payload = {"meta_hash": "0x" + "c" * 64}
+    r = client.post("/elections", json=payload, headers=headers)
+    
+    assert r.status_code == 403
+    assert "Insufficient permissions" in r.text
+
 
 def test_manifest_check():
     import subprocess
@@ -166,9 +183,9 @@ def test_manifest_check():
     assert result.returncode in (0, 1)
 
 
-def test_proof_cache_and_quota(monkeypatch):
+def test_proof_cache_and_quota():
     token = jwt.encode(
-        {"email": "bob@example.com"}, os.environ["JWT_SECRET"], algorithm="HS256"
+        {"email": "bob@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256"
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -199,7 +216,7 @@ def test_proof_cache_and_quota(monkeypatch):
 
 def test_voice_and_batch_tally_and_ws():
     token = jwt.encode(
-        {"email": "carol@example.com"}, os.environ["JWT_SECRET"], algorithm="HS256"
+        {"email": "carol@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256"
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -230,7 +247,7 @@ def test_voice_and_batch_tally_and_ws():
 
 def test_circuit_version_migration():
     token = jwt.encode(
-        {"email": "migrator@example.com"}, os.environ["JWT_SECRET"], algorithm="HS256"
+        {"email": "migrator@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256"
     )
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"country": "US", "dob": "1990-01-01", "residency": "CA"}
@@ -269,7 +286,7 @@ def test_circuit_version_migration():
 
 def test_proof_audit_cli():
     token = jwt.encode(
-        {"email": "auditor@example.com"}, os.environ["JWT_SECRET"], algorithm="HS256"
+        {"email": "auditor@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256"
     )
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"country": "US", "dob": "1990-02-01", "residency": "CA"}
@@ -325,7 +342,7 @@ def test_grpc_wrapper():
 
 def test_multicurve_header():
     token = jwt.encode(
-        {"email": "multi@example.com"}, os.environ["JWT_SECRET"], algorithm="HS256"
+        {"email": "multi@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256"
     )
     headers = {"Authorization": f"Bearer {token}", "x-curve": "bls12-381"}
     payload = {"country": "US", "dob": "1980-01-01", "residency": "CA"}
@@ -338,7 +355,7 @@ def test_multicurve_header():
 
 def test_quota_endpoint():
     token = jwt.encode(
-        {"email": "quota@example.com"}, os.environ["JWT_SECRET"], algorithm="HS256"
+        {"email": "quota@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256"
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -358,7 +375,7 @@ def test_quota_endpoint():
 
 def test_list_proofs():
     token = jwt.encode(
-        {"email": "veri@example.com"}, os.environ["JWT_SECRET"], algorithm="HS256"
+        {"email": "veri@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256"
     )
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"country": "US", "dob": "1990-12-12", "residency": "CA"}

@@ -6,7 +6,8 @@ services:
     image: ghcr.io/foundry-rs/foundry:latest
     user: "0"
     environment:
-      ANVIL_IP_ADDR: 0.0.0.0
+      - FOUNDRY_DISABLE_NIGHTLY_WARNING=1
+      - ANVIL_IP_ADDR=0.0.0.0
     command: >
       anvil
       --port 8545
@@ -16,13 +17,15 @@ services:
       - "8545:8545"
     # Add a healthcheck to Anvil so other services can reliably wait for it.
     healthcheck:
-      test: ["CMD", "cast", "chain-id", "--rpc-url", "http://localhost:8545"]
+      test: ["CMD", "cast", "chain-id", "--rpc-url", "http://127.0.0.1:8545"]
       interval: 2s
       timeout: 2s
       retries: 30
     volumes:
       - .:/app
     working_dir: /app
+    dns: # Added for consistency
+      - 8.8.8.8
   
   redis:
     image: redis:7-alpine
@@ -45,6 +48,8 @@ services:
       interval: 5s
       timeout: 2s
       retries: 10
+    dns: # Added for consistency
+      - 8.8.8.8
 
   # This new service runs the deployment scripts after Anvil is healthy.
   # Other services will depend on this completing successfully.
@@ -57,7 +62,7 @@ services:
       - .:/app
     environment:
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
-    # --- FIX: Add DNS to allow downloading solc ---
+    # Add DNS to allow downloading solc
     dns:
       - 8.8.8.8
     depends_on:
@@ -68,6 +73,8 @@ services:
     command: ["solana-test-validator", "--quiet"]
     ports:
       - "8899:8899"
+    dns: # Added for consistency
+      - 8.8.8.8
 
   backend:
     build:
@@ -141,11 +148,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    env_file:
+    env_file: # Load addresses from setup
       - .env.deployed
     environment:
       NEXT_PUBLIC_API_BASE: http://localhost:8000
-      NEXT_PUBLIC_BUNDLER_URL: ${NEXT_PUBLIC_BUNDLER_URL:-http://localhost:3001}
+      NEXT_PUBLIC_BUNDLER_URL: http://localhost:3001
     ports:
       - "3000:3000"
     dns: # Added for consistency
@@ -173,6 +180,38 @@ services:
       setup:
         condition: service_completed_successfully
 
+  bundler:
+    image: ghcr.io/5afe/erc4337-bundlers-eth-infinitism-bundler:latest
+
+    # 1) Override the default Yarn entrypoint
+    entrypoint: ["sh", "-c"]
+
+    # 2) Use shell‐form command so $NEXT_PUBLIC_ENTRYPOINT expands
+    command: |
+      echo "Bundler waiting for setup..."
+      until [ -f /app/.env.deployed ]; do sleep 1; done
+      . /app/.env.deployed
+      echo "Starting bundler for EntryPoint $NEXT_PUBLIC_ENTRYPOINT..."
+      # 'bundler' is on the PATH inside this image
+      exec bundler \
+        --entryPoint "$NEXT_PUBLIC_ENTRYPOINT" \
+        --eth-client-address http://anvil:8545 \
+        --mnemonic "test test test test test test test test test test test junk" \
+        --port 3001 \
+        --host 0.0.0.0 \
+        --unsafe
+
+    working_dir: /tmp
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/app
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+      anvil:
+        condition: service_healthy
+
   orchestrator:
     build:
       context: .
@@ -194,7 +233,7 @@ services:
         condition: service_healthy
       setup:
         condition: service_completed_successfully
-
+  
   relay:
     build:
       context: .

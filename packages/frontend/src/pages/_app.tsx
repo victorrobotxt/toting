@@ -1,7 +1,7 @@
 import type { AppProps } from 'next/app';
 import { ThemeProvider } from 'next-themes';
 import '../styles/globals.css';
-// FIX: Use correct relative paths to the new lib files
+// Use correct relative paths to the new lib files
 import { AuthProvider } from '../lib/AuthProvider';
 import { I18nProvider } from '../lib/I18nProvider';
 import { ToastProvider } from '../lib/ToastProvider';

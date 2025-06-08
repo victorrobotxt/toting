@@ -1,26 +1,24 @@
 // frontend/components/VoteHandler.tsx
 import { useState } from 'react';
 import { ethers } from 'ethers';
-
-// IMPORTANT: Make sure this ABI is available in your frontend project
-import ElectionManagerABI from '../contracts/ElectionManagerV2.json';
+import ElectionManagerABI from '../src/contracts/ElectionManagerV2.json';
 
 // --- CONFIGURATION ---
-// FIX: The env var is NEXT_PUBLIC_ELECTION_MANAGER, not ..._ADDRESS.
-// Also, the backend URL should use NEXT_PUBLIC_API_BASE.
 const ELECTION_MANAGER_ADDRESS = process.env.NEXT_PUBLIC_ELECTION_MANAGER!;
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
 interface VoteHandlerProps {
   electionId: number;
-  userIdentifier: string; // A unique identifier for the user to generate the nullifier
+}
+
+interface ProofResult {
+  status?: string; // Required by the pollForResult constraint
+  proof: any;
+  pubSignals: string[];
 }
 
 // Helper function to poll for proof results
-// FIX: Changed from a generic async arrow function to a regular async function
-// to avoid ambiguity with JSX syntax in .tsx files, which was causing the
-// "Cannot find name 'async'" build error.
-async function pollForResult<T>(url: string, interval = 2000, maxAttempts = 30): Promise<T> {
+async function pollForResult<T extends { status?: string }>(url: string, interval = 2000, maxAttempts = 30): Promise<T> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
       const res = await fetch(url);
@@ -40,8 +38,8 @@ async function pollForResult<T>(url: string, interval = 2000, maxAttempts = 30):
 };
 
 
-export default function VoteHandler({ electionId, userIdentifier }: VoteHandlerProps) {
-  const [vote, setVote] = useState<'1' | '0' | null>(null); // 1 for Yes, 0 for No
+export default function VoteHandler({ electionId }: VoteHandlerProps) {
+  const [vote, setVote] = useState<'1' | '0' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [error, setError] = useState('');
@@ -66,7 +64,6 @@ export default function VoteHandler({ electionId, userIdentifier }: VoteHandlerP
       // Step 1: Generate ZK Proof from our backend
       setStatusMessage('Generating your private proof... This may take a moment.');
       
-      // The backend /api/zk/voice endpoint is generic. Let's align with what `packages/backend/schemas.py` defines for `VoiceInput`.
       const proofPayload = {
           credits: vote === '1' ? [0, 1] : [1, 0], // Example mapping for a two-option vote
           nonce: Date.now()
@@ -83,7 +80,6 @@ export default function VoteHandler({ electionId, userIdentifier }: VoteHandlerP
         throw new Error(err.detail || 'Failed to start proof generation.');
       }
 
-      // FIX: The backend returns 'job_id', not 'task_id'.
       const { job_id } = await proofResponse.json();
       
       if (!job_id) {
@@ -92,7 +88,7 @@ export default function VoteHandler({ electionId, userIdentifier }: VoteHandlerP
 
       // Step 2: Poll for the proof result
       setStatusMessage('Waiting for proof to be verified by the worker...');
-      const proofResult = await pollForResult<{ proof: any; pubSignals: string[] }>(
+      const proofResult = await pollForResult<ProofResult>(
         `${BACKEND_URL}/api/zk/voice/${job_id}`
       );
       
@@ -111,9 +107,6 @@ export default function VoteHandler({ electionId, userIdentifier }: VoteHandlerP
       );
 
       // Step 4: Call the smart contract's `enqueueMessage` function
-      // FIX: The contract does not have `castVote`. The correct function is `enqueueMessage`.
-      // The proof from the mock backend is a string, which the contract expects as `bytes`.
-      // Assuming nonce is the first public signal for this example.
       const nonce = pubSignals.length > 0 ? parseInt(pubSignals[0], 10) : Date.now();
       const tx = await contract.enqueueMessage(electionId, parseInt(vote, 10), nonce, proof);
 

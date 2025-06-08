@@ -13,7 +13,7 @@ interface AuditRow {
   timestamp: string;
 }
 
-// FIX: Pass the URL and token as an array to match the jsonFetcher's expected signature.
+// Pass the URL and token as an array to match the jsonFetcher's expected signature.
 const fetcher = ([url, token]: [string, string]) => jsonFetcher([url, token]);
 
 function VerifierPage() {

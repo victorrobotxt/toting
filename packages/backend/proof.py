@@ -50,21 +50,37 @@ def cache_get(circuit: str, inputs: dict, curve: str):
         return PROOF_CACHE.get(key)
     except ValueError:
         return None
-
 BROKER_URL = os.getenv("CELERY_BROKER", "redis://localhost:6379/0")
 BACKEND_URL = os.getenv("CELERY_BACKEND", "redis://localhost:6379/0")
-celery_app = Celery('proof', broker=BROKER_URL, backend=BACKEND_URL)
+celery_app = Celery('proof', broker=BROKER_URL, backend=BACKEND_URL, task_serializer='json', result_serializer='json', accept_content=['json'])
 if os.getenv("CELERY_TASK_ALWAYS_EAGER"):
     celery_app.conf.task_always_eager = True
     celery_app.conf.task_store_eager_result = True
 
 @celery_app.task
 def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):
-    """Dummy proof generator that hashes inputs and stores in cache."""
+    """
+    Dummy proof generator.
+    Returns a structured proof for 'eligibility' and a flat hex string for others.
+    """
     data = json.dumps(inputs, sort_keys=True).encode()
     h = hashlib.sha256(data).hexdigest()
-    proof = f"proof-{h[:16]}"
-    pub = [int(h[i:i+8], 16) for i in range(0, 32, 8)]
+    proof = None
+    
+    if circuit == "eligibility":
+        # For wallet creation, we need the structured ZkProof object.
+        dummy_a = [f"0x{h[0:8]}", f"0x{h[8:16]}"]
+        dummy_b = [[f"0x{h[16:24]}", f"0x{h[24:32]}"], [f"0x{h[32:40]}", f"0x{h[40:48]}"]]
+        dummy_c = [f"0x{h[48:56]}", f"0x{h[56:64]}"]
+        proof = {"a": dummy_a, "b": dummy_b, "c": dummy_c}
+    else:
+        # For other proofs like 'voice', the contract expects raw bytes.
+        proof = f"0x{h[:64]}"
+
+    # Generate 7 public signals to match the contract's ABI.
+    # We take 7 chunks of 8 hex characters (4 bytes) each from the hash.
+    # 7 * 8 = 56, which is less than the 64 available characters in the hash.
+    pub = [int(h[i:i+8], 16) for i in range(0, 56, 8)]
     result = {"proof": proof, "pubSignals": pub}
     
     key = cache_key(circuit, inputs, curve)
@@ -72,7 +88,10 @@ def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):
 
     circuit_hash = get_circuit_hash(circuit, curve)
     input_hash = hashlib.sha256(data).hexdigest()
-    proof_root = hashlib.sha256(json.dumps(result).encode()).hexdigest()
+
+    proof_to_hash = json.dumps(proof, sort_keys=True) if isinstance(proof, dict) else str(proof)
+    proof_root = hashlib.sha256(proof_to_hash.encode()).hexdigest()
+
 
     db = SessionLocal()
     db.add(

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-// FIX: Use the remapped path '@openzeppelin/contracts/...'
+// Use the remapped path '@openzeppelin/contracts/...'
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
@@ -50,10 +50,11 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         _;
     }
 
-    function createElection(bytes32 meta) external {
+    // --- FIX: Add the `onlyOwner` modifier for access control ---
+    function createElection(bytes32 meta) external onlyOwner {
         elections[nextId] = Election(
             uint128(block.number),
-            // FIX: Dramatically increase election duration for local development
+            // Dramatically increase election duration for local development
             uint128(block.number + 1_000_000)
         );
         emit ElectionCreated(nextId, meta);

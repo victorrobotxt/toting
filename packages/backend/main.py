@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from jose import jwt
+from jose import jwt, JWTError
 import httpx
 import os
 import json
@@ -15,7 +15,6 @@ from web3 import Web3
 from eth_account import Account
 from web3.middleware import geth_poa_middleware
 
-# FIX: Import the correct database model name
 from .db import SessionLocal, Base, engine, Election as DbElection, ProofRequest, ProofAudit
 from .schemas import (
     ElectionSchema,
@@ -70,11 +69,9 @@ PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY")
 ELECTION_MANAGER = Web3.to_checksum_address(os.getenv("ELECTION_MANAGER"))
 
 
-# --- FIX: Instantiate the Web3 object ---
-# This was the cause of the "name 'web3' is not defined" error.
+# Instantiate the Web3 object
 web3 = Web3(Web3.HTTPProvider(EVM_RPC))
-# Add Proof-of-Authority middleware, which is often required for testnets like Goerli or local Geth.
-# It doesn't hurt to have it for Anvil.
+# Add Proof-of-Authority middleware, required for many testnets and good practice for local dev.
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
@@ -159,17 +156,22 @@ if not PRIVATE_KEY:
     raise RuntimeError("ORCHESTRATOR_KEY must be configured")
 
 
-def get_user_id(authorization: str) -> str:
+def get_current_user(authorization: str = Header(None)) -> dict:
+    """Decodes the JWT and returns the claims payload."""
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(401, "missing auth")
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     token = authorization.split()[1]
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-    except Exception:
-        raise HTTPException(401, "invalid token")
-    user = claims.get("email")
-    if not user:
-        raise HTTPException(401, "invalid token")
+        return claims
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
+# --- FIX: New dependency to check for admin role ---
+def require_admin_role(user: dict = Depends(get_current_user)):
+    """A dependency that ensures the user has the 'admin' role."""
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Insufficient permissions. Admin role required.")
     return user
 
 
@@ -188,6 +190,7 @@ def initiate():
       <body>
         <h1>Mock Login</h1>
         <form action='/auth/callback' method='get'>
+          <p>Use <b>admin@example.com</b> to get an admin role token.</p>
           <label>Email: <input type='text' name='user' value='tester@example.com'></label>
           <button type='submit'>Login</button>
         </form>
@@ -201,28 +204,38 @@ def initiate():
 
 @app.get("/auth/callback")
 async def callback(code: Optional[str] = None, user: Optional[str] = None):
-    """Exchange code for a (dummy) ID token or handle mock logins."""
+    """
+    Exchange code for a (dummy) ID token or handle mock logins.
+    Generates a token with an 'admin' role if the email is 'admin@example.com'.
+    """
     if USE_REAL_OAUTH:
         # For the smoke test we still mint a fake JWT
-        fake_jwt = "ey.fake.base64"
-        return {"id_token": fake_jwt, "eligibility": True}
+        # In a real scenario, you'd exchange the code for a real token here.
+        claims = {"email": "realuser@example.com", "role": "user"}
+        signed_jwt = jwt.encode(claims, JWT_SECRET, algorithm="HS256")
+        return {"id_token": signed_jwt, "eligibility": True}
 
     email = user or "tester@example.com"
-    claims = {"email": email}
-    fake_jwt = jwt.encode(claims, JWT_SECRET, algorithm="HS256")
-    return {"id_token": fake_jwt, "eligibility": True}
+    # --- FIX: Assign role based on email for easy testing ---
+    role = "admin" if email == "admin@example.com" else "user"
+    claims = {"email": email, "role": role}
+    
+    signed_jwt = jwt.encode(claims, JWT_SECRET, algorithm="HS256")
+    return {"id_token": signed_jwt, "eligibility": True}
 
 
 @app.get("/elections", response_model=list[ElectionSchema])
 def list_elections(db: Session = Depends(get_db)):
-    # FIX: Use the correct model name (DbElection) as aliased during import
     return db.query(DbElection).all()
 
+# --- FIX: Protect this endpoint by requiring the admin role ---
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
 def create_election(
     payload: CreateElectionSchema,
     db: Session = Depends(get_db),
+    admin_user: dict = Depends(require_admin_role) # This enforces the protection
 ):
+    print(f"Admin user '{admin_user.get('email')}' is creating an election.")
     # 1) Build & send the on-chain transaction
     account = Account.from_key(PRIVATE_KEY)
     contract = get_manager_contract()
@@ -281,7 +294,7 @@ def create_election(
     db.add(db_election)
     try:
         db.commit()
-    except IntegrityError: # FIX: Be specific about the exception
+    except IntegrityError: # Be specific about the exception
         db.rollback()
         # The record might already exist due to a race condition (e.g., from an indexer).
         # In that case, we can just fetch and return it.
@@ -330,13 +343,13 @@ async def gas_estimate():
 def post_proof_generic(
     circuit: str,
     request: Request,
-    authorization: str = Header(None),
-    x_curve: str | None = Header("bn254", alias="x-curve"),
     db: Session = Depends(get_db),
+    user: dict = Depends(get_current_user),
+    x_curve: str | None = Header("bn254", alias="x-curve"),
 ):
-    user = get_user_id(authorization)
+    user_email = user.get("email")
     day = datetime.utcnow().strftime("%Y-%m-%d")
-    if not increment_quota(db, user, day):
+    if not increment_quota(db, user_email, day):
         raise HTTPException(429, "proof quota exceeded")
 
     curve = x_curve.lower() if x_curve else "bn254"
@@ -360,7 +373,14 @@ def get_proof_generic(circuit: str, job_id: str):
     if async_result.state in {"PENDING", "STARTED"}:
         return {"status": async_result.state.lower()}
     if async_result.state == "SUCCESS":
-        return {"status": "done", **async_result.result}
+        result_data = async_result.result
+        if isinstance(result_data, str):
+            try:
+                result_data = json.loads(result_data)
+            except json.JSONDecodeError:
+                return {"status": "error", "detail": "Invalid result format from worker"}
+        
+        return {"status": "done", **result_data}
     return {"status": "error"}
 
 
@@ -385,11 +405,11 @@ async def ws_proofs(websocket: WebSocket, job_id: str):
 
 
 @app.get("/api/quota")
-def get_quota(authorization: str = Header(None), db: Session = Depends(get_db)):
+def get_quota(db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
     """Return remaining proof quota for the current user."""
-    user = get_user_id(authorization)
+    user_email = user.get("email")
     day = datetime.utcnow().strftime("%Y-%m-%d")
-    pr = db.query(ProofRequest).filter_by(user=user, day=day).first()
+    pr = db.query(ProofRequest).filter_by(user=user_email, day=day).first()
     used = pr.count if pr else 0
     return {"left": PROOF_QUOTA - used}
 

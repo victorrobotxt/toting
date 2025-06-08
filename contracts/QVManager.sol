@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 import "./QVVerifier.sol";
-import "./ElectionManager.sol";
+import "./interfaces/IMACI.sol";
 
 /// @title Manager for Quadratic Voting ballots
 /// @notice Verifies private credit proofs and forwards encrypted ballots to MACI
-// FIX: Use the remapped path '@openzeppelin/contracts/...'
+// Use the remapped path '@openzeppelin/contracts/...'
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 

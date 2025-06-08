@@ -28,12 +28,17 @@ contract DeployFactory is Script {
             revert("ORCHESTRATOR_KEY environment variable not set or invalid.");
         }
 
+        // Read the EntryPoint address from the environment
+        address entryPointAddress = vm.envAddress("ENTRYPOINT_ADDRESS");
+        require(entryPointAddress != address(0), "ENTRYPOINT_ADDRESS env var not set");
+
         // Start broadcasting transactions signed with this specific private key.
         vm.startBroadcast(deployerPrivateKey);
 
         UnsafeVerifierStub vs = new UnsafeVerifierStub();
         WalletFactory factory = new WalletFactory(
-            EntryPoint(payable(address(0))),
+            // Pass the real EntryPoint address to the constructor
+            EntryPoint(payable(entryPointAddress)),
             vs
         );
         console.log("Factory deployed at:", address(factory));

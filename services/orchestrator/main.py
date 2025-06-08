@@ -50,7 +50,7 @@ def wait_for_election_zero(w3: Web3, mgr) -> int | None:
     last_scanned_block = 0
     while True:
         try:
-            # More efficient polling: start from the block after the last one checked.
+            # More efficient polling: start from the block after the last one scanned.
             current_head = w3.eth.block_number
             if current_head <= last_scanned_block:
                 time.sleep(POLL_INTERVAL_S)
@@ -65,19 +65,19 @@ def wait_for_election_zero(w3: Web3, mgr) -> int | None:
                 time.sleep(POLL_INTERVAL_S)
                 continue
 
-            for raw_log in logs:
+            for event_log in logs:
                 try:
-                    processed_log = mgr.events.ElectionCreated().process_log(raw_log)
-                    if processed_log.args.id == 0:
-                        # Assuming a fixed duration of 7200 blocks for the election
-                        end_block = processed_log.blockNumber + 7200
-                        print(f"🎯 Found election #0 in block {processed_log.blockNumber}. Voting ends at block #{end_block}")
+                    # The event is already processed by create_filter
+                    if event_log.args.id == 0:
+                        election_state = mgr.functions.elections(0).call() # (start, end)
+                        end_block = election_state[1]
+                        print(f"🎯 Found election #0 in block {event_log.blockNumber}. Voting ends at block #{end_block}")
                         return end_block
                 except Exception:
                     continue
             
             # Update last scanned block to the latest log processed
-            last_scanned_block = logs[-1].blockNumber
+            last_scanned_block = logs[-1].blockNumber if logs else current_head
 
         except Exception as e:
             print(f"⚠️ An unexpected error occurred while polling for events: {e}")

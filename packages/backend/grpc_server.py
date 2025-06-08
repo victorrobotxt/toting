@@ -25,7 +25,30 @@ class ProofService(proof_pb2_grpc.ProofServiceServicer):
             return proof_pb2.StatusResponse(state=state.lower())
         if state == "SUCCESS":
             res = async_result.result
-            return proof_pb2.StatusResponse(state="done", proof=res["proof"], pubSignals=res["pubSignals"])
+            
+            # If the result from Celery is a string, parse it first.
+            if isinstance(res, str):
+                try:
+                    res = json.loads(res)
+                except json.JSONDecodeError:
+                    context.set_code(grpc.StatusCode.INTERNAL)
+                    context.set_details('failed to parse worker result')
+                    return proof_pb2.StatusResponse(state="error")
+
+            proof = res.get("proof")
+            
+            # The .proto defines 'proof' as a string. If we get a dictionary 
+            # (for structured proofs like eligibility), we must JSON-encode it.
+            if isinstance(proof, dict):
+                proof_str = json.dumps(proof)
+            else:
+                proof_str = str(proof or '') # Ensure it's a string
+
+            return proof_pb2.StatusResponse(
+                state="done", 
+                proof=proof_str, 
+                pubSignals=res.get("pubSignals", [])
+            )
         return proof_pb2.StatusResponse(state="error")
 
 
@@ -35,4 +58,3 @@ def serve(port: int = 50051):
     server.add_insecure_port(f"[::]:{port}")
     server.start()
     return server
-
