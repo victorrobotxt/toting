@@ -4,7 +4,8 @@ pragma solidity ^0.8.24;
 
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
-import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
+// --- FIX: This import is removed as it does not exist in v0.6.0 ---
+// import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol"; 
 import "@account-abstraction/contracts/core/Helpers.sol";
 import { BabyJubjubSig } from "./lib/BabyJubjubSig.sol";
 
@@ -34,7 +35,8 @@ contract SmartWallet is BaseAccount {
     /// @notice Hook called by BaseAccount.validateUserOp(...)
     /// @dev Must return 0 if valid, SIG_VALIDATION_FAILED otherwise.
     function _validateSignature(
-        PackedUserOperation calldata userOp,
+        // --- FIX: The type is changed from `PackedUserOperation` to `UserOperation` ---
+        UserOperation calldata userOp,
         bytes32 userOpHash
     ) internal view override returns (uint256) {
         // we trust the entryPoint to have correctly hashed the UserOp

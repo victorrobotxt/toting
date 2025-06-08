@@ -81,6 +81,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: backend
+    volumes:
+      - .:/app
     env_file:
       - .env.deployed
     environment:
@@ -105,8 +107,13 @@ services:
       - "8000:8000"
     dns: # Added for consistency
       - 8.8.8.8
-    volumes:
-      - ./out/ElectionManagerV2.sol/ElectionManagerV2.json:/app/out/ElectionManagerV2.sol/ElectionManagerV2.json:ro
+    command: >
+      sh -c "
+        echo 'Backend waiting for contract artifact...' &&
+        until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done &&
+        echo 'Backend found artifact. Starting server.' &&
+        python -m uvicorn packages.backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/packages/backend
+      "
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -120,6 +127,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: worker
+    volumes:
+      - .:/app
     env_file:
       - .env.deployed
     environment:
@@ -134,8 +143,6 @@ services:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
     dns: # Added for consistency
       - 8.8.8.8
-    volumes:
-      - ./out/ElectionManagerV2.sol/ElectionManagerV2.json:/app/out/ElectionManagerV2.sol/ElectionManagerV2.json:ro
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -169,7 +176,7 @@ services:
         echo 'Found artifact. Preparing frontend build...' &&
         mkdir -p src/contracts &&
         cp /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ./src/contracts/ElectionManagerV2.json &&
-        echo 'ABI copied to src/contracts. Building Next.js app...' &&
+        echo 'ABI copied. Building Next.js app with pre-installed dependencies...' &&
         yarn build &&
         echo 'Build complete. Starting server...' &&
         yarn start
@@ -182,41 +189,32 @@ services:
 
   bundler:
     image: ghcr.io/5afe/erc4337-bundlers-eth-infinitism-bundler:latest
-
-    # 1) Override the default Yarn entrypoint
-    entrypoint: ["sh", "-c"]
-
-    # 2) Use shell‐form command so $NEXT_PUBLIC_ENTRYPOINT expands
-    command: |
-      echo "Bundler waiting for setup..."
-      until [ -f /app/.env.deployed ]; do sleep 1; done
-      . /app/.env.deployed
-      echo "Starting bundler for EntryPoint $NEXT_PUBLIC_ENTRYPOINT..."
-      # 'bundler' is on the PATH inside this image
-      exec bundler \
-        --entryPoint "$NEXT_PUBLIC_ENTRYPOINT" \
-        --eth-client-address http://anvil:8545 \
-        --mnemonic "test test test test test test test test test test test junk" \
-        --port 3001 \
-        --host 0.0.0.0 \
-        --unsafe
-
-    working_dir: /tmp
+    working_dir: /opt/bundler/packages/bundler
+    volumes:
+      - .:/app 
+      - ./mnemonic.txt:/mnt/mnemonic.txt:ro
+    command:
+      - npx
+      - ts-node
+      - ./src/exec.ts
+      - --config
+      - /app/bundler.config.json
+      - --unsafe
     ports:
       - "3001:3001"
-    volumes:
-      - .:/app
     depends_on:
-      setup:
-        condition: service_completed_successfully
       anvil:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
 
   orchestrator:
     build:
       context: .
       dockerfile: Dockerfile
       target: orchestrator
+    volumes:
+      - .:/app
     env_file:
       - .env.deployed
     environment:
@@ -225,9 +223,13 @@ services:
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
     dns: # Added for consistency
       - 8.8.8.8
-    volumes:
-      - ./out/ElectionManagerV2.sol/ElectionManagerV2.json:/app/orchestrator/ElectionManagerV2.json:ro
-      - ./artifacts:/app/artifacts:ro
+    command: >
+      sh -c "
+        echo 'Orchestrator waiting for contract artifact...' &&
+        until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done &&
+        echo 'Orchestrator found artifact. Starting process.' &&
+        python /app/services/orchestrator/main.py
+      "
     depends_on:
       anvil:
         condition: service_healthy

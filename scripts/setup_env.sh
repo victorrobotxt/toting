@@ -1,5 +1,9 @@
 #!/bin/bash
-set -eo pipefail
+# Exit immediately if a command exits with a non-zero status.
+# Treat unset variables as an error.
+# The `pipefail` option ensures that a pipeline's return status is the value
+# of the last command to exit with a non-zero status.
+set -euo pipefail
 
 # --- Pre-flight Check: Ensure running inside container ---
 if [ ! -d "/app" ] || [ ! -f "/app/foundry.toml" ]; then
@@ -8,27 +12,22 @@ if [ ! -d "/app" ] || [ ! -f "/app/foundry.toml" ]; then
 fi
 
 # --- Forceful Cleanup Step ---
-# This is a robust fix for stale volume mounts or leftover artifacts.
-# It ensures the 'out' directory is completely clean before forge tries to write to it.
-echo "🧹 Forcefully cleaning up previous build artifacts from within the container..."
-rm -rf /app/out
-echo "✅ Artifact cleanup complete."
+echo "🧹 Cleaning up previous Foundry build artifacts and cache..."
+forge clean
 
 # --- Pre-flight Check: Submodules ---
-if [ ! -d "/app/lib/openzeppelin-contracts/contracts" ]; then
-    echo "🛑 Error: Git submodules not found in /app/lib/. The Docker volume mount seems to be stale or empty." >&2
-    echo "This is common on Docker Desktop for Windows/Mac." >&2
-    echo "1. Run 'git submodule update --init --recursive' on your host machine." >&2
-    echo "2. Run 'docker-compose down -v' to remove the old container and its volume." >&2
-    echo "3. Run 'docker-compose up -d --build' to create a fresh one." >&2
+if [ ! -f "/app/lib/account-abstraction/contracts/core/EntryPoint.sol" ]; then
+    echo "🛑 Error: Git submodules not found in /app/lib/." >&2
+    # ... (rest of error message)
     exit 1
 fi
 
 if [ ! -f /app/.env ]; then
-    echo "🛑 .env file not found inside the container at /app/.env. Please copy .env.example to .env on your host."
+    echo "🛑 .env file not found. Please copy .env.example to .env on your host."
     exit 1
 fi
 
+# Load environment variables from .env file
 export $(grep -v '^#' /app/.env | xargs)
 
 # Define the RPC URL for the Anvil service
@@ -48,34 +47,67 @@ until cast block-number --rpc-url "$RPC_URL" > /dev/null 2>&1; do
 done
 echo "✅ Anvil RPC is ready."
 
+# --- PATCH SUBMODULE ---
+# This is the most direct fix. We will use `sed` to patch the import path
+# in the `EntryPoint.sol` file from our v0.6.0 submodule. This is safer than
+# changing the remappings, which seem to be ineffective for this nested dependency.
+ENTRYPOINT_FILE="/app/lib/account-abstraction/contracts/core/EntryPoint.sol"
+echo "🩹 Patching import path in $ENTRYPOINT_FILE..."
+sed -i 's|@openzeppelin/contracts/security/ReentrancyGuard.sol|@openzeppelin/contracts/utils/ReentrancyGuard.sol|' "$ENTRYPOINT_FILE"
+echo "✅ Import path patched."
+
 echo "📦 Deploying contracts..."
 
-# --- Deploy EntryPoint contract first and parse its logged address ---
+# --- Deploy EntryPoint contract ---
 echo "Deploying EntryPoint..."
-ENTRYPOINT_ADDR=$(forge script script/DeployEntryPoint.s.sol:DeployEntryPoint --rpc-url "$RPC_URL" --broadcast | grep "EntryPoint deployed at:" | awk '{print $NF}')
+# --- FIX: Parse the command's output to extract only the address ---
+ENTRYPOINT_ADDR=$(forge script script/DeployEntryPoint.s.sol:DeployEntryPoint --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "EntryPoint deployed at:" | awk '{print $NF}')
 if [ -z "$ENTRYPOINT_ADDR" ]; then
     echo "🛑 Failed to deploy EntryPoint."
     exit 1
 fi
+echo "Verifying EntryPoint deployment..."
+CODE=$(cast code --rpc-url "$RPC_URL" "$ENTRYPOINT_ADDR")
+if [ "$CODE" == "0x" ]; then
+    echo "🛑 Verification failed: No code at EntryPoint address $ENTRYPOINT_ADDR"
+    exit 1
+fi
+echo "✅ EntryPoint code verified."
 echo "✅ EntryPoint deployed at: $ENTRYPOINT_ADDR"
 
-
+# --- Deploy ElectionManagerV2 proxy ---
+# --- FIX: Added grep and awk to parse the address from the command output ---
 MGR_ADDR=$(forge script script/DeployElectionManagerV2.s.sol:DeployElectionManagerV2Script --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "ElectionManagerV2 proxy deployed to:" | awk '{print $NF}')
 if [ -z "$MGR_ADDR" ]; then
     echo "🛑 Failed to deploy ElectionManagerV2."
     exit 1
 fi
+echo "Verifying ElectionManager deployment..."
+CODE=$(cast code --rpc-url "$RPC_URL" "$MGR_ADDR")
+if [ "$CODE" == "0x" ]; then
+    echo "🛑 Verification failed: No code at ElectionManager address $MGR_ADDR"
+    exit 1
+fi
+echo "✅ ElectionManager code verified."
 echo "✅ ElectionManagerV2 proxy deployed at: $MGR_ADDR"
 
-# --- Pass EntryPoint address to Factory deployment script and parse its logged address ---
+# --- Deploy WalletFactory ---
 echo "Deploying WalletFactory..."
 FACTORY_ADDR=$(ENTRYPOINT_ADDRESS=$ENTRYPOINT_ADDR forge script script/DeployFactory.s.sol:DeployFactory --rpc-url "$RPC_URL" --broadcast | grep "Factory deployed at:" | awk '{print $NF}')
 if [ -z "$FACTORY_ADDR" ]; then
     echo "🛑 Failed to deploy WalletFactory."
     exit 1
 fi
+echo "Verifying WalletFactory deployment..."
+CODE=$(cast code --rpc-url "$RPC_URL" "$FACTORY_ADDR")
+if [ "$CODE" == "0x" ]; then
+    echo "🛑 Verification failed: No code at WalletFactory address $FACTORY_ADDR"
+    exit 1
+fi
+echo "✅ WalletFactory code verified."
 echo "✅ WalletFactory deployed at: $FACTORY_ADDR"
 
+# --- Generate .env.deployed file ---
 ENV_FILE="/app/.env.deployed"
 echo "📝 Generating environment file at $ENV_FILE"
 
@@ -84,10 +116,30 @@ echo "NEXT_PUBLIC_ELECTION_MANAGER=$MGR_ADDR" >> $ENV_FILE
 echo "NEXT_PUBLIC_WALLET_FACTORY=$FACTORY_ADDR" >> $ENV_FILE
 echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR" >> $ENV_FILE
 
+# --- Generate bundler.config.json file ---
+BUNDLER_CONFIG_FILE="/app/bundler.config.json"
+echo "📝 Generating bundler config file at $BUNDLER_CONFIG_FILE"
+BENEFICIARY_ADDR=$(cast wallet address --private-key $ORCHESTRATOR_KEY)
 
-# Automatically generate the .env.local file for the frontend
-# This ensures that when running `yarn dev` on the host, it uses the
-# contract addresses from this specific `docker-compose` session.
+cat > "$BUNDLER_CONFIG_FILE" << EOL
+{
+  "port": "3001",
+  "entryPoint": "$ENTRYPOINT_ADDR",
+  "network": "http://anvil:8545",
+  "beneficiary": "$BENEFICIARY_ADDR",
+  "mnemonic": "/mnt/mnemonic.txt",
+  "gasFactor": "1.5",
+  "minBalance": "0",
+  "maxBundleGas": 15000000,
+  "minStake": "0",
+  "minUnstakeDelay": 0,
+  "autoBundleInterval": 5000,
+  "autoBundleMempoolSize": 100
+}
+EOL
+echo "✅ Bundler config created."
+
+# --- Generate frontend's local environment file ---
 FRONTEND_LOCAL_ENV_FILE="/app/packages/frontend/.env.local"
 echo "📝 Generating/updating frontend local environment file at $FRONTEND_LOCAL_ENV_FILE for hot-reloading..."
 

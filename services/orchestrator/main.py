@@ -19,7 +19,7 @@ MANIFEST_PATH = "/app/artifacts/manifest.json"
 
 
 # --- Load full ABI from the mounted artifact ---
-ABI_PATH = os.path.join(os.path.dirname(__file__), 'ElectionManagerV2.json')
+ABI_PATH = "/app/out/ElectionManagerV2.sol/ElectionManagerV2.json"
 print(f"Attempting to load ABI from {ABI_PATH}")
 if not os.path.exists(ABI_PATH):
     print(f"❌ ABI file not found at {ABI_PATH}. Make sure the volume is mounted.")

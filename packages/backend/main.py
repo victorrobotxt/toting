@@ -75,18 +75,23 @@ web3 = Web3(Web3.HTTPProvider(EVM_RPC))
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 
-# Load full ABI from the compiled artifact to ensure event parsing is robust.
-# The Dockerfile must copy this file into the image.
-ABI_PATH = "/app/out/ElectionManagerV2.sol/ElectionManagerV2.json"
-try:
-    with open(ABI_PATH) as f:
-        EM_ARTIFACT = json.load(f)
-        EM_ABI = EM_ARTIFACT["abi"]
-except FileNotFoundError:
-    raise RuntimeError(f"Could not load contract ABI from {ABI_PATH}")
+# --- FIX: Lazily load the contract ABI to prevent startup race conditions ---
+EM_ABI = None
 
 def get_manager_contract():
-    """Helper to create a contract instance."""
+    """Helper to create a contract instance. Lazily loads the ABI."""
+    global EM_ABI
+    if EM_ABI is None:
+        ABI_PATH = "/app/out/ElectionManagerV2.sol/ElectionManagerV2.json"
+        if not os.path.exists(ABI_PATH):
+            # This should not be hit due to the wait-loop in docker-compose,
+            # but it's a robust guard against reloader race conditions.
+            raise RuntimeError(f"Could not load contract ABI from {ABI_PATH}")
+        
+        with open(ABI_PATH) as f:
+            EM_ARTIFACT = json.load(f)
+            EM_ABI = EM_ARTIFACT["abi"]
+    
     return web3.eth.contract(address=ELECTION_MANAGER, abi=EM_ABI)
 
 

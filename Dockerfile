@@ -10,21 +10,22 @@ RUN groupadd -r app && useradd -r -g app appuser
 # --- STAGE 1: Build a unified environment for Python services ---
 FROM base AS python-env
 COPY packages/backend/requirements.txt ./requirements.txt
+# --- FIX: Only copy and install requirements. Source will be mounted via volume. ---
 RUN pip install --no-cache-dir -r requirements.txt
-COPY packages/backend /app/packages/backend
-COPY artifacts/manifest.json /app/circuits/manifest.json
 
 # --- STAGE 2: Final Backend Image ---
 FROM python-env AS backend
 USER appuser
 EXPOSE 8000
-CMD ["python", "-m", "uvicorn", "packages.backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# The CMD is overridden in docker-compose.yml, but this is a good fallback.
+CMD ["sh", "-c", "echo 'Waiting for artifact...' && until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done && python -m uvicorn packages.backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/packages/backend"]
 
 # --- STAGE 3: Final Worker Image (reuses the same env) ---
 FROM python-env AS worker
 USER appuser
-# The Celery -A argument should point to the module and the app instance, separated by a colon.
-CMD ["celery", "-A", "packages.backend.proof:celery_app", "worker", "--loglevel=info"]
+# The CMD is overridden in docker-compose.yml for startup dependencies, but this is a good fallback.
+# The Celery -A argument should point to the module and the app instance.
+CMD ["sh", "-c", "echo 'Waiting for artifact...' && until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done && celery -A packages.backend.proof:celery_app worker --loglevel=info"]
 
 # --- STAGE 4: Final Orchestrator Image ---
 FROM python-env AS orchestrator
@@ -33,4 +34,5 @@ RUN npm install -g snarkjs
 # Now copy the orchestrator code
 COPY services/orchestrator /app/orchestrator
 USER appuser
-CMD ["python", "/app/orchestrator/main.py"]
+# The CMD is overridden in docker-compose.yml, but this is a good fallback.
+CMD ["sh", "-c", "echo 'Waiting for artifact...' && until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done && python /app/orchestrator/main.py"]

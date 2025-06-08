@@ -1,1 +1,2 @@
-packages/frontenend/src/lib
+packages/frontend/packages.json
+packages/frontend/tsconfig.json
