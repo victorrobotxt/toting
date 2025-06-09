@@ -12,7 +12,7 @@ export type ZkProof = {
   c: [string, string];
 };
 
-// --- THIS IS A FIX: Define the ABI for the view function we need to call ---
+// --- This ABI is for the getAddress view function on your factory ---
 const FACTORY_ABI = ['function getAddress(address owner, uint256 salt) view returns (address)'];
 
 // We extend the parameters for SimpleAccountAPI to include our ZK proof data.
@@ -30,6 +30,7 @@ interface ProofWalletApiParams extends
 export class ProofWalletAPI extends SimpleAccountAPI {
   zkProof?: ZkProof;
   pubSignals?: string[];
+  factoryAddress?: string;
 
   constructor(params: ProofWalletApiParams) {
     super({
@@ -37,23 +38,27 @@ export class ProofWalletAPI extends SimpleAccountAPI {
         factoryAddress: params.factoryAddress ?? WALLET_FACTORY_ADDRESS,
     });
     
+    this.factoryAddress = params.factoryAddress ?? WALLET_FACTORY_ADDRESS;
     this.zkProof = params.zkProof;
     this.pubSignals = params.pubSignals;
   }
 
   /**
    * --- THIS IS THE CORE FIX ---
-   * This method is restored and improved. It overrides the default SDK behavior.
-   * Instead of letting the SDK use a `staticcall` on our state-changing `createAccount`
-   * function, we directly call our factory's `getAddress` view function. This is the
-   * correct and intended pattern for custom factories in the `account-abstraction` SDK.
+   * This method overrides the default SDK behavior. Instead of trying to compute the
+   * address off-chain or by calling a state-changing function, we directly call 
+   * our factory's `getAddress` view function. This is the correct pattern for 
+   * custom factories in the `account-abstraction` SDK.
    */
   async getAccountAddress(): Promise<string> {
-    if (this.accountAddress != null) {
+    if (this.accountAddress) {
       return this.accountAddress;
     }
+    if (!this.factoryAddress) {
+        throw new Error("Factory address is not defined");
+    }
     
-    const factory = new ethers.Contract(this.factoryAddress!, FACTORY_ABI, this.provider);
+    const factory = new ethers.Contract(this.factoryAddress, FACTORY_ABI, this.provider);
     const ownerAddress = await this.owner.getAddress();
     
     try {
@@ -62,18 +67,27 @@ export class ProofWalletAPI extends SimpleAccountAPI {
       this.accountAddress = await factory.getAddress(ownerAddress, this.index);
       return this.accountAddress!;
     } catch (error: any) {
-      // Add detailed logging to diagnose any potential issues with the `eth_call`.
-      console.error("Fatal Error: factory.getAddress() reverted. Check contract deployment and network.", error);
-      throw new Error(`Factory.getAddress() call failed: ${error.message}`);
+      console.error("Fatal Error: factory.getAddress() call failed.", error);
+      throw new Error(`Factory.getAddress() call failed: ${error.message || 'call revert exception'}`);
     }
   }
 
   /**
-   * Overrides the base `getAccountInitCode` to work with our custom factory.
+   * Overrides the base `getAccountInitCode` to work with our custom factory
+   * that requires a ZK-proof for wallet creation.
    */
   async getAccountInitCode(): Promise<string> {
+    // If the wallet already exists, initCode is empty.
+    const code = await this.provider.getCode(await this.getAccountAddress());
+    if (code !== '0x') {
+        return '0x';
+    }
+      
     if (!this.zkProof || !this.pubSignals) {
       throw new Error("ProofWalletAPI: ZK proof and public signals are required for the first transaction.");
+    }
+    if (!this.factoryAddress) {
+        throw new Error("ProofWalletAPI: factoryAddress is not defined.");
     }
 
     const ownerAddress = await this.owner.getAddress();
@@ -86,17 +100,13 @@ export class ProofWalletAPI extends SimpleAccountAPI {
             this.zkProof.c,
             this.pubSignals,
             ownerAddress,
-            this.index
+            this.index // salt
         ]
     );
 
     const factoryIface = new ethers.utils.Interface(["function createAccount(bytes data)"]);
     const calldata = factoryIface.encodeFunctionData("createAccount", [innerCreationData]);
 
-    if (!this.factoryAddress) {
-      throw new Error("ProofWalletAPI: factoryAddress is undefined. Check your environment variables and configuration.");
-    }
-    
     return hexConcat([this.factoryAddress, calldata]);
   }
 }

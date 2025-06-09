@@ -46,16 +46,19 @@ contract WalletFactoryDeterminismTest is Test {
             type(SmartWallet).creationCode,
             abi.encode(entryPoint, owner)
         );
-        bytes32 creationCodeHash = keccak256(creationCode);
         bytes32 create2Salt = keccak256(abi.encodePacked(owner, salt));
         
         // When a factory deploys a contract, the deployer address is the factory itself.
-        address expectedAddress = Create2.computeAddress(create2Salt, creationCodeHash, address(factory));
+        address expectedAddress = Create2.computeAddress(create2Salt, keccak256(creationCode), address(factory));
 
         factory.mintWallet(a, b, c, inputs, owner, salt);
         
         address actualAddress = factory.walletOf(owner);
 
         assertEq(actualAddress, expectedAddress, "Wallet address should be deterministic");
+        
+        // Also test the view function
+        address predictedAddress = factory.getAddress(owner, salt);
+        assertEq(predictedAddress, expectedAddress, "getAddress view function should match");
     }
 }

@@ -53,8 +53,8 @@ interface ElectionDetails {
 // Fetches from our backend API
 const apiFetcher = ([url, token]: [string, string?]) => jsonFetcher([url, token]);
 
-// Fetches from any public URL. Now used for our own /meta endpoint.
-const publicFetcher = (url: string) => fetch(url).then(res => {
+// --- FIX: Renamed fetcher for clarity, used for public-accessible URLs ---
+const publicJsonFetcher = (url: string) => fetch(url).then(res => {
     if (!res.ok) throw new Error(`Failed to fetch metadata: ${res.statusText}`);
     return res.json();
 });
@@ -82,12 +82,13 @@ function VotePage() {
     );
     
     // 2. If the election exists, fetch its metadata from our OWN backend
+    // --- THIS IS THE FIX: Use the correct API endpoint for metadata ---
     const { 
         data: metadata, 
         error: metadataError 
     } = useSWR<ElectionMetadata>(
         election ? apiUrl(`/elections/${election.id}/meta`) : null,
-        publicFetcher
+        publicJsonFetcher
     );
 
     // --- Loading and Error Handling ---
