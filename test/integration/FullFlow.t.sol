@@ -1,3 +1,4 @@
+// test/integration/FullFlow.t.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -77,9 +78,14 @@ contract FullFlowTest is Test {
         // First, get the ID of the election to be created. This is a view call and doesn't need a prank.
         id = manager.nextId();
         
-        // Use vm.prank for the single state-changing call to createElection.
         vm.prank(admin);
-        manager.createElection(meta);
+        
+        // --- FIX: Replace the ambiguous high-level call with an explicit low-level call ---
+        // This ensures the calldata sent to the proxy is correctly formatted with the
+        // function selector, preventing the state corruption seen in the test trace.
+        bytes memory calldataToProxy = abi.encodeCall(manager.createElection, (meta));
+        (bool success, ) = address(manager).call(calldataToProxy);
+        require(success, "createElection call to proxy failed");
         
         // Verify the side-effect. This view call does not need a prank.
         assertEq(manager.nextId(), id + 1, "nextId should have been incremented");

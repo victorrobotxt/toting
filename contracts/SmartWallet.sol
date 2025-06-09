@@ -72,5 +72,31 @@ contract SmartWallet is BaseAccount {
         return false;
     }
 
+    
+    /*───────────────────────────  new code  ───────────────────────────*/
+    /// @dev Re-usable auth check: caller must be the EntryPoint or the owner.
+    function _requireFromEntryPointOrOwner() internal view {
+        require(
+            msg.sender == address(_entryPoint) || msg.sender == owner,
+            "SmartWallet: not authorized"
+        );
+    }
+    /**
+     * @notice Execute an arbitrary call from the wallet.
+     *         Can be invoked directly by the owner **or** internally by the
+     *         EntryPoint while processing a UserOperation.
+     */
+    function execute(
+        address dest,
+        uint256 value,
+        bytes calldata func
+    ) external payable {
+        _requireFromEntryPointOrOwner();
+        (bool success, ) = dest.call{value: value}(func);
+        require(success, "SmartWallet: execute failed");
+    }
+    /*───────────────────────────────────────────────────────────────────*/
+
+
     receive() external payable {}
 }
