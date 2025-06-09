@@ -1,3 +1,4 @@
+// contracts/QVManager.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -6,7 +7,9 @@ import "./interfaces/IMACI.sol";
 
 /// @title Manager for Quadratic Voting ballots
 /// @notice Verifies private credit proofs and forwards encrypted ballots to MACI
-// Use the remapped path '@openzeppelin/contracts/...'
+
+// --- FIX: Use the correct import path for OpenZeppelin v4.9.3 ---
+// This path now matches the file you located with the `ls` command.
 import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
