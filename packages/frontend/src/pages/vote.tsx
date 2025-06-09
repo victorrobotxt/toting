@@ -2,16 +2,19 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 import { useRouter } from "next/router";
+import useSWR from 'swr';
 import { bundleSubmitVote } from "../lib/accountAbstraction";
 import { ZkProof } from "../lib/ProofWalletAPI"; // Keep this for eligibility proof
 import withAuth from "../components/withAuth";
 import NavBar from "../components/NavBar";
+import Skeleton from "../components/Skeleton";
 import { useAuth } from "../lib/AuthProvider";
 import { useToast } from "../lib/ToastProvider";
-import { NotEligible } from "../components/ZeroState";
+import { NotEligible, NoElections } from "../components/ZeroState";
 import HelpTip from "../components/HelpTip";
 import { apiUrl, jsonFetcher } from "../lib/api";
 
+// --- Types for API responses ---
 // The vote proof from the API is a flat string (hex), not the structured ZkProof object.
 type VoteProofResult = {
     proof: string; // This will be a hex string like "0x..."
@@ -22,11 +25,39 @@ type VoteProofResult = {
 
 // Eligibility proof IS the structured object
 type EligibilityProofResult = {
-    proof: ZkProof; 
+    proof: ZkProof;
     pubSignals: string[];
     job_id?: string;
     status?: string;
 };
+
+// --- Types for our Data ---
+interface ElectionOption {
+  id: string;
+  label: string;
+}
+
+interface ElectionMetadata {
+  title: string;
+  description: string;
+  options: ElectionOption[];
+}
+
+interface ElectionDetails {
+    id: number;
+    meta: string; // This is the hash
+    status: string;
+}
+
+// --- SWR Fetchers ---
+// Fetches from our backend API
+const apiFetcher = ([url, token]: [string, string?]) => jsonFetcher([url, token]);
+
+// Fetches from any public URL. Now used for our own /meta endpoint.
+const publicFetcher = (url: string) => fetch(url).then(res => {
+    if (!res.ok) throw new Error(`Failed to fetch metadata: ${res.statusText}`);
+    return res.json();
+});
 
 
 function VotePage() {
@@ -40,13 +71,39 @@ function VotePage() {
     
     const { id: electionId } = router.query;
 
+    // --- Data Fetching Logic ---
+    // 1. Fetch the core election details from our API
+    const { 
+        data: election, 
+        error: electionError 
+    } = useSWR<ElectionDetails>(
+        (electionId && token) ? [`/elections/${electionId}`, token] : null, 
+        apiFetcher
+    );
+    
+    // 2. If the election exists, fetch its metadata from our OWN backend
+    const { 
+        data: metadata, 
+        error: metadataError 
+    } = useSWR<ElectionMetadata>(
+        election ? apiUrl(`/elections/${election.id}/meta`) : null,
+        publicFetcher
+    );
+
+    // --- Loading and Error Handling ---
     if (!router.isReady) {
         return <><NavBar /><div style={{ padding: '1rem', textAlign: 'center' }}>Loading...</div></>;
     }
 
-    const cast = async (option: 0 | 1) => {
-        if (!electionId || !(window as any).ethereum) {
-            showToast({ type: 'error', message: 'Election ID missing or no wallet detected' });
+    if (electionError) {
+        // This handles cases where the electionId is invalid (e.g., /vote?id=10000)
+        return <><NavBar /><NoElections /></>;
+    }
+
+    // --- Main Action: Cast Vote ---
+    const cast = async (optionIndex: number) => {
+        if (!electionId || !(window as any).ethereum || !metadata) {
+            showToast({ type: 'error', message: 'Required data missing or no wallet detected' });
             return;
         }
 
@@ -54,10 +111,13 @@ function VotePage() {
         setReceipt("");
         setStatusText("Requesting proofs from server...");
 
+        // Create a one-hot encoded array for the vote credits
+        const credits = metadata.options.map((_, index) => (index === optionIndex ? 1 : 0));
+
         const provider = new ethers.providers.Web3Provider((window as any).ethereum);
         await provider.send("eth_requestAccounts", []);
 
-        const voicePayload = { credits: [option === 0 ? 1 : 0, option === 1 ? 1 : 0], nonce: Date.now() };
+        const voicePayload = { credits, nonce: Date.now() };
         const eligibilityPayload = { country: "US", dob: "1990-01-01", residency: "CA" };
 
         const headers = {
@@ -88,11 +148,13 @@ function VotePage() {
 
             const signer = provider.getSigner();
 
+            // Note: The `bundleSubmitVote` function's second argument `voteOption` is now just for logging/debugging.
+            // The actual vote is encoded in the proof, derived from the `credits` array. We'll pass the index.
             const userOpHash = await bundleSubmitVote(
                 signer,
                 Number(electionId),
-                option,
-                voteProofResult.proof, // This is now correctly a string
+                optionIndex,
+                voteProofResult.proof,
                 voteProofResult.pubSignals,
                 eligibilityProofResult.proof,
                 eligibilityProofResult.pubSignals
@@ -116,21 +178,45 @@ function VotePage() {
         <>
             <NavBar />
             <div style={{ padding: '1rem', maxWidth: '600px', margin: 'auto' }}>
-                <h2>
-                    Vote on election #{electionId}
-                    <HelpTip content="Your vote is private. The first vote also creates your smart wallet." />
-                </h2>
-                
-                {eligibility ? (
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                        <button onClick={() => cast(0)} disabled={loading}>Vote A</button>
-                        <button onClick={() => cast(1)} disabled={loading}>Vote B</button>
+                {!election || !metadata || metadataError ? (
+                    <div>
+                        <h2><Skeleton width={300} height={36} /></h2>
+                        <Skeleton style={{marginTop: '1rem'}} width="80%" height={20} />
+                        <Skeleton style={{marginTop: '1.5rem'}} width="100%" height={48} />
+                        <Skeleton style={{marginTop: '1rem'}} width="100%" height={48} />
                     </div>
                 ) : (
-                    <NotEligible />
+                    <>
+                        <h2>
+                            {metadata.title}
+                            <HelpTip content="Your vote is private. The first vote also creates your smart wallet." />
+                        </h2>
+                        <p style={{ marginTop: '0.5rem', color: '#aaa' }}>{metadata.description}</p>
+                        
+                        {!eligibility ? (
+                            <NotEligible />
+                        ) : election.status !== 'open' ? (
+                            <div style={{ marginTop: '2rem', padding: '1rem', background: '#fefcbf', textAlign: 'center' }}>
+                                This election is not currently open for voting. (Status: {election.status})
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+                                {metadata.options.map((option, index) => (
+                                    <button 
+                                        key={option.id} 
+                                        onClick={() => cast(index)} 
+                                        disabled={loading}
+                                        className="btn btn-primary"
+                                    >
+                                        Vote for {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </>
                 )}
 
-                {loading && <p>{statusText || "Loading..."}</p>}
+                {loading && <div style={{marginTop: '2rem', textAlign: 'center'}}><span className="loading loading-dots loading-lg"></span><p>{statusText || "Loading..."}</p></div>}
 
                 {receipt && (
                     <div style={{ marginTop: '2rem', padding: '1rem', background: '#f0fdf4' }}>

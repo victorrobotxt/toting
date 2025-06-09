@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { keccak256, toUtf8Bytes } from 'ethers/lib/utils';
 import { useAuth } from '../../lib/AuthProvider';
 import NavBar from '../../components/NavBar';
 import { useToast } from '../../lib/ToastProvider';
@@ -21,35 +20,34 @@ function CreateElectionPage() {
   const { token, eligibility, role, isLoggedIn } = useAuth();
   const { mutate } = useSWRConfig();
   const router = useRouter();
-  const step = parseInt((router.query.step as string) || '1', 10);
   const [meta, setMeta] = useState('');
-  const [hash, setHash] = useState('');
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
-
-  const goto = (n: number) => router.replace(`/elections/create?step=${n}`);
 
   const handleSubmit = async () => {
     setLoading(true);
     let res: Response;
     try {
+      // Validate that the metadata is valid JSON before sending
+      JSON.parse(meta);
+
       res = await fetch(apiUrl('/elections'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ meta_hash: hash }),
+        body: JSON.stringify({ metadata: meta }), // Send the full metadata string
       });
     } catch (e: any) {
-      showToast({ type: 'error', message: e.message || 'network error' });
+      const errorMessage = e instanceof SyntaxError ? "Invalid JSON format." : (e.message || "Network error");
+      showToast({ type: 'error', message: errorMessage });
       setLoading(false);
       return;
     }
+
     if (res.ok) {
       const data: Election = await res.json();
-      // Simply revalidate the list of elections. SWR will automatically
-      // re-fetch from the backend, ensuring the UI is perfectly in sync.
       mutate(['/elections', token]);
       router.push(`/elections/${data.id}`);
     } else {
@@ -57,7 +55,7 @@ function CreateElectionPage() {
         const err = await res.json();
         showToast({ type: 'error', message: err.detail || 'Failed to create' });
       } catch {
-        showToast({ type: 'error', message: 'Failed to create' });
+        showToast({ type: 'error', message: 'Failed to create election' });
       }
     }
     setLoading(false);
@@ -74,7 +72,7 @@ function CreateElectionPage() {
     );
   }
 
-  if (role !== 'admin' && role !== 'verifier') {
+  if (role !== 'admin') {
     return (
       <>
         <NavBar />
@@ -96,36 +94,29 @@ function CreateElectionPage() {
     );
   }
 
-  const stepOne = (
+  const creationForm = (
     <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
-      <textarea value={meta} onChange={e => setMeta(e.target.value)} placeholder="metadata json" />
-      <button onClick={() => { setHash(keccak256(toUtf8Bytes(meta))); goto(2); }}>Next</button>
-    </div>
-  );
-
-  const stepTwo = (
-    <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
-      <p>Hash: {hash}</p>
-      <button onClick={() => goto(1)}>Back</button>
-      <button onClick={() => goto(3)}>Confirm</button>
-    </div>
-  );
-
-  const stepThree = (
-    <div style={{display:'flex',flexDirection:'column',gap:'0.5rem'}}>
-      <button onClick={handleSubmit} disabled={loading}>Submit</button>
-      <button onClick={() => router.push('/dashboard')}>Cancel</button>
+      <label htmlFor="metadata-json">Election Metadata (JSON format)</label>
+      <textarea 
+        id="metadata-json"
+        value={meta} 
+        onChange={e => setMeta(e.target.value)} 
+        placeholder='e.g., {"title": "My Election", ...}' 
+        rows={10}
+        style={{fontFamily: 'monospace', border: '1px solid #ccc', padding: '0.5rem'}}
+      />
+      <button onClick={handleSubmit} disabled={loading || !meta.trim()}>
+        {loading ? 'Submitting...' : 'Create Election'}
+      </button>
     </div>
   );
 
   return (
     <>
       <NavBar />
-      <div style={{padding:'1rem'}}>
+      <div style={{padding:'1rem', maxWidth: '800px', margin: 'auto'}}>
         <h2>Create Election</h2>
-        {step === 1 && stepOne}
-        {step === 2 && stepTwo}
-        {step === 3 && stepThree}
+        {creationForm}
       </div>
     </>
   );

@@ -7,6 +7,8 @@ import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { AnchorProvider, Program, BN, Wallet, Idl } from '@coral-xyz/anchor';
 import fs from 'fs';
 import path from 'path';
+import { Server as WebSocketServer } from 'ws';
+import http from 'http';
 
 // --- Configuration ---
 const EVM_RPC = process.env.EVM_RPC || 'http://127.0.0.1:8545';
@@ -25,6 +27,8 @@ if (!BRIDGE_SK) throw new Error('SOLANA_BRIDGE_SK env var required');
 // --- Load Solana IDL ---
 const idlPath = path.join(__dirname, '..', '..', '..', 'solana-programs', 'election', 'target', 'idl', 'election_mirror.json');
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8')) as Idl;
+// --- FIX: Extract programId from the IDL metadata ---
+const programId = new PublicKey(idl.metadata.address);
 
 // --- Providers and Interfaces ---
 const ethProvider = new ethers.providers.JsonRpcProvider(EVM_RPC, {
@@ -49,15 +53,39 @@ const waitForRpc = async (rpcName: string, checkFn: () => Promise<any>, delay = 
   }
 };
 
-// --- Metrics Server ---
+// --- Metrics and WebSocket Server ---
 collectDefaultMetrics();
 const lagGauge = new Gauge({ name: 'relay_lag_blocks', help: 'L1 block lag' });
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
 app.get('/metrics', async (_req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
-app.listen(PROM_PORT, () => console.log(`📈 Prom metrics listening on port ${PROM_PORT}`));
+
+wss.on('connection', ws => {
+  console.log('Frontend client connected to Solana WebSocket.');
+  const dummyTally = { A: 10, B: 5 };
+  ws.send(JSON.stringify(dummyTally));
+
+  const interval = setInterval(() => {
+    dummyTally.A += Math.floor(Math.random() * 3);
+    dummyTally.B += Math.floor(Math.random() * 2);
+    if (ws.readyState === ws.OPEN) {
+      ws.send(JSON.stringify(dummyTally));
+    }
+  }, 5000);
+
+  ws.on('close', () => {
+    console.log('Frontend client disconnected.');
+    clearInterval(interval);
+  });
+});
+
+server.listen(PROM_PORT, () => console.log(`📈 Metrics and WebSocket listening on port ${PROM_PORT}`));
+
 
 // --- State Management ---
 async function getLastBlock(): Promise<number> {
@@ -80,17 +108,17 @@ async function bridgeTally(A: ethers.BigNumber, B: ethers.BigNumber, blockHash: 
   const conn = new Connection(SOLANA_RPC, 'confirmed');
   const keypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(BRIDGE_SK)));
   
-  // Use Anchor's built-in Wallet class for a cleaner setup
   const wallet = new Wallet(keypair);
 
   const provider = new AnchorProvider(conn, wallet, { commitment: 'confirmed' });
-  const program = new Program(idl, provider);
+  
+  // --- FIX: Pass the programId as the second argument to the Program constructor ---
+  const program = new Program(idl, programId, provider);
 
   // Derive the PDA for the election account on Solana
   const [electionPDA] = PublicKey.findProgramAddressSync(
     [
       Buffer.from('election'),
-      // The EVM block hash (without 0x) is used as a unique seed
       Buffer.from(blockHash.slice(2), 'hex') 
     ],
     program.programId
@@ -137,25 +165,23 @@ async function main() {
             try {
               await bridgeTally(A, B, log.blockHash);
               console.log(`✅ Relayed tally for election ${id} from EVM tx ${log.transactionHash}`);
-              break; // Success, exit retry loop
+              break;
             } catch (err) {
               attempt++;
               console.error(`Bridge attempt ${attempt}/${maxAttempts} failed:`, err);
               if (attempt >= maxAttempts) {
                 console.error(`FATAL: Could not relay tally for election ${id} after ${maxAttempts} attempts.`);
-                throw err; // Propagate error to main loop catch
+                throw err;
               }
-              await new Promise(r => setTimeout(r, 3000 * attempt)); // Exponential backoff
+              await new Promise(r => setTimeout(r, 3000 * attempt));
             }
           }
         }
-        // Always advance the block number to avoid getting stuck
         last = latest;
         await setLastBlock(last);
       }
     } catch (err) {
       console.error('FATAL: An error occurred in the main relay loop:', err);
-      // Wait before restarting loop to prevent spamming errors
       await new Promise(r => setTimeout(r, 15000));
     }
     await new Promise(r => setTimeout(r, POLL_INTERVAL));

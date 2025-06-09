@@ -47,14 +47,20 @@ until cast block-number --rpc-url "$RPC_URL" > /dev/null 2>&1; do
 done
 echo "✅ Anvil RPC is ready."
 
-# --- PATCH SUBMODULE ---
-# This is the most direct fix. We will use `sed` to patch the import path
-# in the `EntryPoint.sol` file from our v0.6.0 submodule. This is safer than
-# changing the remappings, which seem to be ineffective for this nested dependency.
-ENTRYPOINT_FILE="/app/lib/account-abstraction/contracts/core/EntryPoint.sol"
-echo "🩹 Patching import path in $ENTRYPOINT_FILE..."
-sed -i 's|@openzeppelin/contracts/security/ReentrancyGuard.sol|@openzeppelin/contracts/utils/ReentrancyGuard.sol|' "$ENTRYPOINT_FILE"
-echo "✅ Import path patched."
+# --- FIX: Patch the incorrect import path in the account-abstraction submodule ---
+# The EntryPoint.sol file from account-abstraction v0.6.0 uses an outdated
+# path for OpenZeppelin's ReentrancyGuard. This command corrects the path
+# from 'utils/ReentrancyGuard.sol' to 'security/ReentrancyGuard.sol' to
+# match the structure of OpenZeppelin v4+, which is used in this project.
+echo "🩹 Patching import path in /app/lib/account-abstraction/contracts/core/EntryPoint.sol..."
+ENTRYPOINT_SOL="/app/lib/account-abstraction/contracts/core/EntryPoint.sol"
+if [ -f "$ENTRYPOINT_SOL" ]; then
+    sed -i 's|@openzeppelin/contracts/utils/ReentrancyGuard.sol|@openzeppelin/contracts/security/ReentrancyGuard.sol|g' "$ENTRYPOINT_SOL"
+    echo "✅ Import path patched."
+else
+    echo "⚠️  Warning: $ENTRYPOINT_SOL not found, skipping patch."
+fi
+
 
 echo "📦 Deploying contracts..."
 
@@ -108,13 +114,26 @@ echo "✅ WalletFactory code verified."
 echo "✅ WalletFactory deployed at: $FACTORY_ADDR"
 
 # --- Generate .env.deployed file ---
-ENV_FILE="/app/.env.deployed"
-echo "📝 Generating environment file at $ENV_FILE"
+DEPLOYED_ENV_FILE="/app/.env.deployed"
+echo "📝 Generating environment file at $DEPLOYED_ENV_FILE"
 
-echo "ELECTION_MANAGER=$MGR_ADDR" > $ENV_FILE
-echo "NEXT_PUBLIC_ELECTION_MANAGER=$MGR_ADDR" >> $ENV_FILE
-echo "NEXT_PUBLIC_WALLET_FACTORY=$FACTORY_ADDR" >> $ENV_FILE
-echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR" >> $ENV_FILE
+{
+    echo "ELECTION_MANAGER=$MGR_ADDR"
+    echo "NEXT_PUBLIC_ELECTION_MANAGER=$MGR_ADDR"
+    echo "NEXT_PUBLIC_WALLET_FACTORY=$FACTORY_ADDR"
+    echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR"
+} > "$DEPLOYED_ENV_FILE"
+echo "✅ .env.deployed created."
+
+# --- Append to main .env file (for manual forge/foundry commands) ---
+MAIN_ENV_FILE="/app/.env"
+echo "📝 Appending deployed addresses to $MAIN_ENV_FILE for forge commands..."
+# First, remove old deployed addresses from .env to prevent duplicates on restart
+sed -i '/^ELECTION_MANAGER=/d' "$MAIN_ENV_FILE"
+sed -i '/^NEXT_PUBLIC_ELECTION_MANAGER=/d' "$MAIN_ENV_FILE"
+sed -i '/^NEXT_PUBLIC_WALLET_FACTORY=/d' "$MAIN_ENV_FILE"
+sed -i '/^NEXT_PUBLIC_ENTRYPOINT=/d' "$MAIN_ENV_FILE"
+cat "$DEPLOYED_ENV_FILE" >> "$MAIN_ENV_FILE"
 
 # --- Generate bundler.config.json file ---
 BUNDLER_CONFIG_FILE="/app/bundler.config.json"

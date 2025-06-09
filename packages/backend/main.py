@@ -9,7 +9,7 @@ from jose import jwt, JWTError
 import httpx
 import os
 import json
-from typing import Optional
+from typing import Optional, Any
 import asyncio
 from web3 import Web3
 from eth_account import Account
@@ -233,22 +233,24 @@ async def callback(code: Optional[str] = None, user: Optional[str] = None):
 def list_elections(db: Session = Depends(get_db)):
     return db.query(DbElection).all()
 
-# --- FIX: Protect this endpoint by requiring the admin role ---
+
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
 def create_election(
     payload: CreateElectionSchema,
     db: Session = Depends(get_db),
-    admin_user: dict = Depends(require_admin_role) # This enforces the protection
+    admin_user: dict = Depends(require_admin_role)
 ):
     print(f"Admin user '{admin_user.get('email')}' is creating an election.")
-    # 1) Build & send the on-chain transaction
+    
+    # 1. Hash the incoming metadata to get the on-chain identifier
+    meta_hash = web3.keccak(text=payload.metadata)
+    
+    # 2. Build & send the on-chain transaction
     account = Account.from_key(PRIVATE_KEY)
     contract = get_manager_contract()
-    meta_bytes = Web3.to_bytes(hexstr=payload.meta_hash)
-
+    
     try:
-        # build → sign → send
-        tx = contract.functions.createElection(meta_bytes).build_transaction({
+        tx = contract.functions.createElection(meta_hash).build_transaction({
             "from": account.address,
             "chainId": CHAIN_ID,
             "gas": 3_000_000,
@@ -259,26 +261,31 @@ def create_election(
         tx_hash = web3.eth.send_raw_transaction(signed.rawTransaction)
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
 
-        # ensure it didn’t revert
         if receipt.status != 1:
             raise HTTPException(status_code=500, detail="On-chain transaction reverted")
 
     except HTTPException:
-        # re-raise our own HTTPExceptions
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"On-chain transaction failed: {e}")
 
-    # 2) Parse the ElectionCreated event
+    # 3. Parse the ElectionCreated event
     try:
         events = contract.events.ElectionCreated().process_receipt(receipt)
         if not events:
             raise ValueError("ElectionCreated event not found in transaction logs")
         on_chain_id = events[0].args.id
+        event_meta_bytes = events[0].args.meta
+        meta_hex_string = Web3.to_hex(event_meta_bytes)
+        
+        # Verification step
+        if meta_hex_string != Web3.to_hex(meta_hash):
+            raise HTTPException(status_code=500, detail="On-chain meta hash does not match calculated hash.")
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Event parsing failed: {e}")
 
-    # 3) Read the start/end from the contract
+    # 4. Read the start/end from the contract
     try:
         election_data = contract.functions.elections(on_chain_id).call()
         start_block, end_block = election_data[0], election_data[1]
@@ -288,10 +295,11 @@ def create_election(
             detail=f"Could not read election state from contract: {e}"
         )
 
-    # 4) Persist in Postgres
+    # 5. Persist in Postgres, now including the full metadata
     db_election = DbElection(
         id=on_chain_id,
-        meta=payload.meta_hash,
+        meta=meta_hex_string,
+        metadata_json=payload.metadata, # FIX: Use the renamed field
         start=start_block,
         end=end_block,
         status="pending",
@@ -299,14 +307,11 @@ def create_election(
     db.add(db_election)
     try:
         db.commit()
-    except IntegrityError: # Be specific about the exception
+    except IntegrityError:
         db.rollback()
-        # The record might already exist due to a race condition (e.g., from an indexer).
-        # In that case, we can just fetch and return it.
         existing = db.query(DbElection).filter_by(id=on_chain_id).first()
         if existing:
             return existing
-        # If it doesn't exist after a rollback, something else went wrong.
         raise HTTPException(
             status_code=500,
             detail=f"Database commit failed for election ID {on_chain_id}."
@@ -322,6 +327,18 @@ def get_election(election_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "election not found")
     return election
 
+# --- NEW ENDPOINT TO SERVE METADATA ---
+@app.get("/elections/{election_id}/meta", response_model=Any)
+def get_election_metadata(election_id: int, db: Session = Depends(get_db)):
+    election = db.query(DbElection).filter(DbElection.id == election_id).first()
+    # FIX: Use the renamed field 'metadata_json'
+    if not election or not election.metadata_json:
+        raise HTTPException(404, "metadata for election not found")
+    try:
+        # Parse the stored string back into a JSON object for the response
+        return json.loads(election.metadata_json)
+    except json.JSONDecodeError:
+        raise HTTPException(500, "failed to parse stored metadata")
 
 @app.patch("/elections/{election_id}", response_model=ElectionSchema)
 def update_election(

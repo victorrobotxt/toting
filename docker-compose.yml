@@ -113,8 +113,7 @@ services:
         echo 'Backend waiting for contract artifact...' &&
         until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done &&
         echo 'Backend found artifact. Starting server.' &&
-        python -m uvicorn packages.backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/packages/backend
-      "
+        python -m uvicorn packages.backend.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/packages/backend --reload-exclude .*/\.venv/.*"
     depends_on:
       setup:
         condition: service_completed_successfully

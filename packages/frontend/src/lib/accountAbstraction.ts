@@ -16,12 +16,12 @@ type UserOperation = Parameters<SimpleAccountAPI['signUserOp']>[0];
 async function sendUserOpToBundler(userOpWithPromises: UserOperation): Promise<string> {
     const bundler = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
 
-    // --- The Fix ---
+    // --- THIS IS THE FIX ---
     // 1. Resolve all promise-based fields. The result is an object with concrete values.
     const resolvedUserOp = await ethers.utils.resolveProperties(userOpWithPromises);
 
     // 2. Manually serialize the now-resolved object into a plain JSON object with hex strings,
-    //    using `ethers.utils.hexValue` to correctly format QUANTITY types (no padded zeros).
+    //    using `ethers.utils.hexValue` to correctly format QUANTITY types (e.g., no extra padded zeros).
     const serializedUserOp = {
         sender: resolvedUserOp.sender,
         nonce: ethers.utils.hexValue(resolvedUserOp.nonce),
@@ -73,7 +73,7 @@ export async function bundleUserOp(
         data,
     });
     
-    // --- FIX: Await the initCode before checking its properties ---
+    // Await the initCode before checking its properties
     const initCode = await unsignedOp.initCode;
     
     // Check if this is a wallet-creation UserOp (it will have a non-empty initCode).
@@ -85,7 +85,6 @@ export async function bundleUserOp(
       console.log('Wallet creation detected. Overriding verificationGasLimit.');
       unsignedOp.verificationGasLimit = 500_000;
     }
-    // --- END FIX ---
 
     const signedOp = await api.signUserOp(unsignedOp);
     
