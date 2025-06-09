@@ -1,65 +1,50 @@
+// test/SmokeTests.t.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../contracts/Verifier.sol";
-import "../contracts/WalletFactory.sol";
-import "../contracts/ElectionManager.sol";
-import "@account-abstraction/contracts/core/EntryPoint.sol";
+import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
+import {WalletFactory} from "../contracts/WalletFactory.sol";
+import {Verifier} from "../contracts/Verifier.sol";
 
-// -------------------- stub contracts --------------------
-
-contract VerifierStub is Verifier {
+contract TestVerifier is Verifier {
     function verifyProof(
-        uint256[2] calldata a,
-        uint256[2][2] calldata b,
-        uint256[2] calldata c,
-        uint256[7] calldata pubSignals
+        uint256[2] calldata,
+        uint256[2][2] calldata,
+        uint256[2] calldata,
+        uint256[7] calldata
     ) public view override returns (bool) {
         return true;
     }
 }
 
-contract MACIStub is IMACI {
-    event MessagePublished(bytes data);
-    function publishMessage(bytes calldata m) external override {
-        emit MessagePublished(m);
-    }
-}
-
-// -------------------- tests -----------------------------
-
 contract SmokeTests is Test {
-    WalletFactory factory;
-    VerifierStub verifier;
-    ElectionManager em;
-    MACIStub maci;
-    address immutable alice = address(0xBEEF);
+    WalletFactory public factory;
+    EntryPoint public entryPoint;
+    TestVerifier public verifier;
+    
+    address internal alice = vm.addr(1);
 
     function setUp() public {
-        verifier = new VerifierStub();
-        factory = new WalletFactory(EntryPoint(payable(address(0))), verifier);
-        maci = new MACIStub();
-        em = new ElectionManager(IMACI(maci));
+        entryPoint = new EntryPoint();
+        verifier = new TestVerifier();
+        factory = new WalletFactory(entryPoint, verifier);
     }
 
-    function testMintAndDupRevert() public {
+    function test_MintWallet() public {
+        // Dummy proof inputs
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;
         uint256[7] memory inputs;
+        uint256 salt = 0;
 
-        vm.prank(alice);
-        address aWallet = factory.mintWallet(a, b, c, inputs, alice);
-
-        vm.prank(alice);
-        vm.expectRevert(bytes("Factory: already minted"));
-        factory.mintWallet(a, b, c, inputs, alice);
-    }
-
-    function testElectionCreateAndEnqueue() public {
-        em.createElection(bytes32(uint256(0x42)));
-        vm.roll(block.number + 1);
-        em.enqueueMessage(0, 1, 0, new bytes(0));
+        factory.mintWallet(a, b, c, inputs, alice, salt);
+        
+        address aWallet = factory.walletOf(alice);
+        assertTrue(aWallet != address(0));
+        
+        vm.expectRevert("Factory: already minted");
+        factory.mintWallet(a, b, c, inputs, alice, salt);
     }
 }

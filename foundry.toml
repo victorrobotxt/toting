@@ -6,6 +6,7 @@ solc_version = "0.8.24"
 remappings = [
     "forge-std/=lib/forge-std/src/",
     "@account-abstraction/contracts/=lib/account-abstraction/contracts/",
+    "@openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts/contracts-upgradeable/",
     "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
 ]
 auto_detect_remappings = false

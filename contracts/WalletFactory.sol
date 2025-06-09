@@ -19,8 +19,8 @@ contract WalletFactory {
     }
 
     /// @dev Creates an account for a given owner and salt. Required by EntryPoint v0.6.0.
+    // --- FIX: Add the `returns (address wallet)` clause as required by the EntryPoint contract ---
     function createAccount(bytes calldata data) external returns (address wallet) {
-        // Decode the arguments for our specific minting logic from the generic `data` bytes.
         (
             uint256[2] memory a,
             uint256[2][2] memory b,
@@ -30,15 +30,15 @@ contract WalletFactory {
             uint256 salt
         ) = abi.decode(data, (uint256[2], uint256[2][2], uint256[2], uint256[7], address, uint256));
         
-        // Call the original minting logic with the decoded arguments.
-        return mintWallet(a, b, c, pubSignals, owner, salt);
+        // Call the minting logic and return the created wallet's address.
+        wallet = mintWallet(a, b, c, pubSignals, owner, salt);
     }
 
 
     /**
      * @notice Mint a new ERC-4337 SmartWallet for `owner`, after proving eligibility.
      */
-    // --- FIX: Change parameter data location from `calldata` to `memory` ---
+    // --- FIX: Add the `returns (address wallet)` clause so it can be returned by createAccount ---
     function mintWallet(
         uint256[2] memory a,
         uint256[2][2] memory b,
@@ -53,7 +53,10 @@ contract WalletFactory {
             "Factory: invalid proof"
         );
         bytes32 create2_salt = keccak256(abi.encodePacked(owner, salt));
+        
+        // Create the wallet and assign its address to the return variable.
         wallet = address(new SmartWallet{salt: create2_salt}(entryPoint, owner));
+        
         walletOf[owner] = wallet;
         emit WalletMinted(owner, wallet);
     }

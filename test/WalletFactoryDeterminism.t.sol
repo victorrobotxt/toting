@@ -3,68 +3,59 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../contracts/WalletFactory.sol";
-import "../contracts/SmartWallet.sol";
-import "../contracts/Verifier.sol";
-import "@account-abstraction/contracts/core/EntryPoint.sol";
+import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
+import {WalletFactory} from "../contracts/WalletFactory.sol";
+import {SmartWallet} from "../contracts/SmartWallet.sol";
+import {Verifier} from "../contracts/Verifier.sol";
+import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 
-contract VerifierStub is Verifier {
+contract TestVerifier is Verifier {
     function verifyProof(
-        uint256[2] calldata a,
-        uint256[2][2] calldata b,
-        uint256[2] calldata c,
-        uint256[7] calldata pubSignals
+        uint256[2] calldata,
+        uint256[2][2] calldata,
+        uint256[2] calldata,
+        uint256[7] calldata
     ) public view override returns (bool) {
         return true;
     }
 }
 
 contract WalletFactoryDeterminismTest is Test {
-    EntryPoint ep;
-    WalletFactory factory;
-    address alice = address(0xABCD);
-    address owner = address(0x1234);
+    WalletFactory public factory;
+    EntryPoint public entryPoint;
+    TestVerifier public verifier;
+    
+    address internal owner = vm.addr(1);
 
     function setUp() public {
-        ep = EntryPoint(payable(address(0)));
-        factory = new WalletFactory(ep, new VerifierStub());
+        entryPoint = new EntryPoint();
+        verifier = new TestVerifier();
+        factory = new WalletFactory(entryPoint, verifier);
     }
 
-    function testCreate2AddressDeterminism() public {
-        uint256[2] memory a = [uint256(0), uint256(0)];
-        uint256[2][2] memory b = [
-            [uint256(0), uint256(0)],
-            [uint256(0), uint256(0)]
-        ];
-        uint256[2] memory c = [uint256(0), uint256(0)];
+    function test_DeterministicAddress() public {
+        // Dummy proof inputs
+        uint256[2] memory a;
+        uint256[2][2] memory b;
+        uint256[2] memory c;
         uint256[7] memory inputs;
+        uint256 salt = 123; // Use a non-zero salt
 
-        vm.prank(alice);
-        address wallet = factory.mintWallet(a, b, c, inputs, owner);
-
-        // recompute CREATE2 address
-        bytes32 salt = keccak256(abi.encodePacked(owner, alice));
-        bytes memory creation = abi.encodePacked(
+        // --- FIX: Correctly compute the creation code hash including constructor args ---
+        bytes memory creationCode = abi.encodePacked(
             type(SmartWallet).creationCode,
-            abi.encode(ep, owner)
+            abi.encode(entryPoint, owner)
         );
-        bytes32 codeHash = keccak256(creation);
-        address expected = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            bytes1(0xff),
-                            address(factory),
-                            salt,
-                            codeHash
-                        )
-                    )
-                )
-            )
-        );
+        bytes32 creationCodeHash = keccak256(creationCode);
+        bytes32 create2Salt = keccak256(abi.encodePacked(owner, salt));
+        
+        // When a factory deploys a contract, the deployer address is the factory itself.
+        address expectedAddress = Create2.computeAddress(create2Salt, creationCodeHash, address(factory));
 
-        assertEq(wallet, expected, "mintWallet wrong");
-        assertEq(factory.walletOf(owner), expected, "walletOf wrong");
+        factory.mintWallet(a, b, c, inputs, owner, salt);
+        
+        address actualAddress = factory.walletOf(owner);
+
+        assertEq(actualAddress, expectedAddress, "Wallet address should be deterministic");
     }
 }

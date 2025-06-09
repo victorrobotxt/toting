@@ -1,2 +1,3 @@
 packages/frontend/packages.json
 packages/frontend/tsconfig.json
+packages/frontend/__tests__/proof.wallet.revert.test.js
