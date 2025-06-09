@@ -178,7 +178,7 @@ contract FullFlowTest is Test {
         uint256 ballotNonce = 67890;
 
         // Build the UserOp with the fuzzed vote, fully signed.
-        (UserOperation memory op,) = _buildOp(eid, ballotNonce, vote, proof);
+        (UserOperation memory op,) = _buildOp( eid, ballotNonce, vote, proof);
 
         UserOperation[] memory arr = new UserOperation[](1);
         arr[0] = op;

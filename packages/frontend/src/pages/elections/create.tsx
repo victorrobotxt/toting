@@ -17,7 +17,7 @@ interface Election {
 }
 
 function CreateElectionPage() {
-  const { token, eligibility, role, isLoggedIn } = useAuth();
+  const { token, eligibility, role, isLoggedIn, ready } = useAuth(); // Destructure 'ready'
   const { mutate } = useSWRConfig();
   const router = useRouter();
   const [meta, setMeta] = useState('');
@@ -60,6 +60,17 @@ function CreateElectionPage() {
     }
     setLoading(false);
   };
+  
+  // --- THIS IS THE FIX ---
+  // Wait for the AuthProvider to be ready before rendering gated content.
+  if (!ready) {
+    return (
+        <>
+            <NavBar />
+            <div style={{padding:'1rem', textAlign: 'center'}}>Loading...</div>
+        </>
+    )
+  }
 
   if (!isLoggedIn) {
     return (

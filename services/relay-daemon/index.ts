@@ -25,7 +25,7 @@ if (!ELECTION_MANAGER) throw new Error('ELECTION_MANAGER env var required');
 if (!BRIDGE_SK) throw new Error('SOLANA_BRIDGE_SK env var required');
 
 // --- Load Solana IDL ---
-const idlPath = path.join(__dirname, '..', '..', '..', 'solana-programs', 'election', 'target', 'idl', 'election_mirror.json');
+const idlPath = path.join(__dirname, '..', 'idl', 'election_mirror.json');
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8')) as Idl;
 // --- FIX: Extract programId from the IDL metadata ---
 const programId = new PublicKey(idl.metadata.address);

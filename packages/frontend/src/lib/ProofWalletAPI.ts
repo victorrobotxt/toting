@@ -12,7 +12,7 @@ export type ZkProof = {
   c: [string, string];
 };
 
-// Minimal ABI for our new view function.
+// --- THIS IS A FIX: Define the ABI for the view function we need to call ---
 const FACTORY_ABI = ['function getAddress(address owner, uint256 salt) view returns (address)'];
 
 // We extend the parameters for SimpleAccountAPI to include our ZK proof data.
@@ -42,15 +42,30 @@ export class ProofWalletAPI extends SimpleAccountAPI {
   }
 
   /**
-   * --- THE DEFINITIVE FIX ---
-   * We override `getAccountAddress` to call our new `getAddress` view function
-   * on the factory. This completely bypasses the problematic `getCounterFactualAddress`
-   * and its reliance on revert data, which is inconsistent across providers.
+   * --- THIS IS THE CORE FIX ---
+   * This method is restored and improved. It overrides the default SDK behavior.
+   * Instead of letting the SDK use a `staticcall` on our state-changing `createAccount`
+   * function, we directly call our factory's `getAddress` view function. This is the
+   * correct and intended pattern for custom factories in the `account-abstraction` SDK.
    */
   async getAccountAddress(): Promise<string> {
-      const factory = new ethers.Contract(this.factoryAddress!, FACTORY_ABI, this.provider);
-      const ownerAddress = await this.owner.getAddress();
-      return factory.getAddress(ownerAddress, this.index);
+    if (this.accountAddress != null) {
+      return this.accountAddress;
+    }
+    
+    const factory = new ethers.Contract(this.factoryAddress!, FACTORY_ABI, this.provider);
+    const ownerAddress = await this.owner.getAddress();
+    
+    try {
+      // Call the `getAddress` view function on the factory contract.
+      // `this.index` is the salt, inherited from the base SimpleAccountAPI.
+      this.accountAddress = await factory.getAddress(ownerAddress, this.index);
+      return this.accountAddress!;
+    } catch (error: any) {
+      // Add detailed logging to diagnose any potential issues with the `eth_call`.
+      console.error("Fatal Error: factory.getAddress() reverted. Check contract deployment and network.", error);
+      throw new Error(`Factory.getAddress() call failed: ${error.message}`);
+    }
   }
 
   /**

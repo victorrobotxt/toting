@@ -16,7 +16,6 @@ type UserOperation = Parameters<SimpleAccountAPI['signUserOp']>[0];
 async function sendUserOpToBundler(userOpWithPromises: UserOperation): Promise<string> {
     const bundler = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
 
-    // --- THIS IS THE FIX ---
     // 1. Resolve all promise-based fields. The result is an object with concrete values.
     const resolvedUserOp = await ethers.utils.resolveProperties(userOpWithPromises);
 
@@ -76,14 +75,15 @@ export async function bundleUserOp(
     // Await the initCode before checking its properties
     const initCode = await unsignedOp.initCode;
     
+    // --- THIS IS THE FIX ---
     // Check if this is a wallet-creation UserOp (it will have a non-empty initCode).
     if (initCode && initCode !== '0x' && initCode.length > 2) {
-      // Bundler gas estimation for wallet creation is often too low.
-      // We'll set a higher, fixed verificationGasLimit to ensure the
-      // initCode (which deploys the contract) has enough gas to execute.
-      // This is a common and necessary workaround for AA wallet creation.
-      console.log('Wallet creation detected. Overriding verificationGasLimit.');
-      unsignedOp.verificationGasLimit = 500_000;
+      // Bundler gas estimation for wallet creation with ZK proof verification
+      // is often too low. We'll set a higher, fixed verificationGasLimit to ensure
+      // the initCode has enough gas to execute the factory's `createAccount` method,
+      // which includes the expensive `verifyProof` call.
+      console.log('Wallet creation detected. Overriding verificationGasLimit to 2,000,000.');
+      unsignedOp.verificationGasLimit = 2_000_000;
     }
 
     const signedOp = await api.signUserOp(unsignedOp);

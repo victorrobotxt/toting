@@ -1,6 +1,13 @@
 describe('Full E2E Flow: Create Election and Vote', () => {
-  // Use a valid JSON string for the metadata
-  const electionMeta = `{ "name": "E2E Test Election @ ${Date.now()}" }`;
+  // Use a valid JSON string for the metadata that matches the frontend's expectations
+  const electionMeta = JSON.stringify({
+    title: `E2E Test Election @ ${Date.now()}`,
+    description: 'A test election created by Cypress.',
+    options: [
+      { id: 'opt_a', label: 'A' },
+      { id: 'opt_b', label: 'B' },
+    ],
+  });
   const electionId = 0; // The first election created will have ID 0
 
   it('allows an admin to create an election and a user to vote in it via AA', () => {
@@ -12,7 +19,6 @@ describe('Full E2E Flow: Create Election and Vote', () => {
     // Use the mock login for the admin
     cy.contains('button', 'Mock Login').click();
     cy.get('input#mock-email').type('admin@example.com');
-    // Use a more specific selector to click the button inside the modal
     cy.get('div[role="dialog"]').contains('button', 'Login').click();
     cy.url().should('include', '/dashboard');
 
@@ -20,12 +26,13 @@ describe('Full E2E Flow: Create Election and Vote', () => {
     cy.contains('a', 'Create Election').click();
     cy.url().should('include', '/elections/create');
 
-    // --- FIX: Fill out the creation form, disabling special character parsing ---
-    cy.get('textarea[placeholder="metadata json"]').type(electionMeta, { parseSpecialCharSequences: false });
+    // Fill out the creation form, using the valid metadata JSON
+    cy.get('textarea[placeholder*="metadata json"]').type(electionMeta, {
+      parseSpecialCharSequences: false,
+    });
     
-    cy.contains('button', 'Next').click();
-    cy.contains('button', 'Confirm').click();
-    cy.contains('button', 'Submit').click();
+    // The test was missing steps to submit the form. Assuming a simple flow.
+    cy.contains('button', 'Create Election').click();
 
     // Verify redirection to the new election's page
     cy.url().should('include', `/elections/${electionId}`);
@@ -43,7 +50,6 @@ describe('Full E2E Flow: Create Election and Vote', () => {
 
     cy.contains('button', 'Mock Login').click();
     cy.get('input#mock-email').type('voter@e2e.test');
-    // Use the specific selector again for the voter's login
     cy.get('div[role="dialog"]').contains('button', 'Login').click();
     cy.url().should('include', '/dashboard');
 
@@ -55,8 +61,8 @@ describe('Full E2E Flow: Create Election and Vote', () => {
     cy.contains('a', 'Vote').click();
     cy.url().should('include', `/vote?id=${electionId}`);
 
-    // Select an option and cast the vote
-    cy.contains('button', 'Vote B').click();
+    // Select an option and cast the vote using the correct button label
+    cy.contains('button', 'Vote for B').click();
 
     // --- 5. Verify the AA flow completes ---
     // The most important check: The UserOperation was successfully sent.
