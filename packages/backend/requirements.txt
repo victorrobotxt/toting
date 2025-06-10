@@ -16,3 +16,4 @@ requests
 base58
 prometheus-fastapi-instrumentator
 python-json-logger
+alembic

@@ -30,6 +30,22 @@ Compose network.
 The frontend will be available on `http://localhost:3000`, the API on
 `http://localhost:8000` and Postgres on `localhost:5432`.
 
+## Database Migrations
+
+The backend uses [Alembic](https://alembic.sqlalchemy.org/) for managing
+schema changes. Migration scripts live under `packages/backend/migrations`.
+Ensure `DATABASE_URL` is set to your Postgres instance and run:
+
+```bash
+alembic revision -m "<message>"
+```
+
+Apply all pending migrations with:
+
+```bash
+alembic upgrade head
+```
+
 ## Debugging Contracts
 
 Contracts are written using Foundry. Deploy scripts live in `script/`.
