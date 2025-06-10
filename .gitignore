@@ -20,4 +20,8 @@ artifacts/
 services/relay-daemon/dist
 out/
 cache/
+
 broadcast/
+
+package-lock.json
+**/package-lock.json

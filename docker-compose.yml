@@ -16,9 +16,12 @@ services:
       --chain-id 31337
       --gas-limit 30000000
       --gas-price 0
-      # --- FIX: Persist the chain state to a volume ---
-      --state /data/anvil_state.json
-      --state-interval 5
+      # --- FIX: Removed state persistence. ---
+      # By not persisting the Anvil chain state, every 'docker compose up'
+      # starts a fresh, deterministic chain. This ensures that contract
+      # deployment addresses are consistent across runs, preventing the
+      # frontend from using stale addresses that cause call exceptions.
+      --no-storage-caching
     ports:
       - "8545:8545"
     healthcheck:
@@ -29,8 +32,7 @@ services:
       retries: 12
     volumes:
       - .:/app
-      # --- FIX: Mount a named volume to persist the state ---
-      - anvil_state:/data
+      # --- FIX: Removed the named volume mount for anvil state. ---
     working_dir: /app
     dns:
       - 8.8.8.8
@@ -271,4 +273,5 @@ services:
 
 volumes:
   frontend_node_modules:
-  anvil_state:
+  # --- FIX: Removed the anvil_state volume definition. ---
+  

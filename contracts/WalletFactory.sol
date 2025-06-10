@@ -9,9 +9,7 @@ import "@account-abstraction/contracts/core/EntryPoint.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 
 contract WalletFactory {
-    // This was changed from `immutable` to a standard state variable.
-    // This avoids potential compiler/EVM bugs with accessing immutables
-    // during the `type().creationCode` process, which can cause silent reverts in view functions.
+    // THIS IS THE KEY FIX: It's a standard state variable, not immutable.
     EntryPoint public entryPoint;
     Verifier public verifier;
     mapping(address => address) public walletOf; // owner => wallet

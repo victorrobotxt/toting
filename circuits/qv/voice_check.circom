@@ -51,3 +51,7 @@ template VoiceCheck(n) {
     ok <== 1;
 }
 
+// This instantiates the VoiceCheck template as the main component of the circuit.
+// Replace `10` with the actual number of options your template expects.
+// Replace `root` with the name of your public output signal if it's different.
+component main { public [root] } = VoiceCheck(10);

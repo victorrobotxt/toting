@@ -11,7 +11,7 @@ if [ ! -d "/app" ] || [ ! -f "/app/foundry.toml" ]; then
     exit 1
 fi
 
-# --- Forceful Cleanup Step ---
+# --- THIS IS THE FIX: Clean up previous builds to prevent using stale artifacts ---
 echo "🧹 Cleaning up previous Foundry build artifacts and cache..."
 forge clean
 
@@ -47,11 +47,7 @@ until cast block-number --rpc-url "$RPC_URL" > /dev/null 2>&1; do
 done
 echo "✅ Anvil RPC is ready."
 
-# --- FIX: Patch the incorrect import path in the account-abstraction submodule ---
-# The EntryPoint.sol file from account-abstraction v0.6.0 uses an outdated
-# path for OpenZeppelin's ReentrancyGuard. This command corrects the path
-# from 'utils/ReentrancyGuard.sol' to 'security/ReentrancyGuard.sol' to
-# match the structure of OpenZeppelin v4+, which is used in this project.
+# --- Patch the incorrect import path in the account-abstraction submodule ---
 echo "🩹 Patching import path in /app/lib/account-abstraction/contracts/core/EntryPoint.sol..."
 ENTRYPOINT_SOL="/app/lib/account-abstraction/contracts/core/EntryPoint.sol"
 if [ -f "$ENTRYPOINT_SOL" ]; then
@@ -66,7 +62,6 @@ echo "📦 Deploying contracts..."
 
 # --- Deploy EntryPoint contract ---
 echo "Deploying EntryPoint..."
-# --- FIX: Parse the command's output to extract only the address ---
 ENTRYPOINT_ADDR=$(forge script script/DeployEntryPoint.s.sol:DeployEntryPoint --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "EntryPoint deployed at:" | awk '{print $NF}')
 if [ -z "$ENTRYPOINT_ADDR" ]; then
     echo "🛑 Failed to deploy EntryPoint."
@@ -82,7 +77,6 @@ echo "✅ EntryPoint code verified."
 echo "✅ EntryPoint deployed at: $ENTRYPOINT_ADDR"
 
 # --- Deploy ElectionManagerV2 proxy ---
-# --- FIX: Added grep and awk to parse the address from the command output ---
 MGR_ADDR=$(forge script script/DeployElectionManagerV2.s.sol:DeployElectionManagerV2Script --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "ElectionManagerV2 proxy deployed to:" | awk '{print $NF}')
 if [ -z "$MGR_ADDR" ]; then
     echo "🛑 Failed to deploy ElectionManagerV2."
