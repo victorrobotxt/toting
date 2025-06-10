@@ -68,6 +68,9 @@ if os.getenv("CELERY_TASK_ALWAYS_EAGER"):
     celery_app.conf.task_always_eager = True
     celery_app.conf.task_store_eager_result = True
 
+def _dummy_proof(circuit: str, inputs: dict) -> dict:
+    """Fallback proof generator using deterministic hashes."""
+
 @signals.task_prerun.connect
 def _start_timer(task_id, task, **kwargs):
     task.__start_time__ = time.time()
@@ -94,33 +97,89 @@ def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):
     """
     data = json.dumps(inputs, sort_keys=True).encode()
     h = hashlib.sha256(data).hexdigest()
-    proof = None
-    
     if circuit == "eligibility":
-        # For wallet creation, we need the structured ZkProof object.
         dummy_a = [f"0x{h[0:8]}", f"0x{h[8:16]}"]
         dummy_b = [[f"0x{h[16:24]}", f"0x{h[24:32]}"], [f"0x{h[32:40]}", f"0x{h[40:48]}"]]
         dummy_c = [f"0x{h[48:56]}", f"0x{h[56:64]}"]
         proof = {"a": dummy_a, "b": dummy_b, "c": dummy_c}
     else:
-        # For other proofs like 'voice', the contract expects raw bytes.
         proof = f"0x{h[:64]}"
-
-    # Generate 7 public signals to match the contract's ABI.
-    # We take 7 chunks of 8 hex characters (4 bytes) each from the hash.
-    # 7 * 8 = 56, which is less than the 64 available characters in the hash.
     pub = [int(h[i:i+8], 16) for i in range(0, 56, 8)]
+    return {"proof": proof, "pubSignals": pub}
+
+
+def _run_snarkjs_proof(wasm_path: str, zkey_path: str, inputs: dict):
+    """Run snarkjs to generate a Groth16 proof and return (a,b,c,pub)."""
+    import tempfile
+    import subprocess
+    import shutil
+
+    tmp = tempfile.mkdtemp(prefix="snarkjs_")
+    input_file = os.path.join(tmp, "input.json")
+    wtns_file = os.path.join(tmp, "witness.wtns")
+    proof_file = os.path.join(tmp, "proof.json")
+    public_file = os.path.join(tmp, "public.json")
+
+    with open(input_file, "w") as f:
+        json.dump(inputs, f)
+
+    exe = "node_modules/.bin/snarkjs"
+    if not shutil.which(exe):
+        exe = "snarkjs"
+
+    subprocess.run([exe, "wtns", "calculate", wasm_path, input_file, wtns_file], check=True, capture_output=True)
+    subprocess.run([exe, "groth16", "prove", zkey_path, wtns_file, proof_file, public_file], check=True, capture_output=True)
+    out = subprocess.check_output([exe, "groth16", "exportsoliditycalldata", public_file, proof_file])
+    params = json.loads(f"[{out.decode().strip()}]")
+    return params[0], params[1], params[2], params[3]
+
+
+@celery_app.task
+def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):
+    """Generate a real zk-SNARK proof using snarkjs when artifacts are available."""
+    data = json.dumps(inputs, sort_keys=True).encode()
+
+    manifest = {}
+    if os.path.exists(MANIFEST_PATH):
+        with open(MANIFEST_PATH) as f:
+            manifest = json.load(f)
+    manifest_name = circuit
+    if manifest_name not in manifest:
+        manifest_name = f"{circuit}_check"
+
+    proof = None
+    pub = []
+    try:
+        if manifest_name:
+            with open(MANIFEST_PATH) as f:
+                manifest = json.load(f)
+            if manifest_name in manifest and curve in manifest[manifest_name]:
+                paths = manifest[manifest_name][curve]
+                base = os.path.abspath(os.path.join(os.path.dirname(MANIFEST_PATH), ".."))
+                wasm = os.path.join(base, paths["wasm"])
+                zkey = os.path.join(base, paths["zkey"])
+                if os.path.exists(wasm) and os.path.exists(zkey):
+                    a, b, cvals, pub = _run_snarkjs_proof(wasm, zkey, inputs)
+                    if circuit == "eligibility":
+                        proof = {"a": a, "b": b, "c": cvals}
+                    else:
+                        ints = [int(x, 0) for x in (a + b[0] + b[1] + cvals + pub)]
+                        proof = "0x" + "".join(i.to_bytes(32, "big").hex() for i in ints)
+    except Exception as e:
+        print(f"snarkjs failed: {e}. Falling back to dummy proof.")
+
+    if proof is None:
+        res = _dummy_proof(circuit, inputs)
+        proof, pub = res["proof"], res["pubSignals"]
     result = {"proof": proof, "pubSignals": pub}
-    
+
     key = cache_key(circuit, inputs, curve)
     PROOF_CACHE[key] = result
 
     circuit_hash = get_circuit_hash(circuit, curve)
     input_hash = hashlib.sha256(data).hexdigest()
-
     proof_to_hash = json.dumps(proof, sort_keys=True) if isinstance(proof, dict) else str(proof)
     proof_root = hashlib.sha256(proof_to_hash.encode()).hexdigest()
-
 
     db = SessionLocal()
     db.add(

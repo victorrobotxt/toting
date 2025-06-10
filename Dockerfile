@@ -22,6 +22,7 @@ CMD ["sh", "-c", "echo 'Waiting for artifact...' && until [ -f /app/out/Election
 
 # --- STAGE 3: Final Worker Image (reuses the same env) ---
 FROM python-env AS worker
+RUN npm install -g snarkjs
 USER appuser
 # The CMD is overridden in docker-compose.yml for startup dependencies, but this is a good fallback.
 # The Celery -A argument should point to the module and the app instance.
