@@ -48,10 +48,15 @@ export $(grep -v '^#' /app/.env | xargs)
 # --- Generate Solana Bridge Key if not present ---
 if [ "${SOLANA_BRIDGE_SK}" == "[]" ]; then
     echo "🔑 Solana bridge key not found, generating a new one..."
-    # --- THIS IS THE FIX ---
-    # Explicitly set NODE_PATH for this command to ensure it can find the global module.
-    # The global modules are typically in /usr/local/lib/node_modules in the node:alpine base image.
-    NEW_SK=$(NODE_PATH="/usr/local/lib/node_modules" node -e "console.log(JSON.stringify(Array.from(require('@solana/web3.js').Keypair.generate().secretKey)))")
+
+    # figure out where npm put globals
+    GLOBAL_NODE_MODULES=$(npm root -g)
+
+    # use that for require()
+    NEW_SK=$(
+    NODE_PATH="$GLOBAL_NODE_MODULES" \
+    node -e "console.log(JSON.stringify(Array.from(require('@solana/web3.js').Keypair.generate().secretKey)))"
+    )
     
     # Use sed to update the .env file in-place. The `|` is used as a separator to avoid issues with `/` in paths.
     sed -i "s|^SOLANA_BRIDGE_SK=\\[\\]|SOLANA_BRIDGE_SK=${NEW_SK}|" /app/.env
