@@ -3,7 +3,7 @@ uvicorn
 sqlalchemy
 python-jose[cryptography]
 httpx<0.25
-web3==6.15.1
+web3==7.12.0
 eth-account
 celery
 redis
