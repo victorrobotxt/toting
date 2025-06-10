@@ -2,9 +2,8 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
 import ElectionManagerABI from '../src/contracts/ElectionManagerV2.json';
+import { getConfig } from '../src/networks';
 
-// --- CONFIGURATION ---
-const ELECTION_MANAGER_ADDRESS = process.env.NEXT_PUBLIC_ELECTION_MANAGER!;
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
 interface VoteHandlerProps {
@@ -100,8 +99,11 @@ export default function VoteHandler({ electionId }: VoteHandlerProps) {
       await provider.send('eth_requestAccounts', []); // Prompts user to connect wallet
       const signer = provider.getSigner();
 
+      const network = await provider.getNetwork();
+      const cfg = getConfig(network.chainId);
+
       const contract = new ethers.Contract(
-        ELECTION_MANAGER_ADDRESS,
+        cfg.electionManager,
         ElectionManagerABI.abi,
         signer
       );

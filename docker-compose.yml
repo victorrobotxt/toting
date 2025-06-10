@@ -65,7 +65,7 @@ services:
   setup:
     image: ghcr.io/foundry-rs/foundry:latest
     user: "0"
-    command: ["/app/scripts/setup_env.sh"]
+    command: ["/app/scripts/setup_env.sh", "anvil"]
     working_dir: /app
     volumes:
       - .:/app

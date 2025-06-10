@@ -1,0 +1,8 @@
+{
+  "chainId": 11155111,
+  "rpcUrl": "https://rpc.sepolia.org",
+  "entryPoint": "0x0000000000000000000000000000000000000000",
+  "electionManager": "0x0000000000000000000000000000000000000000",
+  "walletFactory": "0x0000000000000000000000000000000000000000",
+  "bundlerUrl": "https://bundler.example/rpc"
+}
