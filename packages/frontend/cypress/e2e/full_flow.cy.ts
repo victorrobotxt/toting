@@ -53,6 +53,20 @@ describe('Full E2E Flow: Create Election and Vote', () => {
     cy.get('div[role="dialog"]').contains('button', 'Login').click();
     cy.url().should('include', '/dashboard');
 
+    // Assert the smart wallet starts with zero ETH balance
+    cy.exec("grep NEXT_PUBLIC_WALLET_FACTORY ../../.env.deployed | cut -d '=' -f2").then(({stdout}) => {
+      const factory = stdout.trim();
+      return cy.exec('cast wallet address --mnemonic mnemonic.txt').then(({stdout}) => {
+        const owner = stdout.trim();
+        return cy.exec(`cast call --rpc-url http://localhost:8545 ${factory} \"getAddress(address,uint256)(address)\" ${owner} 0`).then(({stdout}) => {
+          const wallet = stdout.trim();
+          return cy.exec(`cast balance --rpc-url http://localhost:8545 ${wallet}`).its('stdout');
+        });
+      });
+    }).then((balance) => {
+      expect(balance.trim()).to.eq('0');
+    });
+
     // --- 4. Voter navigates to the election and casts a vote ---
     cy.contains('a', `${electionId}`).click();
     cy.url().should('include', `/elections/${electionId}`);

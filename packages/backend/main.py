@@ -13,6 +13,8 @@ from typing import Optional, Any
 import asyncio
 from web3 import Web3
 from eth_account import Account
+from eth_account.messages import encode_defunct
+from eth_abi import encode as abi_encode
 from web3.middleware import geth_poa_middleware
 
 from .db import SessionLocal, Base, engine, Election as DbElection, ProofRequest, ProofAudit
@@ -67,6 +69,7 @@ EVM_RPC = os.getenv("EVM_RPC", "http://localhost:8545")
 CHAIN_ID = int(os.getenv("CHAIN_ID", "31337"))
 PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY")
 ELECTION_MANAGER = Web3.to_checksum_address(os.getenv("ELECTION_MANAGER"))
+PAYMASTER = Web3.to_checksum_address(os.getenv("PAYMASTER", "0x" + "0" * 40))
 
 
 # Instantiate the Web3 object
@@ -77,6 +80,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 # --- FIX: Lazily load the contract ABI to prevent startup race conditions ---
 EM_ABI = None
+PM_ABI = None
 
 def get_manager_contract():
     """Helper to create a contract instance. Lazily loads the ABI."""
@@ -93,6 +97,18 @@ def get_manager_contract():
             EM_ABI = EM_ARTIFACT["abi"]
     
     return web3.eth.contract(address=ELECTION_MANAGER, abi=EM_ABI)
+
+def get_paymaster_contract():
+    """Helper to create the Paymaster contract instance."""
+    global PM_ABI
+    if PM_ABI is None:
+        ABI_PATH = "/app/out/VerifyingPaymaster.sol/VerifyingPaymaster.json"
+        if not os.path.exists(ABI_PATH):
+            raise RuntimeError(f"Could not load contract ABI from {ABI_PATH}")
+        with open(ABI_PATH) as f:
+            PM_ARTIFACT = json.load(f)
+            PM_ABI = PM_ARTIFACT["abi"]
+    return web3.eth.contract(address=PAYMASTER, abi=PM_ABI)
 
 
 # Create tables on startup
@@ -374,6 +390,45 @@ def update_election(
 async def gas_estimate():
     """Return a fake 95th percentile gas fee in gwei."""
     return {"p95": 42}
+
+
+@app.post("/api/paymaster")
+async def paymaster_data(user_op: dict):
+    """Sign a UserOperation for the VerifyingPaymaster."""
+    if PAYMASTER == Web3.to_checksum_address("0x" + "0" * 40):
+        raise HTTPException(500, "Paymaster not configured")
+
+    target = Web3.to_checksum_address(user_op.get("target", ELECTION_MANAGER))
+    if target != ELECTION_MANAGER:
+        raise HTTPException(400, "unsupported target")
+
+    call_data = user_op.get("callData", "0x")
+    if not call_data.startswith("0x7cb85bf8"):
+        raise HTTPException(400, "invalid callData")
+
+    op_tuple = (
+        Web3.to_checksum_address(user_op["sender"]),
+        int(user_op["nonce"], 16),
+        user_op.get("initCode", "0x"),
+        call_data,
+        int(user_op["callGasLimit"], 16),
+        int(user_op["verificationGasLimit"], 16),
+        int(user_op["preVerificationGas"], 16),
+        int(user_op["maxFeePerGas"], 16),
+        int(user_op["maxPriorityFeePerGas"], 16),
+        b"",
+        b"",
+    )
+
+    paymaster = get_paymaster_contract()
+    valid_until = (1 << 48) - 1
+    valid_after = 0
+    h = paymaster.functions.getHash(op_tuple, valid_until, valid_after).call()
+    msg = encode_defunct(hexstr=Web3.to_hex(h))
+    sig = Account.sign_message(msg, private_key=PRIVATE_KEY).signature.hex()
+    timestamp_bytes = abi_encode(["uint48", "uint48"], [valid_until, valid_after]).hex()
+    paymaster_and_data = "0x" + PAYMASTER[2:] + timestamp_bytes + sig[2:]
+    return {"paymaster": PAYMASTER, "paymasterAndData": paymaster_and_data}
 
 
 @app.post("/api/zk/{circuit}")
