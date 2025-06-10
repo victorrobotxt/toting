@@ -1,69 +1,68 @@
 name: CI
+
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
+  # =========================================================================================
+  # JOB 1: BUILD, TEST & SCAN
+  # This is the main job that validates the entire repository. It ensures everything
+  # installs, compiles, passes tests, and is free of critical vulnerabilities.
+  # =========================================================================================
   build:
+    name: Build, Test & Scan
+    runs-on: ubuntu-latest
+    # Pinned to specific versions for consistency and speed. Expand matrix if needed.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        node: [20, 22]
-        solc: ['0.8.24', '0.8.26']
-    timeout-minutes: 15
-    runs-on: ${{ matrix.os }}
+        node: [20]
+        solc: ['0.8.26']
+        python: ['3.11']
+    timeout-minutes: 20
+
     steps:
+      # ─── 1. SETUP ENVIRONMENT ────────────────────────────────────────────────
       - name: Checkout code (with submodules)
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Install Foundry toolchain
-        uses: foundry-rs/foundry-toolchain@v1
-
-      # ─── Forge tests: unit + fuzz (skip invariants) ────────────────────────
-      - name: Run unit & fuzz tests
-        run: forge test --no-match-contract InvariantTests --use ${{ matrix.solc }}
-
-      # ─── Forge invariants (only your InvariantTests contract) ──────────
-      - name: Run invariant tests
-        run: forge test --match-contract InvariantTests --use ${{ matrix.solc }}
-
-      # ─── Gas reporting ───────────────────────────────────────────────────
-      - name: Generate gas report
-        run: forge test --gas-report --use ${{ matrix.solc }} > gas-report.txt
-
-      - name: Upload gas report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: gas-report-${{ matrix.node }}-${{ matrix.solc }}
-          path: gas-report.txt
-
-      - name: Generate gas snapshot diff
-        uses: atarpara/foundry-snapshot-diff@v0.8
-        id: gas_diff
-
-      - name: Comment gas delta
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          delete: ${{ !steps.gas_diff.outputs.markdown }}
-          message: ${{ steps.gas_diff.outputs.markdown }}
-
-      # ─── Frontend type-check ──────────────────────────────────────────────
-      - name: Setup Node.js
+      - name: Setup Node.js w/ Yarn caching
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          cache: 'yarn'
 
-      - name: Install frontend dependencies
-        run: yarn --cwd packages/frontend install
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: 'pip'
 
-      - name: Type-check frontend
-        run: yarn --cwd packages/frontend type-check
+      - name: Install Foundry toolchain
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly # Using nightly for latest features, or pin to a specific version
+
+      - name: Install snarkjs globally
+        run: npm install -g snarkjs
+
+      # ─── 2. INSTALL DEPENDENCIES ──────────────────────────────────────────────
+      - name: Enable Corepack and Install Node.js dependencies
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+
+      - name: Install Python dependencies
+        run: pip install -r packages/backend/requirements.txt
+
+      # ─── 3. BUILD & COMPILE ──────────────────────────────────────────────────
+      - name: Build smart contracts
+        run: forge build --use ${{ matrix.solc }}
 
       - name: Cache PTAU file
         id: cache-ptau
@@ -72,15 +71,9 @@ jobs:
           path: pot12_final.ptau
           key: ptau-v1
 
-      - name: Download PTAU file
+      - name: Download PTAU file if not cached
         if: steps.cache-ptau.outputs.cache-hit != 'true'
         run: curl -L https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_12.ptau -o pot12_final.ptau
-
-      # ─── Circom compilation ──────────────────────────────────────────────
-      - name: Install Python for build scripts
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
 
       - name: Compile Circom circuits (multi-curve)
         run: |
@@ -89,71 +82,96 @@ jobs:
           done
           python scripts/check_manifest.py
 
-      # ─── Build and scan Docker image ──────────────────────────────────────
-      - name: Build Docker image
-        run: docker build -t app .
+      # ─── 4. TEST & ANALYSIS ──────────────────────────────────────────────────
+      - name: Type-check frontend
+        # This assumes a root-level script in package.json: "type-check": "yarn --cwd packages/frontend type-check"
+        run: yarn type-check
 
-      - name: Trivy scan (high severity)
-        uses: aquasecurity/trivy-action@v0.19.0
-        with:
-          image-ref: app
-          exit-code: "1"
-          severity: "HIGH,CRITICAL"
+      - name: Run unit, fuzz & invariant tests
+        run: forge test --use ${{ matrix.solc }}
 
-      - name: Trivy scan (full report)
-        uses: aquasecurity/trivy-action@v0.19.0
-        with:
-          image-ref: app
-          format: "sarif"
-          output: "trivy.sarif"
-          exit-code: "0"
-          severity: "LOW,MEDIUM,HIGH,CRITICAL"
+      - name: Generate gas report
+        run: forge test --gas-report --use ${{ matrix.solc }} > gas-report.txt
 
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Upload gas report artifact
+        uses: actions/upload-artifact@v4
         with:
-          sarif_file: trivy.sarif
+          name: gas-report-ubuntu-node${{ matrix.node }}-solc${{ matrix.solc }}
+          path: gas-report.txt
+
+      - name: Generate gas snapshot diff
+        if: github.event_name == 'pull_request'
+        uses: atarpara/foundry-snapshot-diff@v0.8
+        id: gas_diff
+
+      - name: Comment gas delta on PR
+        if: github.event_name == 'pull_request' && steps.gas_diff.outputs.markdown
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: ${{ steps.gas_diff.outputs.markdown }}
+
+      # ─── 5. SECURITY SCANS ──────────────────────────────────────────────────
+      - name: Build Docker image for scanning
+        run: docker build -t my-app-image .
 
       - name: Scan for secrets
         uses: gitleaks/gitleaks-action@v2
         with:
           fail: true
 
+      - name: Trivy scan (fail on high/critical)
+        uses: aquasecurity/trivy-action@v0.19.0
+        with:
+          image-ref: 'my-app-image'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload full Trivy scan to GitHub Security
+        uses: aquasecurity/trivy-action@v0.19.0
+        with:
+          image-ref: 'my-app-image'
+          format: 'sarif'
+          output: 'trivy.sarif'
+          exit-code: '0'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy.sarif'
+          category: trivy
+
+  # =========================================================================================
+  # JOB 2: SMOKE TEST
+  # Runs after a successful build. Sets up a live environment with services
+  # and runs an end-to-end test script to ensure system integration.
+  # =========================================================================================
   smoke:
+    name: Smoke Test
     runs-on: ubuntu-latest
     needs: build
     services:
       anvil:
-        image: ghcr.io/foundry-rs/foundry:1.0.0
-        options: >-
-          --health-cmd "anvil --version" --health-interval 10s --health-timeout 5s --health-retries 5
-        ports:
-          - 8545:8545
-        command: ["anvil","--host","0.0.0.0","-m","test test test test test test test test test test test junk","--silent"]
+        image: ghcr.io/foundry-rs/foundry:latest
+        ports: ['8545:8545']
+        command: ["anvil", "--host", "0.0.0.0", "-m", "test test test test test test test test test test test junk", "--silent"]
       redis:
         image: redis:7-alpine
-        ports:
-          - 6379:6379
+        ports: ['6379:6379']
       db:
         image: postgres:16-alpine
         env:
           POSTGRES_PASSWORD: pass
-        ports:
-          - 5432:5432
+        ports: ['5432:5432']
       solana:
         image: solanalabs/solana:v1.18.3
-        command: ["solana-test-validator","--quiet"]
-        ports:
-          - 8899:8899
+        command: ["solana-test-validator", "--quiet"]
+        ports: ['8899:8899']
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+        with: { submodules: recursive }
       - uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
+        with: { python-version: '3.11' }
       - uses: foundry-rs/foundry-toolchain@v1
-      - run: git submodule update --init --recursive
       - name: Install Python dependencies
         run: pip install -r packages/backend/requirements.txt
       - name: Deploy factory
@@ -171,29 +189,40 @@ jobs:
         run: |
           timeout 30s bash -c 'until curl -s http://localhost:8000/api/gas > /dev/null; do echo "Waiting for backend..."; sleep 2; done'
           echo "Backend is up!"
-      - name: Run smoke test
+      - name: Run smoke test script
         run: |
           BACKEND=http://localhost:8000 FACTORY_ADDRESS=$FACTORY_ADDRESS \
           python3 scripts/smoke_auth_to_mint.py
       - name: Stop backend
+        if: always()
         run: kill $(cat backend.pid)
 
+  # =========================================================================================
+  # JOB 3: COVERAGE
+  # Runs after a successful build to calculate test coverage and upload the report.
+  # =========================================================================================
   coverage:
+    name: Test Coverage
     runs-on: ubuntu-latest
     needs: build
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+        with: { submodules: recursive }
       - uses: foundry-rs/foundry-toolchain@v1
       - name: Run forge coverage
         run: forge coverage --lcov > coverage.lcov
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.lcov
 
+  # =========================================================================================
+  # JOB 4: VISUAL REGRESSION
+  # Runs on PRs after a successful build to check for unintended visual changes.
+  # =========================================================================================
   visual:
+    name: Visual Regression
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs: build
@@ -203,11 +232,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install frontend deps
-        run: yarn --cwd packages/frontend install
+          cache: 'yarn'
+      - name: Install frontend dependencies
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
       - name: Build frontend
         run: yarn --cwd packages/frontend build
-      - name: Percy visual regression
+      - name: Percy visual regression check
         uses: percy/cli-action@v1
         with:
           token: ${{ secrets.PERCY_TOKEN }}

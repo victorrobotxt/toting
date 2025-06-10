@@ -1,0 +1,13 @@
+1,1,1,main.ok
+2,2,1,main.sums[0]
+3,3,1,main.sums[1]
+4,4,1,main.sums[2]
+5,5,1,main.results[0]
+6,6,1,main.results[1]
+7,7,1,main.results[2]
+8,-1,0,main.sq[0].in
+9,-1,0,main.sq[0].out
+10,-1,0,main.sq[1].in
+11,-1,0,main.sq[1].out
+12,-1,0,main.sq[2].in
+13,-1,0,main.sq[2].out

@@ -1,0 +1,61 @@
+name: Setup and Build Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  setup_and_build:
+    name: "Setup & Build Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 1. Checkout Code (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 2. Install Language & Blockchain Toolchains
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install snarkjs globally
+        run: npm install -g snarkjs
+
+      - name: 3. Set up Project Dependencies
+        run: |
+          echo "📦 Enabling Corepack to manage Yarn..."
+          corepack enable
+          
+          echo "📦 Installing Node.js dependencies with Yarn..."
+          yarn install
+          
+          echo "🐍 Installing backend dependencies..."
+          pip install -r packages/backend/requirements.txt
+          
+      - name: 4. Initial Build & Configuration
+        run: |
+          echo "🔑 Setting up .env file from example..."
+          # In CI, it's safe to copy the example for build steps that might require the file to exist.
+          # Real secrets should be managed with GitHub Secrets, not committed .env files.
+          if [ ! -f .env ]; then
+              cp .env.example .env
+          fi
+          
+          echo "🛠️ Building smart contracts with Foundry..."
+          forge build
+          
+          echo "🧠 Compiling Circom circuits..."
+          npx -y circom2 circuits/eligibility/eligibility.circom --r1cs --wasm --sym
+          npx -y circom2 circuits/qv/voice_check.circom --r1cs --wasm --sym
+          npx -y circom2 circuits/qv/qv_tally.circom --r1cs --wasm --sym
+          npx -y circom2 circuits/tally/batch_tally.circom --r1cs --wasm --sym
+
+      - name: ✅ Final check
+        run: echo "✅✅✅ Setup and build steps completed successfully! ✅✅✅"
