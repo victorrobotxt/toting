@@ -5,9 +5,10 @@ pragma solidity ^0.8.24;
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 // --- FIX: This import is removed as it does not exist in v0.6.0 ---
-// import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol"; 
+// import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
 import "@account-abstraction/contracts/core/Helpers.sol";
-import { BabyJubjubSig } from "./lib/BabyJubjubSig.sol";
+import {BabyJubjubSig} from "./lib/BabyJubjubSig.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 contract SmartWallet is BaseAccount {
     address public owner;
@@ -15,7 +16,7 @@ contract SmartWallet is BaseAccount {
 
     constructor(IEntryPoint entryPoint_, address owner_) {
         _entryPoint = entryPoint_;
-        owner        = owner_;
+        owner = owner_;
     }
 
     /// @notice Required by BaseAccount
@@ -48,11 +49,7 @@ contract SmartWallet is BaseAccount {
 
     /// @dev Dual-curve signature validation. 65-byte secp256k1 (r,s,v packed)
     ///      or 96-byte Baby-Jubjub.
-    function _isValidSignature(bytes32 hash, bytes memory signature)
-        internal
-        view
-        returns (bool)
-    {
+    function _isValidSignature(bytes32 hash, bytes memory signature) internal view returns (bool) {
         if (signature.length == 65) {
             bytes32 r;
             bytes32 s;
@@ -62,7 +59,8 @@ contract SmartWallet is BaseAccount {
                 s := mload(add(signature, 0x40))
                 v := byte(0, mload(add(signature, 0x60)))
             }
-            address recovered = ecrecover(hash, v, r, s);
+            bytes32 digest = ECDSA.toEthSignedMessageHash(hash);
+            address recovered = ecrecover(digest, v, r, s);
             return recovered == owner;
         }
         if (signature.length == 96) {
@@ -72,31 +70,23 @@ contract SmartWallet is BaseAccount {
         return false;
     }
 
-    
     /*───────────────────────────  new code  ───────────────────────────*/
     /// @dev Re-usable auth check: caller must be the EntryPoint or the owner.
     function _requireFromEntryPointOrOwner() internal view {
-        require(
-            msg.sender == address(_entryPoint) || msg.sender == owner,
-            "SmartWallet: not authorized"
-        );
+        require(msg.sender == address(_entryPoint) || msg.sender == owner, "SmartWallet: not authorized");
     }
     /**
      * @notice Execute an arbitrary call from the wallet.
      *         Can be invoked directly by the owner **or** internally by the
      *         EntryPoint while processing a UserOperation.
      */
-    function execute(
-        address dest,
-        uint256 value,
-        bytes calldata func
-    ) external payable {
+
+    function execute(address dest, uint256 value, bytes calldata func) external payable {
         _requireFromEntryPointOrOwner();
-        (bool success, ) = dest.call{value: value}(func);
+        (bool success,) = dest.call{value: value}(func);
         require(success, "SmartWallet: execute failed");
     }
     /*───────────────────────────────────────────────────────────────────*/
-
 
     receive() external payable {}
 }
