@@ -1,0 +1,6 @@
+dashboards:
+  - name: Default
+    options:
+      path: /etc/grafana/provisioning/dashboards
+    orgId: 1
+    type: file
