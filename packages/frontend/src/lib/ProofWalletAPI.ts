@@ -60,7 +60,12 @@ export class ProofWalletAPI extends SimpleAccountAPI {
 
     const codeAtFactory = await this.provider.getCode(this.factoryAddress);
     if (codeAtFactory === '0x') {
-        throw new Error(`Factory not deployed at ${this.factoryAddress}. Did you run setup_env.sh and restart your dev server?`);
+        const network = await this.provider.getNetwork();
+        throw new Error(
+            `Factory not deployed at ${this.factoryAddress} on chain ${network.chainId}. ` +
+            `Did you run setup_env.sh and restart your dev server? ` +
+            `Check that your wallet is connected to the local Anvil network.`
+        );
     }
 
     const factory = new ethers.Contract(this.factoryAddress, FACTORY_ABI, this.provider);

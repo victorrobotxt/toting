@@ -5,6 +5,11 @@ import { SimpleAccountAPI } from "@account-abstraction/sdk";
 import ElectionManagerV2 from "../contracts/ElectionManagerV2.json";
 import { ProofWalletAPI, ZkProof } from "./ProofWalletAPI";
 
+const ENTRY_POINT_ABI = [
+    "function depositTo(address account) payable",
+    "function balanceOf(address account) view returns (uint256)"
+];
+
 const ENTRY_POINT_ADDRESS = process.env.NEXT_PUBLIC_ENTRYPOINT!;
 const ELECTION_MANAGER_ADDR = process.env.NEXT_PUBLIC_ELECTION_MANAGER!;
 const BUNDLER_RPC_URL = process.env.NEXT_PUBLIC_BUNDLER_URL!;
@@ -44,6 +49,19 @@ async function sendUserOpToBundler(userOpWithPromises: UserOperation): Promise<s
     return userOpHash;
 }
 
+async function ensurePrefund(api: ProofWalletAPI, signer: ethers.Signer) {
+    const entryPoint = new ethers.Contract(ENTRY_POINT_ADDRESS, ENTRY_POINT_ABI, signer);
+    const account = await api.getAccountAddress();
+    const deposit: BigNumber = await entryPoint.balanceOf(account);
+    if (deposit.eq(0)) {
+        console.log(`[accountAbstraction] Depositing 0.01 ETH for ${account}`);
+        const tx = await entryPoint.depositTo(account, {
+            value: ethers.utils.parseEther('0.01'),
+        });
+        await tx.wait();
+    }
+}
+
 export async function bundleUserOp(
     signer: ethers.Signer,
     target: string,
@@ -66,6 +84,8 @@ export async function bundleUserOp(
         zkProof: eligibilityProof,
         pubSignals: eligibilityPubSignals,
     });
+
+    await ensurePrefund(api, signer);
 
     const unsignedOp = await api.createUnsignedUserOp({
         target,
