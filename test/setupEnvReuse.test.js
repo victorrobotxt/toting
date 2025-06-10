@@ -42,7 +42,7 @@ exit 0
 
 const env = {...process.env, PATH: `${binDir}:${process.env.PATH}`};
 try {
-  execSync('bash scripts/setup_env.sh', {stdio:'inherit', env});
+  execSync('bash scripts/setup_env.sh anvil', {stdio:'inherit', env});
 } catch (e) {
   console.error('setup_env.sh failed', e);
   process.exit(1);

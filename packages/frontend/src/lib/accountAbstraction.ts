@@ -4,22 +4,20 @@ import { ethers, BigNumber, BigNumberish } from "ethers";
 import { SimpleAccountAPI } from "@account-abstraction/sdk";
 import ElectionManagerV2 from "../contracts/ElectionManagerV2.json";
 import { ProofWalletAPI, ZkProof } from "./ProofWalletAPI";
+import { getConfig } from "../networks";
 
 const ENTRY_POINT_ABI = [
     "function depositTo(address account) payable",
     "function balanceOf(address account) view returns (uint256)"
 ];
 
-const ENTRY_POINT_ADDRESS = process.env.NEXT_PUBLIC_ENTRYPOINT!;
-const ELECTION_MANAGER_ADDR = process.env.NEXT_PUBLIC_ELECTION_MANAGER!;
-const BUNDLER_RPC_URL = process.env.NEXT_PUBLIC_BUNDLER_URL!;
 
 // This is the type we get from the SDK, which can contain promises for some fields.
 // We derive it from the SimpleAccountAPI to ensure it's always correct.
 type UserOperation = Parameters<SimpleAccountAPI['signUserOp']>[0];
 
-async function sendUserOpToBundler(userOpWithPromises: UserOperation): Promise<string> {
-    const bundler = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
+async function sendUserOpToBundler(userOpWithPromises: UserOperation, cfg: ReturnType<typeof getConfig>): Promise<string> {
+    const bundler = new ethers.providers.JsonRpcProvider(cfg.bundlerUrl);
     const bundlerNetwork = await bundler.getNetwork();
     console.log(`[accountAbstraction] sending to bundler on chain ${bundlerNetwork.chainId}`);
 
@@ -46,14 +44,14 @@ async function sendUserOpToBundler(userOpWithPromises: UserOperation): Promise<s
 
     const userOpHash: string = await bundler.send(
         "eth_sendUserOperation",
-        [serializedUserOp, ENTRY_POINT_ADDRESS]
+        [serializedUserOp, cfg.entryPoint]
     );
     console.log(`[accountAbstraction] bundler returned hash: ${userOpHash}`);
     return userOpHash;
 }
 
-async function ensurePrefund(api: ProofWalletAPI, signer: ethers.Signer) {
-    const entryPoint = new ethers.Contract(ENTRY_POINT_ADDRESS, ENTRY_POINT_ABI, signer);
+async function ensurePrefund(api: ProofWalletAPI, signer: ethers.Signer, cfg: ReturnType<typeof getConfig>) {
+    const entryPoint = new ethers.Contract(cfg.entryPoint, ENTRY_POINT_ABI, signer);
     const account = await api.getAccountAddress();
     const deposit: BigNumber = await entryPoint.balanceOf(account);
     if (deposit.eq(0)) {
@@ -74,12 +72,13 @@ export async function bundleUserOp(
 ): Promise<string> {
     const provider = signer.provider!;
 
-    if (!ENTRY_POINT_ADDRESS || !BUNDLER_RPC_URL) {
-        throw new Error("Bundler/EntryPoint not configured in environment variables.");
+    const network = await provider.getNetwork();
+    const cfg = getConfig(network.chainId);
+    if (!cfg.entryPoint || !cfg.bundlerUrl) {
+        throw new Error("Bundler/EntryPoint not configured for chain " + network.chainId);
     }
 
-    const network = await provider.getNetwork();
-    const bundlerProvider = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
+    const bundlerProvider = new ethers.providers.JsonRpcProvider(cfg.bundlerUrl);
     const bundlerNetwork = await bundlerProvider.getNetwork();
     console.log(
         `[accountAbstraction] signer network: ${network.chainId}, bundler network: ${bundlerNetwork.chainId}`
@@ -96,13 +95,13 @@ export async function bundleUserOp(
 
     const api = new ProofWalletAPI({
         provider,
-        entryPointAddress: ENTRY_POINT_ADDRESS,
+        entryPointAddress: cfg.entryPoint,
         owner: signer,
         zkProof: eligibilityProof,
         pubSignals: eligibilityPubSignals,
     });
 
-    await ensurePrefund(api, signer);
+    await ensurePrefund(api, signer, cfg);
 
     const unsignedOp = await api.createUnsignedUserOp({
         target,
@@ -126,7 +125,7 @@ export async function bundleUserOp(
     const signedOp = await api.signUserOp(unsignedOp);
     
     // Pass the signed operation (which may contain promises) to our robust sending function.
-    return sendUserOpToBundler(signedOp);
+    return sendUserOpToBundler(signedOp, cfg);
 }
 
 /**
@@ -154,9 +153,13 @@ export async function bundleSubmitVote(
         proofBytes,
     ]);
 
+    const provider = signer.provider!;
+    const network = await provider.getNetwork();
+    const cfg = getConfig(network.chainId);
+
     return bundleUserOp(
         signer,
-        ELECTION_MANAGER_ADDR,
+        cfg.electionManager,
         callData,
         eligibilityProof,
         eligibilityPubSignals

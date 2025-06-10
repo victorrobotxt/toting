@@ -12,3 +12,7 @@ grpcio-tools
 typer
 psycopg2-binary
 pytest
+requests
+base58
+prometheus-fastapi-instrumentator
+python-json-logger
