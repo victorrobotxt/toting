@@ -35,6 +35,10 @@ Compose network.
 
 The frontend will be available on `http://localhost:3000`, the API on
 `http://localhost:8000` and Postgres on `localhost:5432`.
+## Configuration
+
+See [../env_vars.md](../env_vars.md) for a list of required environment variables.
+
 
 ## Database Migrations
 
