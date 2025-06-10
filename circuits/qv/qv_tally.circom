@@ -1,15 +1,6 @@
 pragma circom 2.2.2;
 
-// Shared square-root gadget
-// 'out' is an INPUT signal, a "witness" provided by the prover.
-template Sqrt() {
-    signal input in;
-    signal input out;
-    // This constraint VERIFIES that the provided 'out' is the square root of 'in'.
-    out * out === in;
-}
-
-// Take an array of squared vote sums and verify their square roots.
+// Simple tally circuit that verifies square roots of vote sums.
 template QVTally(n) {
     // The prover must provide both the sums and their square roots.
     signal input sums[n];
@@ -18,22 +9,12 @@ template QVTally(n) {
     // A single output to confirm all checks passed.
     signal output ok;
 
-    // 1. Declare an array of 'n' Sqrt components.
-    component sq[n];
-
-    // 2. Use a loop to initialize and connect each component.
+    // Use a loop to verify each square root directly.
     for (var i = 0; i < n; i++) {
-        // Initialize the i-th component in the array
-        sq[i] = Sqrt();
-        
-        // Wire the i-th sum and its corresponding witness (result)
-        // to the Sqrt component's inputs.
-        sq[i].in <== sums[i];
-        sq[i].out <== results[i];
+        results[i] * results[i] === sums[i];
     }
 
-    // If all the `out * out === in` constraints in the Sqrt components pass,
-    // the proof will be valid. We output 1 to signify success.
+    // If all constraints pass we output 1 to signify success.
     ok <== 1;
 }
 
