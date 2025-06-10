@@ -10,12 +10,14 @@ USER root
 RUN apt-get update && \
     apt-get install -y --no-install-recommends jq && \
     rm -rf /var/lib/apt/lists/*
-FROM python:3.11.13-slim AS base
+FROM python:3.12.11-slim AS base
 RUN apt-get update \
-    && apt-get upgrade -y \
-    && apt-get install -y curl gnupg \
+    && apt-get dist-upgrade -y \
+    && apt-get install -y --no-install-recommends curl gnupg \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
+    && apt-get install -y --no-install-recommends nodejs \
+    && apt-get purge -y curl gnupg \
+    && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 WORKDIR /app
