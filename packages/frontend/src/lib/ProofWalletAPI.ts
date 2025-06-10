@@ -57,7 +57,12 @@ export class ProofWalletAPI extends SimpleAccountAPI {
     if (!this.factoryAddress) {
         throw new Error("Factory address is not defined");
     }
-    
+
+    const codeAtFactory = await this.provider.getCode(this.factoryAddress);
+    if (codeAtFactory === '0x') {
+        throw new Error(`Factory not deployed at ${this.factoryAddress}. Did you run setup_env.sh and restart your dev server?`);
+    }
+
     const factory = new ethers.Contract(this.factoryAddress, FACTORY_ABI, this.provider);
     const ownerAddress = await this.owner.getAddress();
     
