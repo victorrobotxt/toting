@@ -3,7 +3,7 @@ uvicorn
 sqlalchemy
 alembic
 python-jose[cryptography]
-httpx<0.25
+httpx<0.29
 web3==6.15.1
 eth-account
 celery
