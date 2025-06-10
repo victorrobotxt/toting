@@ -60,52 +60,80 @@ fi
 
 echo "📦 Deploying contracts..."
 
-# --- Deploy EntryPoint contract ---
-echo "Deploying EntryPoint..."
-ENTRYPOINT_ADDR=$(forge script script/DeployEntryPoint.s.sol:DeployEntryPoint --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "EntryPoint deployed at:" | awk '{print $NF}')
-if [ -z "$ENTRYPOINT_ADDR" ]; then
-    echo "🛑 Failed to deploy EntryPoint."
-    exit 1
-fi
-echo "Verifying EntryPoint deployment..."
-CODE=$(cast code --rpc-url "$RPC_URL" "$ENTRYPOINT_ADDR")
-if [ "$CODE" == "0x" ]; then
-    echo "🛑 Verification failed: No code at EntryPoint address $ENTRYPOINT_ADDR"
-    exit 1
-fi
-echo "✅ EntryPoint code verified."
-echo "✅ EntryPoint deployed at: $ENTRYPOINT_ADDR"
+# If a previous deployment file exists, check whether those contracts still
+# exist on chain. If they do, reuse them instead of deploying again. This keeps
+# the addresses stable across repeated runs and prevents the frontend from using
+# stale values.
+DEPLOYED_ENV_FILE="/app/.env.deployed"
+if [ -f "$DEPLOYED_ENV_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$DEPLOYED_ENV_FILE"
+    EXISTING_ENTRYPOINT_ADDR="$NEXT_PUBLIC_ENTRYPOINT"
+    EXISTING_MGR_ADDR="$NEXT_PUBLIC_ELECTION_MANAGER"
+    EXISTING_FACTORY_ADDR="$NEXT_PUBLIC_WALLET_FACTORY"
 
-# --- Deploy ElectionManagerV2 proxy ---
-MGR_ADDR=$(forge script script/DeployElectionManagerV2.s.sol:DeployElectionManagerV2Script --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "ElectionManagerV2 proxy deployed to:" | awk '{print $NF}')
-if [ -z "$MGR_ADDR" ]; then
-    echo "🛑 Failed to deploy ElectionManagerV2."
-    exit 1
-fi
-echo "Verifying ElectionManager deployment..."
-CODE=$(cast code --rpc-url "$RPC_URL" "$MGR_ADDR")
-if [ "$CODE" == "0x" ]; then
-    echo "🛑 Verification failed: No code at ElectionManager address $MGR_ADDR"
-    exit 1
-fi
-echo "✅ ElectionManager code verified."
-echo "✅ ElectionManagerV2 proxy deployed at: $MGR_ADDR"
+    CODE_ENTRY=$(cast code --rpc-url "$RPC_URL" "$EXISTING_ENTRYPOINT_ADDR" 2>/dev/null || echo "0x")
+    CODE_MGR=$(cast code --rpc-url "$RPC_URL" "$EXISTING_MGR_ADDR" 2>/dev/null || echo "0x")
+    CODE_FACTORY=$(cast code --rpc-url "$RPC_URL" "$EXISTING_FACTORY_ADDR" 2>/dev/null || echo "0x")
 
-# --- Deploy WalletFactory ---
-echo "Deploying WalletFactory..."
-FACTORY_ADDR=$(ENTRYPOINT_ADDRESS=$ENTRYPOINT_ADDR forge script script/DeployFactory.s.sol:DeployFactory --rpc-url "$RPC_URL" --broadcast | grep "Factory deployed at:" | awk '{print $NF}')
-if [ -z "$FACTORY_ADDR" ]; then
-    echo "🛑 Failed to deploy WalletFactory."
-    exit 1
+    if [ "$CODE_ENTRY" != "0x" ] && [ "$CODE_MGR" != "0x" ] && [ "$CODE_FACTORY" != "0x" ]; then
+        echo "♻️  Reusing existing deployed contracts from $DEPLOYED_ENV_FILE"
+        ENTRYPOINT_ADDR="$EXISTING_ENTRYPOINT_ADDR"
+        MGR_ADDR="$EXISTING_MGR_ADDR"
+        FACTORY_ADDR="$EXISTING_FACTORY_ADDR"
+    fi
 fi
-echo "Verifying WalletFactory deployment..."
-CODE=$(cast code --rpc-url "$RPC_URL" "$FACTORY_ADDR")
-if [ "$CODE" == "0x" ]; then
-    echo "🛑 Verification failed: No code at WalletFactory address $FACTORY_ADDR"
-    exit 1
+
+if [ -z "${ENTRYPOINT_ADDR:-}" ]; then
+    # --- Deploy EntryPoint contract ---
+    echo "Deploying EntryPoint..."
+    ENTRYPOINT_ADDR=$(forge script script/DeployEntryPoint.s.sol:DeployEntryPoint --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "EntryPoint deployed at:" | awk '{print $NF}')
+    if [ -z "$ENTRYPOINT_ADDR" ]; then
+        echo "🛑 Failed to deploy EntryPoint."
+        exit 1
+    fi
+    echo "Verifying EntryPoint deployment..."
+    CODE=$(cast code --rpc-url "$RPC_URL" "$ENTRYPOINT_ADDR")
+    if [ "$CODE" == "0x" ]; then
+        echo "🛑 Verification failed: No code at EntryPoint address $ENTRYPOINT_ADDR"
+        exit 1
+    fi
+    echo "✅ EntryPoint code verified."
+    echo "✅ EntryPoint deployed at: $ENTRYPOINT_ADDR"
+
+    # --- Deploy ElectionManagerV2 proxy ---
+    MGR_ADDR=$(forge script script/DeployElectionManagerV2.s.sol:DeployElectionManagerV2Script --rpc-url "$RPC_URL" --broadcast --sig "run() returns (address)" | grep "ElectionManagerV2 proxy deployed to:" | awk '{print $NF}')
+    if [ -z "$MGR_ADDR" ]; then
+        echo "🛑 Failed to deploy ElectionManagerV2."
+        exit 1
+    fi
+    echo "Verifying ElectionManager deployment..."
+    CODE=$(cast code --rpc-url "$RPC_URL" "$MGR_ADDR")
+    if [ "$CODE" == "0x" ]; then
+        echo "🛑 Verification failed: No code at ElectionManager address $MGR_ADDR"
+        exit 1
+    fi
+    echo "✅ ElectionManager code verified."
+    echo "✅ ElectionManagerV2 proxy deployed at: $MGR_ADDR"
+
+    # --- Deploy WalletFactory ---
+    echo "Deploying WalletFactory..."
+    FACTORY_ADDR=$(ENTRYPOINT_ADDRESS=$ENTRYPOINT_ADDR forge script script/DeployFactory.s.sol:DeployFactory --rpc-url "$RPC_URL" --broadcast | grep "Factory deployed at:" | awk '{print $NF}')
+    if [ -z "$FACTORY_ADDR" ]; then
+        echo "🛑 Failed to deploy WalletFactory."
+        exit 1
+    fi
+    echo "Verifying WalletFactory deployment..."
+    CODE=$(cast code --rpc-url "$RPC_URL" "$FACTORY_ADDR")
+    if [ "$CODE" == "0x" ]; then
+        echo "🛑 Verification failed: No code at WalletFactory address $FACTORY_ADDR"
+        exit 1
+    fi
+    echo "✅ WalletFactory code verified."
+    echo "✅ WalletFactory deployed at: $FACTORY_ADDR"
+else
+    echo "✅ All contracts already deployed. Skipping deployment."
 fi
-echo "✅ WalletFactory code verified."
-echo "✅ WalletFactory deployed at: $FACTORY_ADDR"
 
 # --- Generate .env.deployed file ---
 DEPLOYED_ENV_FILE="/app/.env.deployed"
