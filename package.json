@@ -1,7 +1,7 @@
 {
   "devDependencies": {
-    "@types/express": "^5.0.2",
-    "@types/node": "^24.0.0",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.14.1",
     "@types/pg": "^8.15.4",
     "circomlib": "^2.0.5",
     "snarkjs": "^0.7.5",
