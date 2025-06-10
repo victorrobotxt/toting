@@ -130,7 +130,8 @@ export class ProofWalletAPI extends SimpleAccountAPI {
 
     const factoryIface = new ethers.utils.Interface(["function createAccount(bytes data)"]);
     const calldata = factoryIface.encodeFunctionData("createAccount", [innerCreationData]);
-
-    return hexConcat([this.factoryAddress, calldata]);
+    const initCode = hexConcat([this.factoryAddress, calldata]);
+    console.log(`[ProofWalletAPI] initCode length: ${initCode.length}`);
+    return initCode;
   }
 }

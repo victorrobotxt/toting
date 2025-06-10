@@ -117,6 +117,8 @@ function VotePage() {
 
         const provider = new ethers.providers.Web3Provider((window as any).ethereum);
         await provider.send("eth_requestAccounts", []);
+        const net = await provider.getNetwork();
+        console.log(`[vote.tsx] connected chainId: ${net.chainId}`);
 
         const voicePayload = { credits, nonce: Date.now() };
         const eligibilityPayload = { country: "US", dob: "1990-01-01", residency: "CA" };
