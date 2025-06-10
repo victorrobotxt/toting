@@ -78,3 +78,16 @@ class ProofAudit(Base):
     input_hash = Column(String, nullable=False)
     proof_root = Column(String, nullable=False, index=True)
     timestamp = Column(String, nullable=False)
+
+
+class DeadLetterQueue(Base):
+    """Events that failed to be bridged after multiple attempts."""
+
+    __tablename__ = "dead_letter_queue"
+
+    id = Column(Integer, primary_key=True)
+    event_block = Column(BigInteger, nullable=False)
+    tx_hash = Column(String, nullable=False)
+    payload = Column(Text, nullable=False)
+    error = Column(Text, nullable=True)
+    attempts = Column(Integer, nullable=False, default=0)
