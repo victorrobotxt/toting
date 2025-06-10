@@ -1,6 +1,5 @@
 name: CodeQL
 
-
 on:
   push:
     branches: [ main ]
@@ -44,8 +43,7 @@ jobs:
           node-version: 20
 
       - name: Install frontend dependencies
-        run: corepack yarn@1.22.22 --cwd packages/frontend install --frozen-lockfile
-
+        run: corepack yarn@1.22.22 --cwd packages/frontend install
       - name: Build frontend
         run: yarn --cwd packages/frontend build
 

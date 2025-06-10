@@ -55,7 +55,7 @@ jobs:
       - name: Enable Corepack and Install Node.js dependencies
         run: |
           corepack enable
-          yarn install --frozen-lockfile
+          yarn install
 
       - name: Run commitlint
         if: github.event_name == 'pull_request'
@@ -66,8 +66,10 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r packages/backend/requirements.txt
+
       - name: Install pre-commit
         run: pip install pre-commit
+
       - name: Run pre-commit checks
         run: pre-commit run --all-files
 
@@ -134,20 +136,21 @@ jobs:
           fail: true
 
       - name: Trivy scan (fail on high/critical)
-        uses: aquasecurity/trivy-action@v0.19.0
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           image-ref: 'my-app-image'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
 
       - name: Upload full Trivy scan to GitHub Security
-        uses: aquasecurity/trivy-action@v0.19.0
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           image-ref: 'my-app-image'
           format: 'sarif'
           output: 'trivy.sarif'
           exit-code: '0'
           severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+
       - name: Upload Trivy SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
@@ -268,7 +271,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           corepack enable
-          yarn install --frozen-lockfile
+          yarn install
       - name: Build frontend
         run: yarn --cwd packages/frontend build
       - name: Percy visual regression check

@@ -45,7 +45,7 @@ jobs:
         run: docker compose build orchestrator
 
       - name: Trivy scan (fail on high/critical)
-        uses: aquasecurity/trivy-action@v0.19.0
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           image-ref: 'toting-orchestrator'
           exit-code: '1'
