@@ -148,6 +148,26 @@ if [ -z "${ENTRYPOINT_ADDR:-}" ]; then
     fi
     echo "✅ WalletFactory code verified."
     echo "✅ WalletFactory deployed at: $FACTORY_ADDR"
+
+    # --- Deploy VerifyingPaymaster ---
+    echo "Deploying VerifyingPaymaster..."
+    PAYMASTER_ADDR=$(ENTRYPOINT_ADDRESS=$ENTRYPOINT_ADDR forge script script/DeployPaymaster.s.sol:DeployPaymaster --rpc-url "$RPC_URL" --broadcast | grep "VerifyingPaymaster deployed at:" | awk '{print $NF}')
+    if [ -z "$PAYMASTER_ADDR" ]; then
+        echo "🛑 Failed to deploy VerifyingPaymaster."
+        exit 1
+    fi
+    echo "Verifying Paymaster deployment..."
+    CODE=$(cast code --rpc-url "$RPC_URL" "$PAYMASTER_ADDR")
+    if [ "$CODE" == "0x" ]; then
+        echo "🛑 Verification failed: No code at Paymaster address $PAYMASTER_ADDR"
+        exit 1
+    fi
+    echo "✅ Paymaster code verified."
+    echo "✅ VerifyingPaymaster deployed at: $PAYMASTER_ADDR"
+
+    # Fund the Paymaster with stake and deposit
+    cast send --private-key $ORCHESTRATOR_KEY --rpc-url "$RPC_URL" "$PAYMASTER_ADDR" "addStake(uint32)" 1 --value 2ether >/dev/null
+    cast send --private-key $ORCHESTRATOR_KEY --rpc-url "$RPC_URL" "$ENTRYPOINT_ADDR" "depositTo(address)" "$PAYMASTER_ADDR" --value 1ether >/dev/null
 else
     echo "✅ All contracts already deployed. Skipping deployment."
 fi
@@ -156,12 +176,13 @@ fi
 DEPLOYED_ENV_FILE="/app/.env.deployed"
 echo "📝 Generating environment file at $DEPLOYED_ENV_FILE"
 
-{
+{ 
     echo "ELECTION_MANAGER=$MGR_ADDR"
     echo "NEXT_PUBLIC_ELECTION_MANAGER=$MGR_ADDR"
     echo "NEXT_PUBLIC_WALLET_FACTORY=$FACTORY_ADDR"
     echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR"
-    echo "CHAIN_ID=$CHAIN_ID"
+    echo "PAYMASTER=$PAYMASTER_ADDR"
+    echo "NEXT_PUBLIC_PAYMASTER=$PAYMASTER_ADDR"
 } > "$DEPLOYED_ENV_FILE"
 echo "✅ .env.deployed created."
 
@@ -173,6 +194,8 @@ sed -i '/^ELECTION_MANAGER=/d' "$MAIN_ENV_FILE"
 sed -i '/^NEXT_PUBLIC_ELECTION_MANAGER=/d' "$MAIN_ENV_FILE"
 sed -i '/^NEXT_PUBLIC_WALLET_FACTORY=/d' "$MAIN_ENV_FILE"
 sed -i '/^NEXT_PUBLIC_ENTRYPOINT=/d' "$MAIN_ENV_FILE"
+sed -i '/^PAYMASTER=/d' "$MAIN_ENV_FILE"
+sed -i '/^NEXT_PUBLIC_PAYMASTER=/d' "$MAIN_ENV_FILE"
 cat "$DEPLOYED_ENV_FILE" >> "$MAIN_ENV_FILE"
 
 # --- Generate bundler.config.json file ---
@@ -211,7 +234,7 @@ echo "📝 Generating/updating frontend local environment file at $FRONTEND_LOCA
     echo "NEXT_PUBLIC_ELECTION_MANAGER=$MGR_ADDR"
     echo "NEXT_PUBLIC_WALLET_FACTORY=$FACTORY_ADDR"
     echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR"
-    echo "NEXT_PUBLIC_CHAIN_ID=$CHAIN_ID"
+    echo "NEXT_PUBLIC_PAYMASTER=$PAYMASTER_ADDR"
 } > "$FRONTEND_LOCAL_ENV_FILE"
 echo "✅ Frontend .env.local created."
 
