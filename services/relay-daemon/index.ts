@@ -27,8 +27,9 @@ if (!BRIDGE_SK) throw new Error('SOLANA_BRIDGE_SK env var required');
 // --- Load Solana IDL ---
 const idlPath = path.join(__dirname, '..', 'idl', 'election_mirror.json');
 const idl = JSON.parse(fs.readFileSync(idlPath, 'utf8')) as Idl;
-// --- FIX: Extract programId from the IDL metadata ---
-const programId = new PublicKey(idl.metadata.address);
+// --- FIX: Anchor v0.31 expects `idl.address` for the Program constructor. ---
+const programId = new PublicKey((idl as any).metadata.address);
+(idl as any).address = programId.toBase58();
 
 // --- Providers and Interfaces ---
 const ethProvider = new ethers.providers.JsonRpcProvider(EVM_RPC, {
@@ -112,8 +113,8 @@ async function bridgeTally(A: ethers.BigNumber, B: ethers.BigNumber, blockHash: 
 
   const provider = new AnchorProvider(conn, wallet, { commitment: 'confirmed' });
   
-  // --- FIX: Pass the programId as the second argument to the Program constructor ---
-  const program = new Program(idl, programId, provider);
+  // --- FIX: Use the Program constructor with provider only. programId comes from idl.address ---
+  const program = new Program(idl, provider);
 
   // Derive the PDA for the election account on Solana
   const [electionPDA] = PublicKey.findProgramAddressSync(
