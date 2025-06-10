@@ -108,7 +108,7 @@ export async function bundleUserOp(
         pubSignals: eligibilityPubSignals,
     });
 
-    await ensurePrefund(api, signer, cfg);
+    await ensurePrefund(api, signer);
 
     const unsignedOp = await api.createUnsignedUserOp({
         target,
