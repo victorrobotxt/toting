@@ -36,7 +36,7 @@ class ElectionSchema(BaseModel):
     # We don't need to expose the full metadata in the list view
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # --- Schema for Proof Auditing ---
@@ -49,4 +49,4 @@ class ProofAuditSchema(BaseModel):
     timestamp: str
 
     class Config:
-        from_attributes = True
+        orm_mode = True

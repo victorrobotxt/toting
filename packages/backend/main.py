@@ -14,6 +14,9 @@ import asyncio
 from web3 import Web3
 from eth_account import Account
 from web3.middleware import geth_poa_middleware
+import hashlib
+
+from .utils.ipfs import pin_json, cid_from_meta_hash, fetch_json
 from prometheus_fastapi_instrumentator import Instrumentator
 import logging
 from pythonjsonlogger import jsonlogger
@@ -253,8 +256,10 @@ def create_election(
 ):
     print(f"Admin user '{admin_user.get('email')}' is creating an election.")
     
-    # 1. Hash the incoming metadata to get the on-chain identifier
-    meta_hash = web3.keccak(text=payload.metadata)
+    # 1. Pin the metadata to IPFS and derive the on-chain hash (sha256 digest)
+    cid = pin_json(payload.metadata)
+    digest = hashlib.sha256(payload.metadata.encode()).digest()
+    meta_hash = digest
     
     # 2. Build & send the on-chain transaction
     account = Account.from_key(PRIVATE_KEY)
@@ -323,7 +328,6 @@ def create_election(
     db_election = DbElection(
         id=on_chain_id,
         meta=meta_hex_string,
-        metadata_json=payload.metadata,
         start=start_block,
         end=end_block,
         status="pending",
@@ -355,14 +359,13 @@ def get_election(election_id: int, db: Session = Depends(get_db)):
 @app.get("/elections/{election_id}/meta", response_model=Any)
 def get_election_metadata(election_id: int, db: Session = Depends(get_db)):
     election = db.query(DbElection).filter(DbElection.id == election_id).first()
-    # FIX: Use the renamed field 'metadata_json'
-    if not election or not election.metadata_json:
+    if not election:
         raise HTTPException(404, "metadata for election not found")
     try:
-        # Parse the stored string back into a JSON object for the response
-        return json.loads(election.metadata_json)
-    except json.JSONDecodeError:
-        raise HTTPException(500, "failed to parse stored metadata")
+        cid = cid_from_meta_hash(election.meta)
+        return fetch_json(cid)
+    except Exception as e:
+        raise HTTPException(500, f"failed to fetch metadata: {e}")
 
 @app.patch("/elections/{election_id}", response_model=ElectionSchema)
 def update_election(

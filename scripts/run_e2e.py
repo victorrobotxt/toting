@@ -4,7 +4,7 @@ import requests, os, time
 BASE = os.getenv("BASE_URL", "http://localhost:8000")
 
 # 1. create election
-payload = {"meta_hash": "0x" + "e"*64}
+payload = {"metadata": "{\"title\": \"E2E\"}"}
 r = requests.post(f"{BASE}/elections", json=payload)
 r.raise_for_status()
 eid = r.json()["id"]

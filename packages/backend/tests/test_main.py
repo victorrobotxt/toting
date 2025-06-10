@@ -141,14 +141,14 @@ def test_create_and_update_election(mock_web3):
     # Configure the mock to return the correct start/end blocks for the `elections(id)` call
     mock_contract.functions.elections(99).call.return_value = (123, 123 + 1_000_000)
 
-    payload = {"meta_hash": "0x" + "b" * 64}
+    payload = {"metadata": "{\"title\": \"Test\", \"options\": []}"}
     # Pass the admin headers with the request
     r = client.post("/elections", json=payload, headers=headers)
     
     assert r.status_code == 201, f"API failed with: {r.text}"
     data = r.json()
     assert data["id"] == 99  # From the mocked event
-    assert data["meta"] == payload["meta_hash"]
+    assert data["meta"].startswith("0x")
     # Assert against the values returned by the mocked contract call
     assert data["start"] == 123
     assert data["end"] == 123 + 1_000_000
@@ -167,7 +167,7 @@ def test_create_election_fails_for_non_admin(mock_web3):
     user_token = jwt.encode({"email": "user@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256")
     headers = {"Authorization": f"Bearer {user_token}"}
     
-    payload = {"meta_hash": "0x" + "c" * 64}
+    payload = {"metadata": "{\"title\": \"Bad\"}"}
     r = client.post("/elections", json=payload, headers=headers)
     
     assert r.status_code == 403
