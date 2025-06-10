@@ -1,9 +1,12 @@
 {
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@types/express": "^5.0.3",
     "@types/node": "^22.14.1",
     "@types/pg": "^8.15.4",
     "circomlib": "^2.0.5",
+    "husky": "^9.1.7",
     "snarkjs": "^0.7.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.4",
@@ -24,7 +27,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "test": "node test/setupEnvReuse.test.js && node test/setupEnvRedeploy.test.js && node test/circuitProperty.test.js && npx tsc -p services/relay-daemon"
+    "test": "node test/setupEnvReuse.test.js && node test/setupEnvRedeploy.test.js && node test/circuitProperty.test.js && npx tsc -p services/relay-daemon",
+    "commitlint": "commitlint"
   },
   "packageManager": "yarn@1.22.22"
 }
