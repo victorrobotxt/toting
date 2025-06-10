@@ -11,3 +11,5 @@ mQENBF9...FAKEKEY...IDAQAB
 ```
 
 We will acknowledge receipt within 2 business days.
+
+The results of our formal security audit will be published under [docs/audit/final_report](docs/audit/final_report) once complete.
