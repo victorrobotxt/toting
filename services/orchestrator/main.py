@@ -3,6 +3,7 @@ import os
 import time
 import subprocess
 import json
+import math
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from eth_account import Account
@@ -94,19 +95,43 @@ def get_tally_input(w3: Web3, mgr, election_id: int) -> dict:
     2. Filter for all instances of that event for the given `election_id`.
     3. Count the 'yes' and 'no' votes.
     4. Return a dictionary that matches the input format of your `qv_tally.circom` circuit.
-    
-    For now, this returns dummy data.
     """
-    print("⚠️ Using DUMMY data for tally input. Implement `get_tally_input` for production.")
-    # Example: fetch all `VoteCast` events from block 0 to 'latest'
-    # event_filter = mgr.events.VoteCast.create_filter(fromBlock=0, argument_filters={'electionId': election_id})
-    # all_votes = event_filter.get_all_entries()
-    # yes_votes = sum(1 for vote in all_votes if vote.args.vote)
-    # no_votes = len(all_votes) - yes_votes
-    # return {"yes_votes": str(yes_votes), "no_votes": str(no_votes)}
 
-    # Using dummy data that matches a potential circuit input structure
-    return {"in": ["1", "2"]}
+    try:
+        start_block, end_block = mgr.functions.elections(election_id).call()
+    except Exception:
+        start_block, end_block = 0, "latest"
+
+    try:
+        vote_filter = mgr.events.VoteCast.create_filter(
+            fromBlock=start_block,
+            toBlock=end_block,
+            argument_filters={"electionId": election_id},
+        )
+        logs = vote_filter.get_all_entries()
+    except Exception as e:
+        print(f"⚠️ Failed to fetch VoteCast events: {e}")
+        logs = []
+
+    yes_votes = 0
+    no_votes = 0
+    for log in logs:
+        try:
+            vote = log.args.vote
+        except Exception:
+            vote = False
+        if vote:
+            yes_votes += 1
+        else:
+            no_votes += 1
+
+    yes_root = int(math.isqrt(yes_votes))
+    no_root = int(math.isqrt(no_votes))
+
+    return {
+        "sums": [str(yes_votes), str(no_votes), "0"],
+        "results": [str(yes_root), str(no_root), "0"],
+    }
 
 
 def run_snarkjs_proof(wasm_path, zkey_path, tally_input: dict):
