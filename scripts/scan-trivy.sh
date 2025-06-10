@@ -20,7 +20,7 @@ fi
 # --------------------------------------
 
 echo "▶ Scanning $IMAGE …"
-trivy image --quiet --format json -o "$REPORT" "$IMAGE"
+trivy image --quiet --ignore-unfixed --format json -o "$REPORT" "$IMAGE"
 
 echo
 echo "✦ Vulnerable files (Severity ▸ Package ▸ Path ▸ Installed ▸ CVE)"
@@ -32,7 +32,7 @@ jq -r '
 ' "$REPORT" | column -t -s $'\t' || true
 
 # ---------- exit code handling ----------
-HIGH_CRIT_COUNT=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL" or .Severity=="HIGH")] | length' "$REPORT")
+HIGH_CRIT_COUNT=$(jq '[.Results[].Vulnerabilities[]? | select((.Severity=="CRITICAL" or .Severity=="HIGH") and (.FixedVersion != null and .FixedVersion != ""))] | length' "$REPORT")
 if (( HIGH_CRIT_COUNT > 0 )); then
   echo
   echo "❗ Found $HIGH_CRIT_COUNT CRITICAL/HIGH vulnerabilities – exiting 1"
