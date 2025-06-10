@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 sqlalchemy
+alembic
 python-jose[cryptography]
 httpx<0.25
 web3==6.15.1
