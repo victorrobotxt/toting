@@ -51,4 +51,3 @@ jobs:
 
       - name: Run Trivy scan
         run: ./scripts/scan-trivy.sh toting-orchestrator
-        continue-on-error: true
