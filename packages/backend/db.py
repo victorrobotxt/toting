@@ -4,6 +4,7 @@ from sqlalchemy import (
     Integer,
     String,
     BigInteger,
+    Text,
     Index,
 )
 from sqlalchemy.ext.declarative import declarative_base
