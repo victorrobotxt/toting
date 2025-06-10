@@ -25,7 +25,9 @@ Copy `.env.example` to `.env` and update the values before starting the stack. T
 The backend exposes a simple mock OAuth login for local testing. By default
 `docker-compose` starts the API with `USE_REAL_OAUTH=false`, serving a minimal
 form at `/auth/initiate` that lets you enter an email. Set
-`USE_REAL_OAUTH=true` to redirect to the configured `GRAO_BASE_URL` instead.
+`USE_REAL_OAUTH=true` to redirect to the configured `GRAO_BASE_URL` instead. The
+`GRAO_REDIRECT_URI` environment variable should match your frontend callback
+page (by default `http://localhost:3000/auth/callback`).
 
 ### API Endpoints
 
