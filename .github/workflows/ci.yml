@@ -59,6 +59,10 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r packages/backend/requirements.txt
+      - name: Install pre-commit
+        run: pip install pre-commit
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files
 
       # ─── 3. BUILD & COMPILE ──────────────────────────────────────────────────
       - name: Build smart contracts
