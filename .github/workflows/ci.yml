@@ -57,6 +57,10 @@ jobs:
           corepack enable
           yarn install --frozen-lockfile
 
+      - name: Run commitlint
+        if: github.event_name == 'pull_request'
+        run: npm run commitlint -- --from=origin/main --to=HEAD
+
       - name: Lint frontend
         run: yarn --cwd packages/frontend lint
 

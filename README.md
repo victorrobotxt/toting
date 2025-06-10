@@ -1,5 +1,7 @@
 # Toting Example
 [![codecov](https://codecov.io/gh/owner/toting/branch/main/graph/badge.svg)](https://codecov.io/gh/owner/toting)
+[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://owner.github.io/toting/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 This repository includes example Circom circuits and minimal setup scripts. To build the circuits you need **Circom 2**.
 
@@ -60,3 +62,7 @@ BLS12-381 artifact set; BN254 is the default.
 ## Smart Contract Audit
 
 See [docs/audit](docs/audit/README.md) for the outline of the upcoming formal audit process.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
