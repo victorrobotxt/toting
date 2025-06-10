@@ -16,6 +16,10 @@ npx -y circom2 circuits/tally/batch_tally.circom --r1cs --wasm --sym
 
 Using plain `npx circom` installs the legacy Circom 1 package, which fails on `pragma circom 2.x`. Always invoke Circom 2 via the `circom2` package.
 
+## Getting Started
+
+See [docs/env_vars.md](docs/env_vars.md) for required environment variables and defaults.
+
 
 
 ## Developer Handbook
