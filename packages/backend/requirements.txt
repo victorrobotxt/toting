@@ -12,3 +12,5 @@ grpcio-tools
 typer
 psycopg2-binary
 pytest
+requests
+base58

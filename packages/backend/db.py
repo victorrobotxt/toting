@@ -5,7 +5,6 @@ from sqlalchemy import (
     String,
     BigInteger,
     Index,
-    Text, # Import Text for larger JSON strings
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -33,7 +32,6 @@ class Election(Base):
     __tablename__ = "elections"
     id = Column(BigInteger, primary_key=True, index=True, autoincrement=False)
     meta = Column(String, nullable=False, unique=True)
-    metadata_json = Column(Text, nullable=True) # FIX: Renamed from 'metadata'
     start = Column(BigInteger, nullable=False)
     end = Column(BigInteger, nullable=False)
     status = Column(String, nullable=False, default="pending", index=True)
