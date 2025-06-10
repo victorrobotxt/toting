@@ -21,3 +21,11 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     </ThemeProvider>
   );
 }
+
+export function reportWebVitals(metric: any) {
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon('/api/vitals', JSON.stringify(metric));
+  } else {
+    fetch('/api/vitals', { method: 'POST', body: JSON.stringify(metric), keepalive: true });
+  }
+}

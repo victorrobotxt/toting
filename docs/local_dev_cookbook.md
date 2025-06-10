@@ -29,7 +29,7 @@ This guide provides setup instructions for a standard Windows environment using 
     Execute the setup script **inside the `anvil` container**.
     ```powershell
     # In PowerShell, from your project root
-    docker-compose exec anvil /app/scripts/setup_env.sh
+    docker-compose exec anvil /app/scripts/setup_env.sh anvil
     ```
     If this step succeeds, continue to step 5. If it fails with a "file not found" error, please proceed to the **Troubleshooting** section below.
 
@@ -76,7 +76,7 @@ Follow these steps to perform a hard reset:
     Now, start again from step 3 of the Quickstart guide.
     ```powershell
     docker-compose up -d anvil
-    docker-compose exec anvil /app/scripts/setup_env.sh
+    docker-compose exec anvil /app/scripts/setup_env.sh anvil
     ```
 
 If the problem still persists, run this diagnostic command to see what the container's file system looks like. The `lib` directory should not be empty.
@@ -93,7 +93,7 @@ Factory not deployed at 0x.... Did you run setup_env.sh and restart your dev ser
 
 it usually means the contracts were redeployed but the frontend is still using old addresses cached from a previous run. Run the setup script again and then restart the frontend so it picks up the new `.env.local` values:
 ```powershell
-docker-compose exec anvil /app/scripts/setup_env.sh
+docker-compose exec anvil /app/scripts/setup_env.sh anvil
 docker-compose restart frontend
 ```
 

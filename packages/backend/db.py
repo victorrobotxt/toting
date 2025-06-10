@@ -5,7 +5,6 @@ from sqlalchemy import (
     String,
     BigInteger,
     Index,
-    Text, # Import Text for larger JSON strings
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -33,7 +32,6 @@ class Election(Base):
     __tablename__ = "elections"
     id = Column(BigInteger, primary_key=True, index=True, autoincrement=False)
     meta = Column(String, nullable=False, unique=True)
-    metadata_json = Column(Text, nullable=True) # FIX: Renamed from 'metadata'
     start = Column(BigInteger, nullable=False)
     end = Column(BigInteger, nullable=False)
     status = Column(String, nullable=False, default="pending", index=True)
@@ -78,3 +76,16 @@ class ProofAudit(Base):
     input_hash = Column(String, nullable=False)
     proof_root = Column(String, nullable=False, index=True)
     timestamp = Column(String, nullable=False)
+
+
+class DeadLetterQueue(Base):
+    """Events that failed to be bridged after multiple attempts."""
+
+    __tablename__ = "dead_letter_queue"
+
+    id = Column(Integer, primary_key=True)
+    event_block = Column(BigInteger, nullable=False)
+    tx_hash = Column(String, nullable=False)
+    payload = Column(Text, nullable=False)
+    error = Column(Text, nullable=True)
+    attempts = Column(Integer, nullable=False, default=0)

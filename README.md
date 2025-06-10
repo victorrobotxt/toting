@@ -25,7 +25,9 @@ Copy `.env.example` to `.env` and update the values before starting the stack. T
 The backend exposes a simple mock OAuth login for local testing. By default
 `docker-compose` starts the API with `USE_REAL_OAUTH=false`, serving a minimal
 form at `/auth/initiate` that lets you enter an email. Set
-`USE_REAL_OAUTH=true` to redirect to the configured `GRAO_BASE_URL` instead.
+`USE_REAL_OAUTH=true` to redirect to the configured `GRAO_BASE_URL` instead. The
+`GRAO_REDIRECT_URI` environment variable should match your frontend callback
+page (by default `http://localhost:3000/auth/callback`).
 
 ### API Endpoints
 
@@ -54,3 +56,7 @@ BLS12-381 artifact set; BN254 is the default.
 - [Circuits Overview](https://www.loom.com/share/circuits-demo)
 - [Contracts Overview](https://www.loom.com/share/contracts-demo)
 - [Backend Overview](https://www.loom.com/share/backend-demo)
+
+## Smart Contract Audit
+
+See [docs/audit](docs/audit/README.md) for the outline of the upcoming formal audit process.
