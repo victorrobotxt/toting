@@ -103,3 +103,9 @@ ID `31337`. If your wallet is pointed at a different chain (such as `1337`),
 the frontend will query the wrong network and the factory contract will appear
 missing.
 
+### Bundler complains that `AA21 didn't pay prefund`
+
+This means the EntryPoint doesn't have a deposit for your smart wallet. The
+frontend now attempts to deposit `0.01` ETH automatically before sending a
+UserOperation. If you still see this error, ensure your connected account has
+sufficient ETH on Anvil and retry.
