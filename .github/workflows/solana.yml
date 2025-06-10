@@ -22,7 +22,7 @@ jobs:
       # 2) install Node, Solana CLI & Anchor CLI
       - uses: metaDAOproject/setup-anchor@v3.1
         with:
-          node-version:       '20'
+          node-version:       '22'
           solana-cli-version: '1.18.18'
           anchor-version:     '0.30.1'
 

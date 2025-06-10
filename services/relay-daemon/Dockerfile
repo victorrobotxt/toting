@@ -1,5 +1,5 @@
 # services/relay-daemon/Dockerfile
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Set the working directory inside the container
 WORKDIR /app
