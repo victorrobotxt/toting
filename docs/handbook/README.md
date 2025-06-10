@@ -119,3 +119,18 @@ npx -y circom2 circuits/tally/batch_tally.circom --r1cs --wasm --sym
 ```
 
 Generated artifacts are written to the `out/` directory.
+
+## Database Migrations
+
+The backend uses Alembic for schema migrations. Create a new migration
+automatically from the current models with:
+
+```bash
+alembic revision --autogenerate -m "message"
+```
+
+Apply migrations to the database with:
+
+```bash
+alembic upgrade head
+```
