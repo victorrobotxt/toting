@@ -1,8 +1,8 @@
-FROM python:3.11.13-slim AS base
+FROM python:3.12.11-slim AS base
 RUN apt-get update \
     && apt-get dist-upgrade -y \
     && apt-get install -y --no-install-recommends curl gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && apt-get purge -y curl gnupg \
     && apt-get autoremove -y \
