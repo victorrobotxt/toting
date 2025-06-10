@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { ethers } from 'ethers';
 import { Pool } from 'pg';
 import express from 'express';
-import { Gauge, collectDefaultMetrics, register } from 'prom-client';
+import { Gauge, Counter, collectDefaultMetrics, register } from 'prom-client';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
 import { AnchorProvider, Program, BN, Wallet, Idl } from '@coral-xyz/anchor';
 import fs from 'fs';
@@ -19,6 +19,7 @@ const BRIDGE_SK = process.env.SOLANA_BRIDGE_SK as string;
 const POLL_INTERVAL = Number(process.env.POLL_INTERVAL || '10000');
 const PROM_PORT = Number(process.env.PROM_PORT || '9300');
 const CHAIN_ID = Number(process.env.CHAIN_ID || '31337');
+const CONFIRMATIONS = Number(process.env.CONFIRMATIONS || '5');
 
 if (!POSTGRES_URL) throw new Error('POSTGRES_URL env var required');
 if (!ELECTION_MANAGER) throw new Error('ELECTION_MANAGER env var required');
@@ -39,6 +40,14 @@ const ethProvider = new ethers.providers.JsonRpcProvider(EVM_RPC, {
 const iface = new ethers.utils.Interface(['event Tally(uint256 indexed id, uint256 A, uint256 B)']);
 const pool = new Pool({ connectionString: POSTGRES_URL });
 
+// --- Solana Provider ---
+const solConn = new Connection(SOLANA_RPC, 'confirmed');
+const keypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(BRIDGE_SK)));
+const wallet = new Wallet(keypair);
+const solProvider = new AnchorProvider(solConn, wallet, { commitment: 'confirmed' });
+const program = new Program(idl, solProvider);
+let latestElectionPDA: PublicKey | null = null;
+
 // --- Helper Functions ---
 const waitForRpc = async (rpcName: string, checkFn: () => Promise<any>, delay = 1000) => {
   while (true) {
@@ -57,6 +66,8 @@ const waitForRpc = async (rpcName: string, checkFn: () => Promise<any>, delay = 
 // --- Metrics and WebSocket Server ---
 collectDefaultMetrics();
 const lagGauge = new Gauge({ name: 'relay_lag_blocks', help: 'L1 block lag' });
+const failedBridgeCounter = new Counter({ name: 'relay_failed_bridge_total', help: 'Failed bridge attempts' });
+const dlqGauge = new Gauge({ name: 'relay_dead_letter_queue', help: 'Events in dead letter queue' });
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
@@ -68,14 +79,14 @@ app.get('/metrics', async (_req, res) => {
 
 wss.on('connection', ws => {
   console.log('Frontend client connected to Solana WebSocket.');
-  const dummyTally = { A: 10, B: 5 };
-  ws.send(JSON.stringify(dummyTally));
 
-  const interval = setInterval(() => {
-    dummyTally.A += Math.floor(Math.random() * 3);
-    dummyTally.B += Math.floor(Math.random() * 2);
-    if (ws.readyState === ws.OPEN) {
-      ws.send(JSON.stringify(dummyTally));
+  const interval = setInterval(async () => {
+    if (ws.readyState !== ws.OPEN || !latestElectionPDA) return;
+    try {
+      const acc = await (program.account as any).election.fetch(latestElectionPDA);
+      ws.send(JSON.stringify({ A: acc.votesA, B: acc.votesB }));
+    } catch (err) {
+      console.error('Failed to fetch tally for WS client:', err);
     }
   }, 5000);
 
@@ -91,6 +102,7 @@ server.listen(PROM_PORT, () => console.log(`📈 Metrics and WebSocket listening
 // --- State Management ---
 async function getLastBlock(): Promise<number> {
   await pool.query('CREATE TABLE IF NOT EXISTS relay_state (id INT PRIMARY KEY, last_block BIGINT)');
+  await pool.query('CREATE TABLE IF NOT EXISTS dead_letter_queue (id SERIAL PRIMARY KEY, event_block BIGINT, tx_hash TEXT, payload JSON, error TEXT, attempts INT DEFAULT 0)');
   const res = await pool.query('SELECT last_block FROM relay_state WHERE id=1');
   if (res.rowCount === 0) {
     const latest = await ethProvider.getBlockNumber();
@@ -104,23 +116,21 @@ async function setLastBlock(b: number) {
   await pool.query('UPDATE relay_state SET last_block=$1 WHERE id=1', [b]);
 }
 
+async function addDeadLetter(log: ethers.providers.Log, payload: any, err: any, attempts: number) {
+  await pool.query(
+    'INSERT INTO dead_letter_queue(event_block, tx_hash, payload, error, attempts) VALUES ($1,$2,$3,$4,$5)',
+    [log.blockNumber, log.transactionHash, JSON.stringify(payload), String(err), attempts]
+  );
+  const { rows } = await pool.query('SELECT COUNT(*) FROM dead_letter_queue');
+  dlqGauge.set(Number(rows[0].count));
+}
+
 // --- Solana Bridge Logic ---
 async function bridgeTally(A: ethers.BigNumber, B: ethers.BigNumber, blockHash: string) {
-  const conn = new Connection(SOLANA_RPC, 'confirmed');
-  const keypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(BRIDGE_SK)));
-  
-  const wallet = new Wallet(keypair);
-
-  const provider = new AnchorProvider(conn, wallet, { commitment: 'confirmed' });
-  
-  // --- FIX: Use the Program constructor with provider only. programId comes from idl.address ---
-  const program = new Program(idl, provider);
-
-  // Derive the PDA for the election account on Solana
   const [electionPDA] = PublicKey.findProgramAddressSync(
     [
       Buffer.from('election'),
-      Buffer.from(blockHash.slice(2), 'hex') 
+      Buffer.from(blockHash.slice(2), 'hex')
     ],
     program.programId
   );
@@ -130,7 +140,9 @@ async function bridgeTally(A: ethers.BigNumber, B: ethers.BigNumber, blockHash: 
     .setTally(new BN(A.toString()), new BN(B.toString()))
     .accounts({ election: electionPDA, authority: wallet.publicKey })
     .rpc();
-  
+
+  latestElectionPDA = electionPDA;
+
   console.log(`Solana transaction successful: ${txSignature}`);
 }
 
@@ -138,6 +150,9 @@ async function bridgeTally(A: ethers.BigNumber, B: ethers.BigNumber, blockHash: 
 async function main() {
   await waitForRpc('EVM RPC', () => ethProvider.getBlockNumber());
   await waitForRpc('Postgres DB', () => pool.query('SELECT 1'));
+
+  const { rows: dlqRows } = await pool.query('SELECT COUNT(*) FROM dead_letter_queue');
+  dlqGauge.set(Number(dlqRows[0].count));
 
   let last = await getLastBlock();
   console.log(`🚀 Starting relay from block ${last}`);
@@ -148,11 +163,16 @@ async function main() {
       lagGauge.set(latest - last);
 
       if (latest > last) {
-        console.log(`Scanning blocks from ${last + 1} to ${latest}`);
+        const confirmed = latest - CONFIRMATIONS;
+        if (confirmed <= last) {
+          await new Promise(r => setTimeout(r, POLL_INTERVAL));
+          continue;
+        }
+        console.log(`Scanning blocks from ${last + 1} to ${confirmed}`);
         const logs = await ethProvider.getLogs({
           address: ELECTION_MANAGER,
           fromBlock: last + 1,
-          toBlock: latest,
+          toBlock: confirmed,
           topics: [iface.getEventTopic('Tally')]
         });
 
@@ -169,16 +189,19 @@ async function main() {
               break;
             } catch (err) {
               attempt++;
+              failedBridgeCounter.inc();
               console.error(`Bridge attempt ${attempt}/${maxAttempts} failed:`, err);
               if (attempt >= maxAttempts) {
-                console.error(`FATAL: Could not relay tally for election ${id} after ${maxAttempts} attempts.`);
-                throw err;
+                console.error(`Moving event to dead-letter queue after ${maxAttempts} attempts.`);
+                await addDeadLetter(log, { A: A.toString(), B: B.toString() }, err, attempt);
+                break;
               }
-              await new Promise(r => setTimeout(r, 3000 * attempt));
+              const backoff = Math.min(30000, Math.pow(2, attempt) * 1000);
+              await new Promise(r => setTimeout(r, backoff));
             }
           }
         }
-        last = latest;
+        last = confirmed;
         await setLastBlock(last);
       }
     } catch (err) {

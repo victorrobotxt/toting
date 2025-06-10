@@ -41,7 +41,7 @@ exit 0
 `);
 
 const env = {...process.env, PATH: `${binDir}:${process.env.PATH}`};
-execSync('bash scripts/setup_env.sh', {stdio:'inherit', env});
+execSync('bash scripts/setup_env.sh anvil', {stdio:'inherit', env});
 
 const contents = fs.readFileSync(deployedFile,'utf8');
 assert(!contents.includes('NEXT_PUBLIC_ENTRYPOINT=0x0'), 'entrypoint not updated');

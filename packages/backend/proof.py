@@ -3,10 +3,21 @@ import json
 import hashlib
 from datetime import datetime
 from celery import Celery
+from celery import signals
 from .db import SessionLocal, Circuit, ProofAudit, Base, engine
+from prometheus_client import Histogram, Counter, Gauge, start_http_server
+import time
 
 # simple in-memory cache (used in tests when Redis unavailable)
 PROOF_CACHE: dict[str, dict] = {}
+
+TASK_TIME = Histogram('celery_task_duration_seconds', 'Time spent on Celery tasks', ['name'])
+TASK_SUCCESS = Counter('celery_task_success_total', 'Successful Celery tasks', ['name'])
+TASK_FAILURE = Counter('celery_task_failure_total', 'Failed Celery tasks', ['name'])
+QUEUE_LENGTH = Gauge('celery_queue_length', 'Tasks waiting in queue')
+
+if os.getenv('CELERY_METRICS_PORT'):
+    start_http_server(int(os.getenv('CELERY_METRICS_PORT')))
 
 # Load default hashes from the compiled circuit manifest
 MANIFEST_PATH = os.getenv("CIRCUIT_MANIFEST", "/app/circuits/manifest.json")
@@ -56,6 +67,24 @@ celery_app = Celery('proof', broker=BROKER_URL, backend=BACKEND_URL, task_serial
 if os.getenv("CELERY_TASK_ALWAYS_EAGER"):
     celery_app.conf.task_always_eager = True
     celery_app.conf.task_store_eager_result = True
+
+@signals.task_prerun.connect
+def _start_timer(task_id, task, **kwargs):
+    task.__start_time__ = time.time()
+
+@signals.task_postrun.connect
+def _record_time(task_id, task, **kwargs):
+    duration = time.time() - getattr(task, '__start_time__', time.time())
+    TASK_TIME.labels(task.name).observe(duration)
+    QUEUE_LENGTH.set(len(celery_app.control.inspect().reserved() or []))
+
+@signals.task_success.connect
+def _task_success(sender=None, result=None, **kwargs):
+    TASK_SUCCESS.labels(sender.name).inc()
+
+@signals.task_failure.connect
+def _task_failure(sender=None, exception=None, **kwargs):
+    TASK_FAILURE.labels(sender.name).inc()
 
 @celery_app.task
 def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):

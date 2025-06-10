@@ -1,3 +1,4 @@
+// DEPRECATED: The relay-daemon now bridges tallies automatically.
 // ts-node scripts/bridge_tally.ts <EVM_RPC> <EVENT_TX_HASH>
 import { ethers } from "ethers";
 import { Connection, Keypair, PublicKey, Transaction } from "@solana/web3.js";

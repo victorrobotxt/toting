@@ -17,6 +17,13 @@ from web3.middleware import geth_poa_middleware
 import hashlib
 
 from .utils.ipfs import pin_json, cid_from_meta_hash, fetch_json
+from prometheus_fastapi_instrumentator import Instrumentator
+import logging
+from pythonjsonlogger import jsonlogger
+
+handler = logging.StreamHandler()
+handler.setFormatter(jsonlogger.JsonFormatter())
+logging.basicConfig(level=logging.INFO, handlers=[handler])
 
 from .db import SessionLocal, Base, engine, Election as DbElection, ProofRequest, ProofAudit
 from .schemas import (
@@ -34,6 +41,8 @@ from sqlalchemy.exc import IntegrityError
 
 
 app = FastAPI()
+
+Instrumentator().instrument(app).expose(app)
 
 FRONTEND_ORIGIN = os.getenv("NEXT_PUBLIC_API_BASE", "http://localhost:3000")
 LOCAL_MODE = "localhost" in FRONTEND_ORIGIN
