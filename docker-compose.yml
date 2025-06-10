@@ -63,7 +63,10 @@ services:
       - 8.8.8.8
 
   setup:
-    image: ghcr.io/foundry-rs/foundry:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: setup-env # This tells Docker to build only the `setup-env` stage
     user: "0"
     command: ["/app/scripts/setup_env.sh", "anvil"]
     working_dir: /app
@@ -75,6 +78,7 @@ services:
       - 8.8.8.8
     depends_on:
       anvil: { condition: service_healthy }
+
 
   solana:
     image: solanalabs/solana:v1.18.3

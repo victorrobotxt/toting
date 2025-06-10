@@ -239,4 +239,10 @@ echo "📝 Generating/updating frontend local environment file at $FRONTEND_LOCA
 echo "✅ Frontend .env.local created."
 
 
+# --- Install frontend dependencies ---
+echo "📦 Installing frontend dependencies..."
+cd /app/packages/frontend
+yarn install
+cd - >/dev/null
+
 echo "🎉 Setup complete. You can now run other services."

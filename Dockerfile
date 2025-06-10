@@ -1,3 +1,15 @@
+# --- STAGE 0: Custom Setup Image with Foundry + JQ ---
+# We need jq to parse config files in the setup_env.sh script.
+# The base foundry image is minimal and does not include it.
+FROM ghcr.io/foundry-rs/foundry:latest AS setup-env
+
+# --- FIX: Switch to the root user to install packages ---
+USER root
+
+# The base image is Debian/Ubuntu, so we must use apt-get.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends jq && \
+    rm -rf /var/lib/apt/lists/*
 FROM python:3.11.13-slim AS base
 RUN apt-get update \
     && apt-get upgrade -y \
