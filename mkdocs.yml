@@ -1,0 +1,19 @@
+site_name: Toting Example
+site_url: https://owner.github.io/toting/
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Developer Handbook: handbook/README.md
+  - Smart Contract Audit Plan: audit/README.md
+  - Architecture ADR: architecture_adr.md
+  - ADR-002 Event Sourcing: adr-002-event-sourcing.md
+  - Threat Model: threat_model.md
+  - Local-Dev Cookbook: local_dev_cookbook.md
+  - PBIs:
+      - Backend: backend_pbis.md
+      - Frontend: frontend_pbis.md
+      - Smart Contracts & Relay: contracts_relay_pbis.md
+      - Circuits: circuit_pbis.md
+      - Integration: integration_pbis.md
+      - UI/UX: uiux_pbis.md

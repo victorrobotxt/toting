@@ -1,5 +1,6 @@
 # Toting Example
 [![codecov](https://codecov.io/gh/owner/toting/branch/main/graph/badge.svg)](https://codecov.io/gh/owner/toting)
+[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://owner.github.io/toting/)
 
 This repository includes example Circom circuits and minimal setup scripts. To build the circuits you need **Circom 2**.
 
