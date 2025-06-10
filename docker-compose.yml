@@ -1,3 +1,5 @@
+# docker-compose.yml
+
 services:
   # ----------------------------------------
   # Anvil (Foundry local blockchain)
@@ -13,9 +15,12 @@ services:
       --port 8545
       --chain-id 31337
       --gas-limit 30000000
+      --gas-price 0
+      # --- FIX: Persist the chain state to a volume ---
+      --state /data/anvil_state.json
+      --state-interval 5
     ports:
       - "8545:8545"
-    # Add a healthcheck to Anvil so other services can reliably wait for it.
     healthcheck:
       test: ["CMD-SHELL", "cast chain-id --rpc-url http://127.0.0.1:8545"]
       start_period: 20s
@@ -24,10 +29,13 @@ services:
       retries: 12
     volumes:
       - .:/app
+      # --- FIX: Mount a named volume to persist the state ---
+      - anvil_state:/data
     working_dir: /app
-    dns: # Added for consistency
+    dns:
       - 8.8.8.8
   
+  # (The rest of your docker-compose.yml remains the same)
   redis:
     image: redis:7-alpine
     ports:
@@ -49,11 +57,9 @@ services:
       interval: 5s
       timeout: 2s
       retries: 10
-    dns: # Added for consistency
+    dns:
       - 8.8.8.8
 
-  # This new service runs the deployment scripts after Anvil is healthy.
-  # Other services will depend on this completing successfully.
   setup:
     image: ghcr.io/foundry-rs/foundry:latest
     user: "0"
@@ -63,7 +69,6 @@ services:
       - .:/app
     environment:
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
-    # Add DNS to allow downloading solc
     dns:
       - 8.8.8.8
     depends_on:
@@ -74,7 +79,7 @@ services:
     command: ["solana-test-validator", "--quiet"]
     ports:
       - "8899:8899"
-    dns: # Added for consistency
+    dns:
       - 8.8.8.8
 
   backend:
@@ -106,7 +111,7 @@ services:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
     ports:
       - "8000:8000"
-    dns: # Added for consistency
+    dns:
       - 8.8.8.8
     command: >
       sh -c "
@@ -141,7 +146,7 @@ services:
       CELERY_BROKER: redis://redis:6379/0
       CELERY_BACKEND: redis://redis:6379/0
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
-    dns: # Added for consistency
+    dns:
       - 8.8.8.8
     depends_on:
       setup:
@@ -155,37 +160,34 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    env_file: # Load addresses from setup
+    env_file:
       - .env.deployed
     environment:
       NEXT_PUBLIC_API_BASE: http://localhost:8000
       NEXT_PUBLIC_BUNDLER_URL: http://localhost:3001/rpc
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "3000:3000"
-    dns: # Added for consistency
-      - 8.8.8.8
     volumes:
       - .:/app
       - frontend_node_modules:/app/packages/frontend/node_modules
-      - frontend_next:/app/packages/frontend/.next
     working_dir: /app/packages/frontend
     command: >
       sh -c "
         echo 'Waiting for contract artifact...' &&
         until [ -f /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ]; do sleep 1; done &&
-        echo 'Found artifact. Preparing frontend build...' &&
+        echo 'Found artifact. Copying ABI...' &&
         mkdir -p src/contracts &&
         cp /app/out/ElectionManagerV2.sol/ElectionManagerV2.json ./src/contracts/ElectionManagerV2.json &&
-        echo 'ABI copied. Building Next.js app with pre-installed dependencies...' &&
-        yarn build &&
-        echo 'Build complete. Starting server...' &&
-        yarn start
+        echo 'ABI copied. Starting Next.js development server...' &&
+        yarn dev
       "
     depends_on:
       backend:
         condition: service_started
       setup:
         condition: service_completed_successfully
+
 
   bundler:
     image: ghcr.io/5afe/erc4337-bundlers-eth-infinitism-bundler:latest
@@ -221,7 +223,7 @@ services:
       EVM_RPC: http://anvil:8545
       EVM_MAX_RETRIES: "0"
       ORCHESTRATOR_KEY: ${ORCHESTRATOR_KEY}
-    dns: # Added for consistency
+    dns:
       - 8.8.8.8
     command: >
       sh -c "
@@ -250,7 +252,7 @@ services:
       SOLANA_BRIDGE_SK: ${SOLANA_BRIDGE_SK}
     ports:
       - "9300:9300"
-    dns: # THIS IS THE FIX
+    dns:
       - 8.8.8.8
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9300/metrics || exit 1"]
@@ -269,5 +271,4 @@ services:
 
 volumes:
   frontend_node_modules:
-  frontend_next:
-  
+  anvil_state:

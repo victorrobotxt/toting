@@ -5,12 +5,15 @@ pragma solidity ^0.8.24;
 import "./Verifier.sol";
 import "./SmartWallet.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
-// --- THIS IS THE FIX: Add the import for the Create2 library ---
+// --- FIX: Add the import for the Create2 library ---
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 
 contract WalletFactory {
-    EntryPoint public immutable entryPoint;
-    Verifier public immutable verifier;
+    // This was changed from `immutable` to a standard state variable.
+    // This avoids potential compiler/EVM bugs with accessing immutables
+    // during the `type().creationCode` process, which can cause silent reverts in view functions.
+    EntryPoint public entryPoint;
+    Verifier public verifier;
     mapping(address => address) public walletOf; // owner => wallet
 
     event WalletMinted(address indexed owner, address indexed wallet);

@@ -234,6 +234,8 @@ def list_elections(db: Session = Depends(get_db)):
     return db.query(DbElection).all()
 
 
+# packages/backend/main.py
+
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
 def create_election(
     payload: CreateElectionSchema,
@@ -250,19 +252,31 @@ def create_election(
     contract = get_manager_contract()
     
     try:
-        tx = contract.functions.createElection(meta_hash).build_transaction({
+        # --- THIS IS THE FIX ---
+        # Instead of a high-level function call which can be ambiguous with proxies,
+        # we manually encode the calldata. This is the Python equivalent of the
+        # `abi.encodeCall` fix already present in your `FullFlow.t.sol` test.
+        # This ensures the proxy receives the exact, intended function call.
+        encoded_calldata = contract.encodeABI(fn_name='createElection', args=[meta_hash])
+
+        tx = {
+            "to": ELECTION_MANAGER, # The address of the proxy contract
             "from": account.address,
+            "data": encoded_calldata,
             "chainId": CHAIN_ID,
             "gas": 3_000_000,
             "gasPrice": web3.eth.gas_price,
             "nonce": web3.eth.get_transaction_count(account.address),
-        })
+        }
+        # --- END OF FIX ---
+
         signed = account.sign_transaction(tx)
         tx_hash = web3.eth.send_raw_transaction(signed.rawTransaction)
         receipt = web3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
 
         if receipt.status != 1:
-            raise HTTPException(status_code=500, detail="On-chain transaction reverted")
+            # This will now give a more direct error if the transaction reverts
+            raise HTTPException(status_code=500, detail=f"On-chain transaction reverted. Tx hash: {tx_hash.hex()}")
 
     except HTTPException:
         raise
@@ -271,14 +285,15 @@ def create_election(
 
     # 3. Parse the ElectionCreated event
     try:
+        # This part should now succeed because the transaction no longer reverts
         events = contract.events.ElectionCreated().process_receipt(receipt)
         if not events:
+            # This is the error you were seeing
             raise ValueError("ElectionCreated event not found in transaction logs")
         on_chain_id = events[0].args.id
         event_meta_bytes = events[0].args.meta
         meta_hex_string = Web3.to_hex(event_meta_bytes)
         
-        # Verification step
         if meta_hex_string != Web3.to_hex(meta_hash):
             raise HTTPException(status_code=500, detail="On-chain meta hash does not match calculated hash.")
 
@@ -295,11 +310,11 @@ def create_election(
             detail=f"Could not read election state from contract: {e}"
         )
 
-    # 5. Persist in Postgres, now including the full metadata
+    # 5. Persist in Postgres
     db_election = DbElection(
         id=on_chain_id,
         meta=meta_hex_string,
-        metadata_json=payload.metadata, # FIX: Use the renamed field
+        metadata_json=payload.metadata,
         start=start_block,
         end=end_block,
         status="pending",

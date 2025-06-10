@@ -45,10 +45,10 @@ export class ProofWalletAPI extends SimpleAccountAPI {
 
   /**
    * --- THIS IS THE CORE FIX ---
-   * This method overrides the default SDK behavior. Instead of trying to compute the
-   * address off-chain or by calling a state-changing function, we directly call 
-   * our factory's `getAddress` view function. This is the correct pattern for 
-   * custom factories in the `account-abstraction` SDK.
+   * We add robust logging before the potentially failing call. This will immediately
+   * show you in the browser console if you are using a stale contract address,
+   * making this class of error easy to debug in the future. The logic itself
+   * remains the same as it correctly follows the custom factory pattern.
    */
   async getAccountAddress(): Promise<string> {
     if (this.accountAddress) {
@@ -61,14 +61,28 @@ export class ProofWalletAPI extends SimpleAccountAPI {
     const factory = new ethers.Contract(this.factoryAddress, FACTORY_ABI, this.provider);
     const ownerAddress = await this.owner.getAddress();
     
+    // --- ADDED LOGGING FOR DEBUGGING ---
+    console.log(`[ProofWalletAPI] Calling getAddress on factory: ${this.factoryAddress}`);
+    console.log(` > Owner: ${ownerAddress}`);
+    console.log(` > Salt (index): ${this.index}`);
+    // --- END ADDED LOGGING ---
+
     try {
       // Call the `getAddress` view function on the factory contract.
       // `this.index` is the salt, inherited from the base SimpleAccountAPI.
       this.accountAddress = await factory.getAddress(ownerAddress, this.index);
+      console.log(`[ProofWalletAPI] Got predicted address: ${this.accountAddress}`);
       return this.accountAddress!;
     } catch (error: any) {
+      // Enhance the error message to be more explicit about the likely cause.
       console.error("Fatal Error: factory.getAddress() call failed.", error);
-      throw new Error(`Factory.getAddress() call failed: ${error.message || 'call revert exception'}`);
+      const newError = new Error(
+        `Factory.getAddress() call failed: ${error.message || 'call revert exception'}. ` +
+        `This often means the factory address (${this.factoryAddress}) is wrong or stale. ` +
+        `Try a hard refresh (Ctrl+Shift+R) of your browser.`
+      );
+      (newError as any).cause = error;
+      throw newError;
     }
   }
 
