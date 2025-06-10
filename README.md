@@ -54,3 +54,7 @@ BLS12-381 artifact set; BN254 is the default.
 - [Circuits Overview](https://www.loom.com/share/circuits-demo)
 - [Contracts Overview](https://www.loom.com/share/contracts-demo)
 - [Backend Overview](https://www.loom.com/share/backend-demo)
+
+## Smart Contract Audit
+
+See [docs/audit](docs/audit/README.md) for the outline of the upcoming formal audit process.
