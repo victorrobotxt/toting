@@ -82,3 +82,18 @@ Follow these steps to perform a hard reset:
 If the problem still persists, run this diagnostic command to see what the container's file system looks like. The `lib` directory should not be empty.
 ```powershell
 docker-compose exec anvil ls -lR /app/lib
+```
+
+### "Factory not deployed" errors
+
+If you see an error like:
+```
+Factory not deployed at 0x.... Did you run setup_env.sh and restart your dev server?
+```
+
+it usually means the contracts were redeployed but the frontend is still using old addresses cached from a previous run. Run the setup script again and then restart the frontend so it picks up the new `.env.local` values:
+```powershell
+docker-compose exec anvil /app/scripts/setup_env.sh
+docker-compose restart frontend
+```
+
