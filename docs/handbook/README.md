@@ -2,6 +2,12 @@
 
 This guide covers running services, debugging contracts and regenerating ZK proofs.
 
+## Table of Contents
+- [Running Services](#running-services)
+- [Running the Orchestrator](#running-the-orchestrator)
+- [Debugging Contracts](#debugging-contracts)
+- [Regenerating Proofs](#regenerating-proofs)
+
 ## Running Services
 
 Use Docker Compose to launch the full stack (frontend, backend,
@@ -45,6 +51,46 @@ Apply all pending migrations with:
 ```bash
 alembic upgrade head
 ```
+
+## Running the Orchestrator
+
+The orchestrator watches the `ElectionManager` contract and submits a tally once
+voting ends. Export the following variables before running it:
+
+```bash
+export ELECTION_MANAGER=<deployed address>
+export ORCHESTRATOR_KEY=<private key>
+export EVM_RPC=http://127.0.0.1:8545  # or your node
+```
+
+Ensure `out/ElectionManagerV2.sol/ElectionManagerV2.json` and
+`artifacts/manifest.json` exist, then execute:
+
+```bash
+python services/orchestrator/main.py
+```
+
+The script waits for `ElectionCreated(id=0)`, blocks until the election ends and
+generates a Groth16 proof for `qv_tally`. On success it calls `tallyVotes` with
+the resulting calldata.
+
+### Common Errors
+
+- **ABI file not found** – compile contracts so the JSON artifact exists in
+  `out/`.
+- **Manifest file not found** – run the build to create `artifacts/manifest.json`.
+- **EVM RPC not reachable** – check the `EVM_RPC` URL or network connectivity.
+
+### Generating Tally Proofs Manually
+
+To run the proof steps yourself:
+
+```bash
+snarkjs wtns calculate <qv_tally.wasm> tally_input.json tally.wtns
+snarkjs groth16 prove <qv_tally.zkey> tally.wtns proof.json public.json
+```
+
+Use the resulting calldata with `tallyVotes` if submitting manually.
 
 ## Debugging Contracts
 
