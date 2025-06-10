@@ -15,6 +15,8 @@ type UserOperation = Parameters<SimpleAccountAPI['signUserOp']>[0];
 
 async function sendUserOpToBundler(userOpWithPromises: UserOperation): Promise<string> {
     const bundler = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
+    const bundlerNetwork = await bundler.getNetwork();
+    console.log(`[accountAbstraction] sending to bundler on chain ${bundlerNetwork.chainId}`);
 
     // 1. Resolve all promise-based fields. The result is an object with concrete values.
     const resolvedUserOp = await ethers.utils.resolveProperties(userOpWithPromises);
@@ -41,6 +43,7 @@ async function sendUserOpToBundler(userOpWithPromises: UserOperation): Promise<s
         "eth_sendUserOperation",
         [serializedUserOp, ENTRY_POINT_ADDRESS]
     );
+    console.log(`[accountAbstraction] bundler returned hash: ${userOpHash}`);
     return userOpHash;
 }
 
@@ -56,7 +59,21 @@ export async function bundleUserOp(
     if (!ENTRY_POINT_ADDRESS || !BUNDLER_RPC_URL) {
         throw new Error("Bundler/EntryPoint not configured in environment variables.");
     }
-    
+
+    const network = await provider.getNetwork();
+    const bundlerProvider = new ethers.providers.JsonRpcProvider(BUNDLER_RPC_URL);
+    const bundlerNetwork = await bundlerProvider.getNetwork();
+    console.log(
+        `[accountAbstraction] signer network: ${network.chainId}, bundler network: ${bundlerNetwork.chainId}`
+    );
+
+    if (network.chainId !== bundlerNetwork.chainId) {
+        throw new Error(
+            `Wallet connected to wrong chain (chainId ${network.chainId}). ` +
+            `Please switch to chain ${bundlerNetwork.chainId}.`
+        );
+    }
+
     console.log("Submitting UserOp via Account Abstraction...");
 
     const api = new ProofWalletAPI({
