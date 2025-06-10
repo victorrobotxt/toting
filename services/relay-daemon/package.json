@@ -1,21 +1,28 @@
 {
   "name": "relay-daemon",
   "version": "1.0.0",
-  "private": true,
+  "description": "Bridges EVM events to Solana and exposes a WebSocket for tally data.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc -w & nodemon dist/index.js"
+  },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.31.1",
-    "@solana/web3.js": "^1.91.0",
-    "dotenv": "^16.3.1",
+    "@coral-xyz/anchor": "^0.30.0",
+    "dotenv": "^16.4.5",
     "ethers": "^5.7.2",
-    "express": "^4.18.2",
-    "pg": "^8.11.3",
-    "prom-client": "^15.1.0",
-    "ws": "^8.14.2"
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "prom-client": "^15.1.2",
+    "ws": "^8.17.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/pg": "^8.10.9",
+    "@types/node": "^20.14.2",
+    "@types/pg": "^8.11.6",
     "@types/ws": "^8.5.10",
-    "typescript": "^5.2.2"
+    "nodemon": "^3.1.3",
+    "typescript": "^5.4.5"
   }
 }

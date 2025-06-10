@@ -45,6 +45,21 @@ fi
 # Load environment variables from .env file
 export $(grep -v '^#' /app/.env | xargs)
 
+# --- Generate Solana Bridge Key if not present ---
+if [ "${SOLANA_BRIDGE_SK}" == "[]" ]; then
+    echo "🔑 Solana bridge key not found, generating a new one..."
+    # --- THIS IS THE FIX ---
+    # Explicitly set NODE_PATH for this command to ensure it can find the global module.
+    # The global modules are typically in /usr/local/lib/node_modules in the node:alpine base image.
+    NEW_SK=$(NODE_PATH="/usr/local/lib/node_modules" node -e "console.log(JSON.stringify(Array.from(require('@solana/web3.js').Keypair.generate().secretKey)))")
+    
+    # Use sed to update the .env file in-place. The `|` is used as a separator to avoid issues with `/` in paths.
+    sed -i "s|^SOLANA_BRIDGE_SK=\\[\\]|SOLANA_BRIDGE_SK=${NEW_SK}|" /app/.env
+    echo "✅ New Solana bridge key generated and saved to .env"
+    # Re-export the new value for the current script session
+    export SOLANA_BRIDGE_SK="$NEW_SK"
+fi
+
 # RPC_URL was loaded from the network config above
 
 # --- Wait for Anvil to be ready ---
@@ -88,16 +103,19 @@ if [ -f "$DEPLOYED_ENV_FILE" ]; then
     EXISTING_ENTRYPOINT_ADDR="$NEXT_PUBLIC_ENTRYPOINT"
     EXISTING_MGR_ADDR="$NEXT_PUBLIC_ELECTION_MANAGER"
     EXISTING_FACTORY_ADDR="$NEXT_PUBLIC_WALLET_FACTORY"
+    EXISTING_PAYMASTER_ADDR="${PAYMASTER:-0x0}" 
 
     CODE_ENTRY=$(cast code --rpc-url "$RPC_URL" "$EXISTING_ENTRYPOINT_ADDR" 2>/dev/null || echo "0x")
     CODE_MGR=$(cast code --rpc-url "$RPC_URL" "$EXISTING_MGR_ADDR" 2>/dev/null || echo "0x")
     CODE_FACTORY=$(cast code --rpc-url "$RPC_URL" "$EXISTING_FACTORY_ADDR" 2>/dev/null || echo "0x")
+    CODE_PAYMASTER=$(cast code --rpc-url "$RPC_URL" "$EXISTING_PAYMASTER_ADDR" 2>/dev/null || echo "0x")
 
-    if [ "$CODE_ENTRY" != "0x" ] && [ "$CODE_MGR" != "0x" ] && [ "$CODE_FACTORY" != "0x" ]; then
+    if [ "$CODE_ENTRY" != "0x" ] && [ "$CODE_MGR" != "0x" ] && [ "$CODE_FACTORY" != "0x" ] && [ "$CODE_PAYMASTER" != "0x" ]; then
         echo "♻️  Reusing existing deployed contracts from $DEPLOYED_ENV_FILE"
         ENTRYPOINT_ADDR="$EXISTING_ENTRYPOINT_ADDR"
         MGR_ADDR="$EXISTING_MGR_ADDR"
         FACTORY_ADDR="$EXISTING_FACTORY_ADDR"
+        PAYMASTER_ADDR="$EXISTING_PAYMASTER_ADDR"
     fi
 fi
 
@@ -170,6 +188,7 @@ if [ -z "${ENTRYPOINT_ADDR:-}" ]; then
     cast send --private-key $ORCHESTRATOR_KEY --rpc-url "$RPC_URL" "$ENTRYPOINT_ADDR" "depositTo(address)" "$PAYMASTER_ADDR" --value 1ether >/dev/null
 else
     echo "✅ All contracts already deployed. Skipping deployment."
+    PAYMASTER_ADDR="${PAYMASTER:-}"
 fi
 
 # --- Generate .env.deployed file ---
@@ -183,6 +202,7 @@ echo "📝 Generating environment file at $DEPLOYED_ENV_FILE"
     echo "NEXT_PUBLIC_ENTRYPOINT=$ENTRYPOINT_ADDR"
     echo "PAYMASTER=$PAYMASTER_ADDR"
     echo "NEXT_PUBLIC_PAYMASTER=$PAYMASTER_ADDR"
+    echo "SOLANA_BRIDGE_SK=${SOLANA_BRIDGE_SK}"
 } > "$DEPLOYED_ENV_FILE"
 echo "✅ .env.deployed created."
 
@@ -196,6 +216,7 @@ sed -i '/^NEXT_PUBLIC_WALLET_FACTORY=/d' "$MAIN_ENV_FILE"
 sed -i '/^NEXT_PUBLIC_ENTRYPOINT=/d' "$MAIN_ENV_FILE"
 sed -i '/^PAYMASTER=/d' "$MAIN_ENV_FILE"
 sed -i '/^NEXT_PUBLIC_PAYMASTER=/d' "$MAIN_ENV_FILE"
+sed -i '/^SOLANA_BRIDGE_SK=/d' "$MAIN_ENV_FILE"
 cat "$DEPLOYED_ENV_FILE" >> "$MAIN_ENV_FILE"
 
 # --- Generate bundler.config.json file ---

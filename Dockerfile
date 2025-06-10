@@ -1,15 +1,23 @@
-# --- STAGE 0: Custom Setup Image with Foundry + JQ ---
-# We need jq to parse config files in the setup_env.sh script.
-# The base foundry image is minimal and does not include it.
+# --- STAGE 0: Custom Setup Image with Foundry + JQ + Node ---
+# The setup_env.sh script needs:
+# - `jq` to parse config files.
+# - `node` and `yarn` to install frontend dependencies.
+# The base foundry image is minimal and does not include them.
 FROM ghcr.io/foundry-rs/foundry:latest AS setup-env
 
-# --- FIX: Switch to the root user to install packages ---
+# Switch to the root user to install packages
 USER root
 
-# The base image is Debian/Ubuntu, so we must use apt-get.
+# The base image is Debian/Ubuntu, so we use apt-get.
+# Install dependencies for Node.js setup, plus jq.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends jq && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends curl gnupg jq && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    npm install -g yarn @solana/web3.js && \
+    rm -rf /var/lib/apt/lists/* && apt-get clean
+
+# --- STAGE: Base Python Image with Node.js ---
 FROM python:3.12.11-slim AS base
 RUN apt-get update \
     && apt-get dist-upgrade -y \

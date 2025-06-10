@@ -40,9 +40,19 @@ const ethProvider = new ethers.providers.JsonRpcProvider(EVM_RPC, {
 const iface = new ethers.utils.Interface(['event Tally(uint256 indexed id, uint256 A, uint256 B)']);
 const pool = new Pool({ connectionString: POSTGRES_URL });
 
+// --- FIX: Add robust parsing for the Solana secret key ---
+const skBytes = (() => {
+  try {
+    const parsed = JSON.parse(BRIDGE_SK);
+    return Uint8Array.from(parsed);
+  } catch (e) {
+    throw new Error('SOLANA_BRIDGE_SK is not a valid JSON array of bytes.');
+  }
+})();
+
 // --- Solana Provider ---
 const solConn = new Connection(SOLANA_RPC, 'confirmed');
-const keypair = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(BRIDGE_SK)));
+const keypair = Keypair.fromSecretKey(skBytes);
 const wallet = new Wallet(keypair);
 const solProvider = new AnchorProvider(solConn, wallet, { commitment: 'confirmed' });
 const program = new Program(idl, solProvider);
