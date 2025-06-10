@@ -24,7 +24,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "test": "npx tsc -p services/relay-daemon"
+    "test": "node test/setupEnvReuse.test.js && npx tsc -p services/relay-daemon"
   },
   "packageManager": "yarn@1.22.22"
 }
