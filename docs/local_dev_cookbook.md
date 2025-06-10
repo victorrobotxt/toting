@@ -39,6 +39,12 @@ This guide provides setup instructions for a standard Windows environment using 
     docker-compose up -d
     ```
 
+    *Whenever you rerun `scripts/setup_env.sh` to redeploy the contracts, you must
+    restart the frontend container so it reads the updated `.env` values.*
+    ```powershell
+    docker-compose restart frontend
+    ```
+
 6.  **Access the App**:
     The frontend will be available at `http://localhost:3000`.
 
