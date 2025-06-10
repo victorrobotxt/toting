@@ -5,7 +5,8 @@ from datetime import datetime
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from jose import jwt, JWTError
+from jose import jwt, JWTError, jwk
+from jose.utils import base64url_decode
 import httpx
 import os
 import json
@@ -124,9 +125,57 @@ IDP_BASE = os.getenv("GRAO_BASE_URL", "https://demo-oauth.example")
 CLIENT_ID = os.getenv("GRAO_CLIENT_ID", "test-client")
 CLIENT_SEC = os.getenv("GRAO_CLIENT_SECRET", "test-client-secret")
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-jwt-secret")
-REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/callback")
+# The URL the identity provider will redirect back to after authentication
+REDIRECT = os.getenv("GRAO_REDIRECT_URI", "http://localhost:3000/auth/callback")
 USE_REAL_OAUTH = os.getenv("USE_REAL_OAUTH", "false").lower() in ("1", "true")
 PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
+
+# Caches for OIDC discovery and signing keys
+OIDC_CONFIG: dict | None = None
+OIDC_JWKS: dict | None = None
+
+def fetch_oidc_config() -> dict:
+    """Retrieve and cache the OIDC discovery document."""
+    global OIDC_CONFIG
+    if OIDC_CONFIG is None:
+        url = f"{IDP_BASE}/.well-known/openid-configuration"
+        resp = httpx.get(url, timeout=5)
+        resp.raise_for_status()
+        OIDC_CONFIG = resp.json()
+    return OIDC_CONFIG
+
+def fetch_jwks() -> dict:
+    """Retrieve and cache the JWKS used to verify ID tokens."""
+    global OIDC_JWKS
+    if OIDC_JWKS is None:
+        conf = fetch_oidc_config()
+        jwks_uri = conf.get("jwks_uri", f"{IDP_BASE}/.well-known/jwks.json")
+        resp = httpx.get(jwks_uri, timeout=5)
+        resp.raise_for_status()
+        OIDC_JWKS = resp.json()
+    return OIDC_JWKS
+
+def decode_oidc_token(token: str) -> dict:
+    """Validate a JWT using the provider's JWKS."""
+    jwks = fetch_jwks()
+    header = jwt.get_unverified_header(token)
+    kid = header.get("kid")
+    if not kid:
+        raise JWTError("Token missing 'kid' header")
+    key_data = next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
+    if not key_data:
+        raise JWTError("Signing key not found")
+    key = jwk.construct(key_data)
+    message, sig = token.rsplit(".", 1)
+    if not key.verify(message.encode(), base64url_decode(sig.encode())):
+        raise JWTError("Signature verification failed")
+    claims = jwt.get_unverified_claims(token)
+    if "exp" in claims and datetime.utcnow().timestamp() > float(claims["exp"]):
+        raise JWTError("Token expired")
+    aud = claims.get("aud")
+    if aud and CLIENT_ID not in (aud if isinstance(aud, list) else [aud]):
+        raise JWTError("Invalid audience")
+    return claims
 
 def increment_quota(db: Session, user: str, day: str) -> bool:
     """Atomically increment daily proof counter."""
@@ -179,7 +228,10 @@ def get_current_user(authorization: str = Header(None)) -> dict:
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     token = authorization.split()[1]
     try:
-        claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        if USE_REAL_OAUTH:
+            claims = decode_oidc_token(token)
+        else:
+            claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         return claims
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
@@ -187,7 +239,14 @@ def get_current_user(authorization: str = Header(None)) -> dict:
 # --- FIX: New dependency to check for admin role ---
 def require_admin_role(user: dict = Depends(get_current_user)):
     """A dependency that ensures the user has the 'admin' role."""
-    if user.get("role") != "admin":
+    roles = user.get("roles")
+    role = user.get("role")
+    has_admin = False
+    if isinstance(roles, list):
+        has_admin = "admin" in roles
+    elif isinstance(role, str):
+        has_admin = role == "admin"
+    if not has_admin:
         raise HTTPException(status_code=403, detail="Insufficient permissions. Admin role required.")
     return user
 
@@ -226,11 +285,31 @@ async def callback(code: Optional[str] = None, user: Optional[str] = None):
     Generates a token with an 'admin' role if the email is 'admin@example.com'.
     """
     if USE_REAL_OAUTH:
-        # For the smoke test we still mint a fake JWT
-        # In a real scenario, you'd exchange the code for a real token here.
-        claims = {"email": "realuser@example.com", "role": "user"}
-        signed_jwt = jwt.encode(claims, JWT_SECRET, algorithm="HS256")
-        return {"id_token": signed_jwt, "eligibility": True}
+        if not code:
+            raise HTTPException(400, "missing authorization code")
+        conf = fetch_oidc_config()
+        token_url = conf.get("token_endpoint", f"{IDP_BASE}/token")
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                token_url,
+                data={
+                    "grant_type": "authorization_code",
+                    "code": code,
+                    "redirect_uri": REDIRECT,
+                    "client_id": CLIENT_ID,
+                    "client_secret": CLIENT_SEC,
+                },
+                headers={"Accept": "application/json"},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        id_token = data.get("id_token")
+        if not id_token:
+            raise HTTPException(400, "id_token missing in response")
+        # Validate the token before returning it
+        decode_oidc_token(id_token)
+        return {"id_token": id_token, "access_token": data.get("access_token")}
 
     email = user or "tester@example.com"
     # --- FIX: Assign role based on email for easy testing ---

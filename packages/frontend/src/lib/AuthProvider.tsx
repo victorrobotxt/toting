@@ -78,6 +78,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, [handleMessage]);
 
+  // Handle redirect-based login where the IdP sends the token via query params
+  useEffect(() => {
+    if (!router.isReady) return;
+    const { id_token, eligibility: elig } = router.query;
+    if (typeof id_token === 'string') {
+      login(id_token, elig === 'true', 'eid');
+      router.replace('/dashboard');
+    }
+  }, [router.isReady, router.query, login, router]);
+
   const logout = useCallback(() => {
     sessionStorage.removeItem('id_token');
     sessionStorage.removeItem('eligibility');
