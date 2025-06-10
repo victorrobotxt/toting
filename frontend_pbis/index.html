@@ -1,0 +1,1142 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://owner.github.io/toting/frontend_pbis/">
+      
+      
+        <link rel="prev" href="../backend_pbis/">
+      
+      
+        <link rel="next" href="../contracts_relay_pbis/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Frontend - Toting Example</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#frontend-pbis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Toting Example" class="md-header__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Toting Example
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Frontend
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Toting Example" class="md-nav__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Toting Example
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../handbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Handbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contract Audit Plan
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture_adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture ADR
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr-002-event-sourcing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ADR-002 Event Sourcing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Threat Model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local_dev_cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Local-Dev Cookbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    PBIs
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            PBIs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Backend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Frontend
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Frontend
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#f-01-wallet-onboarding-wizard" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-01 Wallet Onboarding Wizard
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-02-live-countdown-banner" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-02 Live Countdown Banner
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-03-accessibility-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-03 Accessibility Audit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-04-solana-tally-viewer" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-04 Solana Tally Viewer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-05-multi-wallet-connector" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-05 Multi-Wallet Connector
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-06-live-gas-fee-estimator" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-06 Live Gas Fee Estimator
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-07-offline-proof-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-07 Offline Proof Builder
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-08-i18n-en-bg" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-08 i18n (en, bg)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-09-accessibility-100-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-09 Accessibility 100 Score
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-10-dark-mode-theming-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-10 Dark-Mode Theming Tokens
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-11-zk-proof-worker-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-11 ZK-Proof Worker Pool
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-12-ledger-otg-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-12 Ledger OTG Support
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-13-real-time-solana-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-13 Real-Time Solana Chart
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-14-a11y-100-u2192-wcag-aaa" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-14 A11y 100 \u2192 WCAG AAA
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-15-i18n-rtl-plurals" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-15 i18n RTL &amp; Plurals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-16-pwa-offline-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-16 PWA Offline Mode
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-17-eip-6963-wallet-standard" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-17 EIP-6963 Wallet Standard
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-18-frontend-login-page-redirect-to-oauth-initiation" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-18 Frontend Login Page &amp; Redirect to OAuth Initiation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-19-callback-handling-token-storage-in-authprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-19 Callback Handling &amp; Token Storage in AuthProvider
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-20-dashboard-navbar-adjustments-post-login" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-20 Dashboard &amp; Navbar Adjustments Post-Login
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-21-eligibility-voting-links-only-visible-when-eligible" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-21 Eligibility &amp; Voting Links Only Visible When Eligible
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contracts_relay_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contracts & Relay
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../circuit_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Circuits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uiux_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    UI/UX
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#f-01-wallet-onboarding-wizard" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-01 Wallet Onboarding Wizard
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-02-live-countdown-banner" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-02 Live Countdown Banner
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-03-accessibility-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-03 Accessibility Audit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-04-solana-tally-viewer" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-04 Solana Tally Viewer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-05-multi-wallet-connector" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-05 Multi-Wallet Connector
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-06-live-gas-fee-estimator" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-06 Live Gas Fee Estimator
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-07-offline-proof-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-07 Offline Proof Builder
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-08-i18n-en-bg" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-08 i18n (en, bg)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-09-accessibility-100-score" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-09 Accessibility 100 Score
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-10-dark-mode-theming-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-10 Dark-Mode Theming Tokens
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-11-zk-proof-worker-pool" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-11 ZK-Proof Worker Pool
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-12-ledger-otg-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-12 Ledger OTG Support
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-13-real-time-solana-chart" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-13 Real-Time Solana Chart
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-14-a11y-100-u2192-wcag-aaa" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-14 A11y 100 \u2192 WCAG AAA
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-15-i18n-rtl-plurals" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-15 i18n RTL &amp; Plurals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-16-pwa-offline-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-16 PWA Offline Mode
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-17-eip-6963-wallet-standard" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-17 EIP-6963 Wallet Standard
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-18-frontend-login-page-redirect-to-oauth-initiation" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-18 Frontend Login Page &amp; Redirect to OAuth Initiation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-19-callback-handling-token-storage-in-authprovider" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-19 Callback Handling &amp; Token Storage in AuthProvider
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-20-dashboard-navbar-adjustments-post-login" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-20 Dashboard &amp; Navbar Adjustments Post-Login
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#f-21-eligibility-voting-links-only-visible-when-eligible" class="md-nav__link">
+    <span class="md-ellipsis">
+      F-21 Eligibility &amp; Voting Links Only Visible When Eligible
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="frontend-pbis">Frontend PBIs</h1>
+<p>The following product backlog items (PBIs) capture upcoming frontend work.</p>
+<h2 id="f-01-wallet-onboarding-wizard">F-01 Wallet Onboarding Wizard</h2>
+<ul>
+<li>3-step React flow (connect, generate ZK proof, sign EIP-712).</li>
+<li>Uses wagmi + viem; no ethers.js.</li>
+</ul>
+<h2 id="f-02-live-countdown-banner">F-02 Live Countdown Banner</h2>
+<ul>
+<li>Visibility-triggered SWR hook hitting <code>/ws/chain</code>.</li>
+<li>Switches to "Tallying…" when election closed.</li>
+</ul>
+<h2 id="f-03-accessibility-audit">F-03 Accessibility Audit</h2>
+<ul>
+<li>Achieve Lighthouse a11y \u2265 90.</li>
+<li>Dark-mode contrast fixes.</li>
+</ul>
+<h2 id="f-04-solana-tally-viewer">F-04 Solana Tally Viewer</h2>
+<ul>
+<li>After bridge, show bar chart (Recharts) with votes.</li>
+</ul>
+<h2 id="f-05-multi-wallet-connector">F-05 Multi-Wallet Connector</h2>
+<ul>
+<li>Add Ledger &amp; WalletConnect flows; wagmi auto-detect; Storybook demo.</li>
+</ul>
+<h2 id="f-06-live-gas-fee-estimator">F-06 Live Gas Fee Estimator</h2>
+<ul>
+<li>SWR hook hitting <code>/api/gas</code>. Shows 95th percentile, updates every 15 s.</li>
+<li>Unit test with MSW.</li>
+</ul>
+<h2 id="f-07-offline-proof-builder">F-07 Offline Proof Builder</h2>
+<ul>
+<li>Web Worker doing circom-wasm witness &amp; proof (C-06) entirely client-side; progress bar hooked to UI.</li>
+</ul>
+<h2 id="f-08-i18n-en-bg">F-08 i18n (en, bg)</h2>
+<ul>
+<li>Next-int-l10n; runtime locale switch; E2E Cypress test verifying bg translations.</li>
+</ul>
+<h2 id="f-09-accessibility-100-score">F-09 Accessibility 100 Score</h2>
+<ul>
+<li>Fix remaining Lighthouse a11y issues; include CI budget gate &lt; 1 regression.</li>
+</ul>
+<h2 id="f-10-dark-mode-theming-tokens">F-10 Dark-Mode Theming Tokens</h2>
+<ul>
+<li>Tailwind CSS vars driven by next-themes; snapshot visual regression tests.</li>
+</ul>
+<h2 id="f-11-zk-proof-worker-pool">F-11 ZK-Proof Worker Pool</h2>
+<ul>
+<li>Shared-worker pool (Comlink) multiplexes witness builds; CPU utilisation \u2265 80 % of cores.</li>
+</ul>
+<h2 id="f-12-ledger-otg-support">F-12 Ledger OTG Support</h2>
+<ul>
+<li>WebUSB flow; Cypress E2E on Chromebook runner.</li>
+</ul>
+<h2 id="f-13-real-time-solana-chart">F-13 Real-Time Solana Chart</h2>
+<ul>
+<li>Recharts bar chart subscribes to <code>/ws/solana</code>; updates within 2 s of relay.</li>
+</ul>
+<h2 id="f-14-a11y-100-u2192-wcag-aaa">F-14 A11y 100 \u2192 WCAG AAA</h2>
+<ul>
+<li>Goes beyond Lighthouse; axe-core CI gate \u2264 1 violation.</li>
+</ul>
+<h2 id="f-15-i18n-rtl-plurals">F-15 i18n RTL &amp; Plurals</h2>
+<ul>
+<li>Arabic localisation + ICU plural-rules; E2E visual diff.</li>
+</ul>
+<h2 id="f-16-pwa-offline-mode">F-16 PWA Offline Mode</h2>
+<ul>
+<li>ServiceWorker caches circuit WASM &amp; proofs; acts as proof cache layer.</li>
+</ul>
+<h2 id="f-17-eip-6963-wallet-standard">F-17 EIP-6963 Wallet Standard</h2>
+<ul>
+<li>Replace wagmi auto-detect with official API; Storybook example.</li>
+</ul>
+<h2 id="f-18-frontend-login-page-redirect-to-oauth-initiation">F-18 Frontend Login Page &amp; Redirect to OAuth Initiation</h2>
+<ul>
+<li>Implement a dedicated <code>/login</code> route with a “Log in with eID” button.</li>
+<li>Fetch <code>/auth/initiate</code> and open the returned URL or HTML inside a popup window so the main tab never shows raw JSON.</li>
+</ul>
+<h2 id="f-19-callback-handling-token-storage-in-authprovider">F-19 Callback Handling &amp; Token Storage in AuthProvider</h2>
+<ul>
+<li>Popup posts <code>{ id_token, eligibility }</code> back to the opener after <code>/auth/callback</code>.</li>
+<li><code>AuthProvider</code> listens for the message, stores the token and eligibility, then redirects to <code>/dashboard</code>.</li>
+</ul>
+<h2 id="f-20-dashboard-navbar-adjustments-post-login">F-20 Dashboard &amp; Navbar Adjustments Post-Login</h2>
+<ul>
+<li>Navbar shows “Logout” when authenticated and guards protected pages.</li>
+<li>Logged-in users visiting <code>/login</code> are redirected to <code>/dashboard</code> automatically.</li>
+</ul>
+<h2 id="f-21-eligibility-voting-links-only-visible-when-eligible">F-21 Eligibility &amp; Voting Links Only Visible When Eligible</h2>
+<ul>
+<li>Navbar and dashboard links depend on the <code>eligibility</code> flag from the backend.</li>
+<li>Voting buttons disabled when <code>eligibility === false</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

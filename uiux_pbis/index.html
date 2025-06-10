@@ -1,0 +1,1070 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://owner.github.io/toting/uiux_pbis/">
+      
+      
+        <link rel="prev" href="../integration_pbis/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>UI/UX - Toting Example</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ui-ux-pbis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Toting Example" class="md-header__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Toting Example
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              UI/UX
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Toting Example" class="md-nav__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Toting Example
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../handbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Handbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contract Audit Plan
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture_adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture ADR
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr-002-event-sourcing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ADR-002 Event Sourcing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Threat Model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local_dev_cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Local-Dev Cookbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    PBIs
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            PBIs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Backend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../frontend_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Frontend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contracts_relay_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contracts & Relay
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../circuit_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Circuits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    UI/UX
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    UI/UX
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ui-ux-pbis_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI / UX PBIs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed Acceptance-Criteria
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detailed Acceptance-Criteria">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ux-01-dual-mode-auth-selector" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-01 Dual-Mode Auth Selector
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-02-mock-login-modal" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-02 Mock Login Modal
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-03-global-auth-status-chip" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-03 Global Auth Status Chip
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-04-error-quota-toasts" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-04 Error &amp; Quota Toasts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Architectural Notes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Graph
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependency Graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ux-24-universal-no-reload-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-24 Universal No-Reload Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-25-end-to-end-smoke-flow-fe-only-cypress" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-25 End-to-End Smoke Flow (FE-only Cypress)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ui-ux-pbis_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      UI / UX PBIs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#detailed-acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      Detailed Acceptance-Criteria
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Detailed Acceptance-Criteria">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ux-01-dual-mode-auth-selector" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-01 Dual-Mode Auth Selector
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-02-mock-login-modal" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-02 Mock Login Modal
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-03-global-auth-status-chip" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-03 Global Auth Status Chip
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-04-error-quota-toasts" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-04 Error &amp; Quota Toasts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Architectural Notes
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependency-graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dependency Graph
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dependency Graph">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ux-24-universal-no-reload-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-24 Universal No-Reload Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ux-25-end-to-end-smoke-flow-fe-only-cypress" class="md-nav__link">
+    <span class="md-ellipsis">
+      UX-25 End-to-End Smoke Flow (FE-only Cypress)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="ui-ux-pbis">UI / UX PBIs</h1>
+<p>The following product backlog items (PBIs) capture upcoming UI and UX work.</p>
+<h2 id="ui-ux-pbis_1">UI / UX PBIs</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Title</th>
+<th>Summary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>UX-01</strong></td>
+<td><strong>Dual-Mode Auth Selector</strong></td>
+<td>Add a polished entry screen that lets the user choose <strong>“Log in with eID”</strong> or <strong>“Mock Login (developer mode)”</strong> before the OAuth flow starts.</td>
+</tr>
+<tr>
+<td><strong>UX-02</strong></td>
+<td><strong>Mock Login Modal</strong></td>
+<td>Replace the raw mock HTML form returned by <code>/auth/initiate</code> with a consistent, branded modal inside the frontend, keeping the URL bar clean.</td>
+</tr>
+<tr>
+<td><strong>UX-03</strong></td>
+<td><strong>Global Auth Status Chip</strong></td>
+<td>Surface the current auth method (eID / Mock / Guest) as a pill-shaped chip in the navbar, updating in real time.</td>
+</tr>
+<tr>
+<td><strong>UX-04</strong></td>
+<td><strong>Error &amp; Quota Toasts</strong></td>
+<td>Consolidate all error / 429 quota messages into a unified toast component (Headless UI), replacing inline red text.</td>
+</tr>
+<tr>
+<td><strong>UX-05</strong></td>
+<td><strong>Skeleton &amp; Shimmer States</strong></td>
+<td>Introduce skeleton loaders for election lists, dashboards and charts to eliminate layout shift.</td>
+</tr>
+<tr>
+<td><strong>UX-06</strong></td>
+<td><strong>Responsive Nav &amp; Drawer</strong></td>
+<td>Collapse <code>&lt;NavBar&gt;</code> into a hamburger drawer on ≤ 640 px screens; preserve auth chip and theme toggle.</td>
+</tr>
+<tr>
+<td><strong>UX-07</strong></td>
+<td><strong>Theming Tokens v2</strong></td>
+<td>Formalise a design-token JSON (light/dark) and refactor existing CSS vars; prepare for future branding.</td>
+</tr>
+<tr>
+<td><strong>UX-08</strong></td>
+<td><strong>Keyboard &amp; Screen-Reader Flow</strong></td>
+<td>Bring login, modal and toast components to <strong>Lighthouse a11y ≥ 90</strong> with full focus trapping &amp; ARIA labelling.</td>
+</tr>
+<tr>
+<td><strong>UX-09</strong></td>
+<td><strong>AuthProvider Refactor</strong></td>
+<td>Centralise mock-vs-real toggling behind a new <code>authMode</code> enum, exposed via context and persisted to <code>sessionStorage</code>.</td>
+</tr>
+<tr>
+<td><strong>UX-10</strong></td>
+<td><strong>Developer Settings Panel</strong></td>
+<td>Hidden <code>/dev</code> route that shows current env vars, auth mode, proof quota left and a “Switch to Mock Login” toggle.</td>
+</tr>
+<tr>
+<td><strong>UX-11</strong></td>
+<td><strong>Zero-State Illustrations</strong></td>
+<td>Provide friendly SVG illustrations (unDraw licence) for: <em>no elections</em>, <em>not eligible</em>, <em>no proofs yet</em>.</td>
+</tr>
+<tr>
+<td><strong>UX-12</strong></td>
+<td><strong>Cross-Flow Exit Handling</strong></td>
+<td>If a user starts the eID flow but cancels or closes the popup, surface an inline banner with <strong>Retry</strong> / <strong>Switch to Mock</strong> actions.</td>
+</tr>
+<tr>
+<td><strong>UX-13</strong></td>
+<td><strong>Mobile-First Vote Page</strong></td>
+<td>Redesign <code>/vote</code> buttons as large, touch-friendly cards (min-hit-area 48 × 48 dp) with colour feedback.</td>
+</tr>
+<tr>
+<td><strong>UX-14</strong></td>
+<td><strong>Progress Overlay for Proofs</strong></td>
+<td>Full-screen translucent overlay with spinner &amp; percent while waiting for backend proofs (uses WS progress).</td>
+</tr>
+<tr>
+<td><strong>UX-15</strong></td>
+<td><strong>Unified Settings &amp; Logout</strong></td>
+<td>Convert the bare <strong>Logout</strong> button into an <strong>Account</strong> menu (avatar → Menu) that includes <strong>Logout</strong>, <strong>Switch Login Method</strong>, <strong>Theme</strong>, and future preferences.</td>
+</tr>
+<tr>
+<td><strong>UX-16</strong></td>
+<td><strong>Contextual Help Popovers</strong></td>
+<td>Small <code>?</code> icons next to complex terms (Eligibility, Voice Credits, ZK Proof) that open Tippy.js popovers.</td>
+</tr>
+<tr>
+<td><strong>UX-17</strong></td>
+<td><strong>i18n Copy Pass #2</strong></td>
+<td>Audit new UI strings introduced by UX-01 – UX-16 and add to <code>en.json</code> / <code>bg.json</code>; ensure plural rules.</td>
+</tr>
+</tbody>
+</table>
+<p>| <strong>UX-18</strong> | <strong>Role-Aware Nav &amp; Route Guards</strong> | Surface the current RBAC role (admin / user / verifier) in <code>&lt;AuthProvider&gt;</code>; update all guards to gate links &amp; pages accordingly. |
+| <strong>UX-19</strong> | <strong>Eligibility Gate Banner</strong> | Inline banner on <code>/create</code> and <code>/eligibility</code> explains why the user can\'t proceed. |
+| <strong>UX-20</strong> | <strong>Create-Election Wizard</strong> | Replace the single textbox with a 3-step wizard to confirm hash before submit. |
+| <strong>UX-21</strong> | <strong>Optimistic Dashboard Update</strong> | Newly created election appears without full reload. |
+| <strong>UX-22</strong> | <strong>Verifier Panel</strong> | Table of pending proofs visible only for verifier role. |
+| <strong>UX-23</strong> | <strong>Admin → User Role Switcher UI</strong> | Account menu lets an admin change another user\'s role. |
+| <strong>UX-24</strong> | <strong>Universal No-Reload Flow</strong> | Convert remaining page loads to client-side transitions. |
+| <strong>UX-25</strong> | <strong>End-to-End Smoke Flow (FE-only Cypress)</strong> | Cypress runs the full login → eligibility → create flow with no reloads. |</p>
+<h2 id="detailed-acceptance-criteria">Detailed Acceptance-Criteria</h2>
+<h3 id="ux-01-dual-mode-auth-selector">UX-01  Dual-Mode Auth Selector</h3>
+<ul>
+<li><strong>Screen</strong>: <code>/login</code></li>
+<li><strong>Design</strong>: Two equal buttons (primary = eID, secondary = Mock) with descriptive sub-text.</li>
+<li><strong>Behaviour</strong></li>
+<li>Clicking <strong>eID</strong> behaves exactly as today.</li>
+<li>Clicking <strong>Mock</strong> sets <code>authMode=mock</code> in <code>sessionStorage</code> and opens the new <strong>Mock Login Modal</strong> (UX-02).</li>
+<li><strong>Analytics</strong>: emit <code>auth_mode_selected</code> event with <code>{ mode }</code>.</li>
+<li><strong>Dependencies</strong>: None explicit – first item to implement.</li>
+</ul>
+<h3 id="ux-02-mock-login-modal">UX-02  Mock Login Modal</h3>
+<ul>
+<li><strong>Component</strong>: <code>&lt;MockLoginModal/&gt;</code> driven by React state; lives entirely in the frontend – never navigates away.</li>
+<li><strong>Inputs</strong>: email text field (HTML5 <code>type=email</code>) + <em>Login</em> button.</li>
+<li><strong>Validations</strong>:</li>
+<li>Invalid email shows inline error, button disabled until valid.</li>
+<li><strong>API</strong>: calls <code>GET /auth/callback?user=&lt;email&gt;</code> and processes the JSON.</li>
+<li><strong>Security</strong>: never displays the raw JWT; stores id_token via existing <code>AuthProvider</code>.</li>
+<li><strong>UX</strong>: Esc / outside click closes modal and resets to initial login page.</li>
+<li><strong>Dependencies</strong>: UX-01, UX-09.</li>
+</ul>
+<h3 id="ux-03-global-auth-status-chip">UX-03  Global Auth Status Chip</h3>
+<ul>
+<li><strong>Design</strong>: 16 px pill, left coloured dot (green =eID, blue =Mock, gray =Guest) + text.</li>
+<li><strong>Placement</strong>: right side of <code>&lt;NavBar&gt;</code>, next to Theme Toggle.</li>
+<li><strong>Live updates</strong>: listens to <code>AuthProvider</code> context; fades in/out within 150 ms.</li>
+</ul>
+<h3 id="ux-04-error-quota-toasts">UX-04  Error &amp; Quota Toasts</h3>
+<ul>
+<li><strong>Library</strong>: Headless UI + Framer-Motion; max 3 concurrent toasts, vertical stack bottom-right.</li>
+<li><strong>Types</strong>: <code>error</code>, <code>success</code>, <code>info</code>.</li>
+<li><strong>Replaces</strong>: all current <code>setError</code> red <code>&lt;p&gt;</code> blocks.</li>
+<li><strong>AC</strong>: Proof quota exceeded shows <strong>error toast</strong> with <em>Try again tomorrow</em> action link to docs.</li>
+</ul>
+<p><em>(Continue with similar detail for UX-05 … UX-17. Full text omitted for brevity in this answer, but follow the same pattern: </em><em>Scope → Behaviour → Design specs → AC → Dependencies</em><em>.)</em></p>
+<h2 id="architectural-notes">Architectural Notes</h2>
+<ul>
+<li><strong><code>AuthProvider</code> update (UX-09)</strong></li>
+</ul>
+<p><code>ts
+  type AuthMode = 'eid' | 'mock' | 'guest';
+  interface AuthContext { mode: AuthMode; setMode(m:AuthMode): void; … }</code></p>
+<p>Existing logic remains untouched—only the source of the <strong>id_token</strong> changes.</p>
+<ul>
+<li>
+<p><strong>Backend remains unchanged</strong>
+  The mock flow already exists (<code>USE_REAL_OAUTH=false</code>). All UI work happens client-side.</p>
+</li>
+<li>
+<p><strong>Testing</strong></p>
+</li>
+<li>Extend Cypress to run both auth modes (<code>E2E_AUTH_MODE=mock|eid</code>).</li>
+<li>
+<p>Jest: new tests for <code>&lt;MockLoginModal/&gt;</code>, auth chip, error toast reducer.</p>
+</li>
+<li>
+<p><strong>Visual Design</strong>
+  Provide Figma frames for Dual-Mode screen, modal, toast and mobile nav; export PNGs into <code>docs/ui-screens/</code>.</p>
+</li>
+</ul>
+<h2 id="dependency-graph">Dependency Graph</h2>
+<pre><code>UX-01
+ └─▶ UX-02 ─┐
+UX-09 ──────┤
+            ├─▶ UX-03
+UX-04 ──────┘
+UX-05, UX-06, UX-07 are parallel.
+UX-08 depends on UX-02, UX-04, UX-05.
+UX-10 depends on UX-03, UX-06, UX-09.
+UX-11–UX-17 can run once core flows (UX-01 … UX-10) are merged.
+</code></pre>
+<h3 id="ux-24-universal-no-reload-flow">UX-24  Universal No-Reload Flow</h3>
+<ul>
+<li><strong>Scope</strong>: Replace the remaining full page loads with client-side routing via <code>next/link</code> or <code>router.push</code>.</li>
+<li><strong>Pages Affected</strong>: <code>/</code>, <code>/dashboard</code>, <code>/elections/[id]</code>, <code>/elections/create</code>, <code>/eligibility</code>.</li>
+<li><strong>Acceptance Criteria</strong></li>
+<li>Navigating between these pages does not create additional <code>navigation</code> entries in <code>window.performance</code>.</li>
+<li>All call-to-action buttons use client-side links.</li>
+<li><strong>Dependencies</strong>: UX-21.</li>
+</ul>
+<h3 id="ux-25-end-to-end-smoke-flow-fe-only-cypress">UX-25  End-to-End Smoke Flow (FE-only Cypress)</h3>
+<ul>
+<li><strong>Tooling</strong>: Cypress 13, executed in the frontend package via <code>yarn test:e2e</code>.</li>
+<li><strong>Flow</strong>:</li>
+<li>Start from <code>/</code> and navigate to the Solana chart.</li>
+<li>Use the navbar to open the login page.</li>
+<li>Assert that <code>performance.getEntriesByType('navigation').length</code> remains <code>1</code> throughout.</li>
+<li><strong>CI</strong>: run the Cypress smoke test on pull requests.</li>
+<li><strong>Dependencies</strong>: UX-24 must be complete.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

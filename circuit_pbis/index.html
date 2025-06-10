@@ -1,0 +1,1109 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://owner.github.io/toting/circuit_pbis/">
+      
+      
+        <link rel="prev" href="../contracts_relay_pbis/">
+      
+      
+        <link rel="next" href="../integration_pbis/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Circuits - Toting Example</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#circuit-pbis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Toting Example" class="md-header__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Toting Example
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Circuits
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Toting Example" class="md-nav__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Toting Example
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../handbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Handbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contract Audit Plan
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture_adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture ADR
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr-002-event-sourcing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ADR-002 Event Sourcing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Threat Model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local_dev_cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Local-Dev Cookbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    PBIs
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            PBIs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backend_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Backend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../frontend_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Frontend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contracts_relay_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contracts & Relay
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Circuits
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Circuits
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#c-01-eligibility-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-01 Eligibility v2
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-02-voice-credits-range-proof-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-02 Voice-Credits Range Proof (Implemented)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-03-batch-tally-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-03 Batch Tally (Implemented)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-04-snarkjs-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-04 SnarkJS Pipeline
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-05-proof-fuzzing-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-05 Proof Fuzzing Harness
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-06-deposit-nullifier-circuit" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-06 Deposit-Nullifier Circuit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-07-poseidon-hash-refactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-07 Poseidon Hash Refactor
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-08-recursive-batch-tally-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-08 Recursive Batch-Tally v2
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-09-signal-range-proofs" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-09 Signal Range Proofs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-10-parallel-witness-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-10 Parallel Witness Builder
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-11-multi-curve-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-11 Multi-Curve Compatibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-12-proof-compression-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-12 Proof Compression Benchmark
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-13-e2e-circuit-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-13 E2E Circuit Docs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-14-multi-proof-aggregator" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-14 Multi-Proof Aggregator
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-15-trusted-setup-audit-kit" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-15 Trusted-Setup Audit Kit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-16-warp-swap-curve-port" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-16 Warp-Swap Curve Port
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-17-hardware-keccak-gadget" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-17 Hardware Keccak Gadget
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-18-stateless-witness-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-18 Stateless Witness Builder
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uiux_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    UI/UX
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#c-01-eligibility-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-01 Eligibility v2
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-02-voice-credits-range-proof-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-02 Voice-Credits Range Proof (Implemented)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-03-batch-tally-implemented" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-03 Batch Tally (Implemented)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-04-snarkjs-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-04 SnarkJS Pipeline
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-05-proof-fuzzing-harness" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-05 Proof Fuzzing Harness
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-06-deposit-nullifier-circuit" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-06 Deposit-Nullifier Circuit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-07-poseidon-hash-refactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-07 Poseidon Hash Refactor
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-08-recursive-batch-tally-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-08 Recursive Batch-Tally v2
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-09-signal-range-proofs" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-09 Signal Range Proofs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-10-parallel-witness-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-10 Parallel Witness Builder
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-11-multi-curve-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-11 Multi-Curve Compatibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-12-proof-compression-benchmark" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-12 Proof Compression Benchmark
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-13-e2e-circuit-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-13 E2E Circuit Docs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-14-multi-proof-aggregator" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-14 Multi-Proof Aggregator
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-15-trusted-setup-audit-kit" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-15 Trusted-Setup Audit Kit
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-16-warp-swap-curve-port" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-16 Warp-Swap Curve Port
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-17-hardware-keccak-gadget" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-17 Hardware Keccak Gadget
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#c-18-stateless-witness-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      C-18 Stateless Witness Builder
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="circuit-pbis">Circuit PBIs</h1>
+<p>The following product backlog items (PBIs) outline planned improvements to the ZK circuits.</p>
+<h2 id="c-01-eligibility-v2">C-01 Eligibility v2</h2>
+<ul>
+<li>ZK circuit overhaul for passport / age / residency.</li>
+<li>Support up to 3 independent eligibility proofs in a single witness (boolean OR logic).</li>
+<li>Inputs: Merkle path for country list, birth-date commit, residence commit.</li>
+<li>Constraints &lt; 140k R1CS constraints.</li>
+<li>Must still compile in &lt; 30 s on CI.</li>
+<li>Unit tests in <code>circuits/eligibility/__tests__</code> proving ≥ 99 % valid, 100 % invalid rejection.</li>
+</ul>
+<h2 id="c-02-voice-credits-range-proof-implemented">C-02 Voice-Credits Range Proof <em>(Implemented)</em></h2>
+<ul>
+<li>Prevent overflow / negative credit injection.</li>
+<li>Add field range checks <code>0 ≤ vc ≤ 1 000 000</code>.</li>
+<li>Enforce quadratic cost formula inside circuit to close "cheap vote" loophole.</li>
+<li>Groth16 proof size unchanged (≈ 192 bytes).</li>
+</ul>
+<h2 id="c-03-batch-tally-implemented">C-03 Batch Tally <em>(Implemented)</em></h2>
+<ul>
+<li>Aggregate 128 encrypted ballots per proof.</li>
+<li>Circuit takes an array of 128 ElGamal ciphertexts + public key, outputs <code>(sumA, sumB)</code>.</li>
+<li>Provide a Poseidon root to let contracts verify subsets.</li>
+<li>Constraint budget ≤ 6 M.</li>
+<li>Benchmark script dumps R1CS, generates zkey, exports verifier (Sol) + <code>tally.wasm</code>.</li>
+</ul>
+<h2 id="c-04-snarkjs-pipeline">C-04 SnarkJS Pipeline</h2>
+<ul>
+<li>Reusable Makefile + cache.</li>
+<li><code>make circuits</code> rebuilds only dirty <code>.circom</code> files.</li>
+<li>Output artifacts in <code>artifacts/{name}/{hash}/</code> with Git LFS-friendly <code>.gitignore</code> stub.</li>
+<li>CI job checks hash drift vs. committed verifier.</li>
+</ul>
+<h2 id="c-05-proof-fuzzing-harness">C-05 Proof Fuzzing Harness</h2>
+<ul>
+<li>Negative-testing with <code>ffmpeg-wasm</code> noise.</li>
+<li>Generate 1 000 random bad witnesses per circuit; ensure verifier reverts.</li>
+</ul>
+<h2 id="c-06-deposit-nullifier-circuit">C-06 Deposit-Nullifier Circuit</h2>
+<ul>
+<li>Groth16 circuit proving one-time deposit without leaking identity.</li>
+<li>≤ 200 k constraints.</li>
+<li>Rejects duplicate nullifier in 1 000 negative tests.</li>
+<li>Solidity verifier auto-generated and unit-tested in Foundry.</li>
+</ul>
+<h2 id="c-07-poseidon-hash-refactor">C-07 Poseidon Hash Refactor</h2>
+<ul>
+<li>Replace MiMC in all circuits with Poseidon (Arkworks params 3,5).</li>
+<li>Proof size must remain unchanged.</li>
+<li>Benchmarks ≤ 5 % slower than baseline.</li>
+</ul>
+<h2 id="c-08-recursive-batch-tally-v2">C-08 Recursive Batch-Tally v2</h2>
+<ul>
+<li>Halo2 or Plonk recursion proof that rolls 8 × <code>C-03</code> tallies into one.</li>
+<li>Constraint budget ≤ 2 M.</li>
+<li>Prove &amp; verify under 30 s on CI.</li>
+</ul>
+<h2 id="c-09-signal-range-proofs">C-09 Signal Range Proofs</h2>
+<ul>
+<li>Generic gadget library for <code>0 ≤ value ≤ 2³²-1</code> usable by other circuits.</li>
+<li>Fuzz harness must find zero false negatives/positives.</li>
+</ul>
+<h2 id="c-10-parallel-witness-builder">C-10 Parallel Witness Builder</h2>
+<ul>
+<li>Rust <code>rayon</code> based <code>build_witness</code> saturating all cores.</li>
+<li>2 × speed-up vs serial.</li>
+<li>Integrated in Makefile with CI proving speed shortcut.</li>
+</ul>
+<h2 id="c-11-multi-curve-compatibility">C-11 Multi-Curve Compatibility</h2>
+<ul>
+<li>Port circuits to support BN254 and BLS12-381.</li>
+<li>Build matrix in CI.</li>
+<li>Contracts auto-select curve at deploy.</li>
+</ul>
+<h2 id="c-12-proof-compression-benchmark">C-12 Proof Compression Benchmark</h2>
+<ul>
+<li>Script that compares zkey size, proof size and verifier gas across <code>C-01…C-11</code>.</li>
+<li>CI uploads CSV artefact.</li>
+</ul>
+<h2 id="c-13-e2e-circuit-docs">C-13 E2E Circuit Docs</h2>
+<ul>
+<li>Architecture doc with constraint graphs, input tables and trusted setup workflow.</li>
+<li>Published as MkDocs site with diagrams exported from Circom graph.</li>
+</ul>
+<h2 id="c-14-multi-proof-aggregator">C-14 Multi-Proof Aggregator</h2>
+<ul>
+<li>Groth16 → BLS12-381 aggregator that rolls up ≤ 512 vote proofs into one.</li>
+<li>Solidity verifier gas ≤ 6 M.</li>
+<li>AC: same public signals out, ≤ 5 s prove time on CI.</li>
+<li>Depends on <strong>C-08</strong>.</li>
+</ul>
+<h2 id="c-15-trusted-setup-audit-kit">C-15 Trusted-Setup Audit Kit</h2>
+<ul>
+<li>Script reproduces PTAU &amp; ZKey hashes, uploads to release.</li>
+<li>AC: <code>make audit</code> exits 0 on identical hashes, non-zero otherwise.</li>
+<li>Depends on <strong>C-04</strong>.</li>
+</ul>
+<h2 id="c-16-warp-swap-curve-port">C-16 Warp-Swap Curve Port</h2>
+<ul>
+<li>Compile circuits for bn254 and curve25519 via CirC.</li>
+<li>AC: unit tests pass on both targets; Verifier gas delta ≤ +5 %.</li>
+<li>Depends on <strong>C-11</strong>.</li>
+</ul>
+<h2 id="c-17-hardware-keccak-gadget">C-17 Hardware Keccak Gadget</h2>
+<ul>
+<li>Verilog Poseidon ASIC stub + constraint mapping; prove on GPU CI runner.</li>
+<li>AC: FPGA sim &lt; 150 ms per hash.</li>
+<li>Depends on <strong>C-07</strong>.</li>
+</ul>
+<h2 id="c-18-stateless-witness-builder">C-18 Stateless Witness Builder</h2>
+<ul>
+<li>Rust lib returns streaming iterator so browser can GC.</li>
+<li>Benchmark 30 % less peak RAM vs baseline.</li>
+<li>Depends on <strong>C-10</strong>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>

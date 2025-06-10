@@ -1,0 +1,1343 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://owner.github.io/toting/backend_pbis/">
+      
+      
+        <link rel="prev" href="../local_dev_cookbook/">
+      
+      
+        <link rel="next" href="../frontend_pbis/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Backend - Toting Example</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#backend-pbis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Toting Example" class="md-header__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Toting Example
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Backend
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Toting Example" class="md-nav__button md-logo" aria-label="Toting Example" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Toting Example
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../handbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Handbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contract Audit Plan
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture_adr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture ADR
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adr-002-event-sourcing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ADR-002 Event Sourcing
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../threat_model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Threat Model
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local_dev_cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Local-Dev Cookbook
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    PBIs
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            PBIs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Backend
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Backend
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#b-01-robust-oauth2-eid-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-01 Robust OAuth2 / eID Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-02-api-key-rate-limiting-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-02 API Key &amp; Rate-Limiting Layer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-03-election-metadata-rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-03 Election Metadata REST API
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-04-websocket-push-live-block-height-countdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-04 WebSocket Push: Live Block Height &amp; Countdown
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-05-celery-job-queue-for-heavy-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-05 Celery Job Queue for Heavy Tasks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-06-audit-trail-logger-worm" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-06 Audit-Trail Logger (WORM)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-07-prometheus-grafana-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-07 Prometheus &amp; Grafana Metrics
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-08-load-test-harness-locust" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-08 Load-Test Harness (Locust)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-09-admin-dashboard-role-based-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-09 Admin Dashboard &amp; Role-Based Access
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-10-email-sms-notification-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-10 Email &amp; SMS Notification Service
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-11-graphql-proxy-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-11 GraphQL Proxy Layer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-12-backend-cli-for-admins-typer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-12 Backend CLI for Admins (Typer)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-13-zero-knowledge-proof-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-13 Zero-Knowledge Proof API
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-14-evm-event-indexer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-14 EVM Event Indexer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-15-rate-limit-bypass-for-internal-ips" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-15 Rate-Limit Bypass for Internal IPs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-16-grpc-proof-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-16 gRPC Proof Service
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-17-streaming-blocks-listener" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-17 Streaming Blocks Listener
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-18-oauth2-token-cache-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-18 OAuth2 Token Cache Revocation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-19-restgraphql-deprecation-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-19 REST→GraphQL Deprecation Layer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-20-vault-based-secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-20 Vault-Based Secrets
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-21-openid-verifiable-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-21 OpenID → Verifiable Credentials
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-22-oauth-pkce-mtls" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-22 OAuth PKCE &amp; mTLS
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-23-hierarchical-rbac" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-23 Hierarchical RBAC
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-24-off-chain-voting-simulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-24 Off-chain Voting Simulation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-25-live-metrics-websocket" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-25 Live Metrics WebSocket
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-26-rest-deprecation-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-26 REST Deprecation Proxy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-27-pydantic-v2-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-27 Pydantic v2 Migration
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../frontend_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Frontend
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contracts_relay_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Smart Contracts & Relay
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../circuit_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Circuits
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Integration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uiux_pbis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    UI/UX
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#b-01-robust-oauth2-eid-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-01 Robust OAuth2 / eID Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-02-api-key-rate-limiting-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-02 API Key &amp; Rate-Limiting Layer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-03-election-metadata-rest-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-03 Election Metadata REST API
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-04-websocket-push-live-block-height-countdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-04 WebSocket Push: Live Block Height &amp; Countdown
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-05-celery-job-queue-for-heavy-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-05 Celery Job Queue for Heavy Tasks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-06-audit-trail-logger-worm" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-06 Audit-Trail Logger (WORM)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-07-prometheus-grafana-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-07 Prometheus &amp; Grafana Metrics
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-08-load-test-harness-locust" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-08 Load-Test Harness (Locust)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-09-admin-dashboard-role-based-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-09 Admin Dashboard &amp; Role-Based Access
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-10-email-sms-notification-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-10 Email &amp; SMS Notification Service
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-11-graphql-proxy-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-11 GraphQL Proxy Layer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-12-backend-cli-for-admins-typer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-12 Backend CLI for Admins (Typer)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-13-zero-knowledge-proof-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-13 Zero-Knowledge Proof API
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-14-evm-event-indexer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-14 EVM Event Indexer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-15-rate-limit-bypass-for-internal-ips" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-15 Rate-Limit Bypass for Internal IPs
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-16-grpc-proof-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-16 gRPC Proof Service
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-17-streaming-blocks-listener" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-17 Streaming Blocks Listener
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-18-oauth2-token-cache-revocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-18 OAuth2 Token Cache Revocation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-19-restgraphql-deprecation-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-19 REST→GraphQL Deprecation Layer
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-20-vault-based-secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-20 Vault-Based Secrets
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-21-openid-verifiable-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-21 OpenID → Verifiable Credentials
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-22-oauth-pkce-mtls" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-22 OAuth PKCE &amp; mTLS
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-23-hierarchical-rbac" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-23 Hierarchical RBAC
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-24-off-chain-voting-simulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-24 Off-chain Voting Simulation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-25-live-metrics-websocket" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-25 Live Metrics WebSocket
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-26-rest-deprecation-proxy" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-26 REST Deprecation Proxy
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#b-27-pydantic-v2-migration" class="md-nav__link">
+    <span class="md-ellipsis">
+      B-27 Pydantic v2 Migration
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="backend-pbis">Backend PBIs</h1>
+<p>The following product backlog items (PBIs) capture upcoming backend work.</p>
+<h2 id="b-01-robust-oauth2-eid-flow">B-01 Robust OAuth2 / eID Flow</h2>
+<ul>
+<li>Implement real OAuth2 code→token exchange and refresh token handling.</li>
+<li>Validate ID token signature and claims using <code>python-jose</code>.</li>
+<li>Store tokens in a secure database table with rotation.</li>
+<li>30‑minute ID token TTL with automatic silent refresh.</li>
+<li>Invalid or expired tokens return HTTP 401.</li>
+</ul>
+<h2 id="b-02-api-key-rate-limiting-layer">B-02 API Key &amp; Rate-Limiting Layer</h2>
+<ul>
+<li>CRUD endpoints for API keys under <code>/admin/api-keys</code> (Basic Auth protected).</li>
+<li>Rate limit requests to 60 per minute per key/IP using a Redis token bucket.</li>
+<li>Log API key usage and respond with HTTP 429 when limits are exceeded.</li>
+</ul>
+<h2 id="b-03-election-metadata-rest-api">B-03 Election Metadata REST API</h2>
+<ul>
+<li>Persist election objects including id, meta, start/end, status and tally.</li>
+<li>Endpoints:</li>
+<li><code>GET /elections</code> → list elections.</li>
+<li><code>GET /elections/{id}</code> → full JSON including tally.</li>
+<li>Auto-generate Swagger docs.</li>
+<li>Models with SQLAlchemy and background task to sync EVM events.</li>
+<li>Use Pydantic schemas with versioning.</li>
+</ul>
+<h2 id="b-04-websocket-push-live-block-height-countdown">B-04 WebSocket Push: Live Block Height &amp; Countdown</h2>
+<ul>
+<li>WebSocket endpoint <code>/ws/chain</code> pushing <code>{block, remaining}</code> every 3 s.</li>
+<li>Support graceful reconnects and heartbeat messages.</li>
+<li>Implement with <code>FastAPI</code> WebSocket routes using shared web3 listener.</li>
+</ul>
+<h2 id="b-05-celery-job-queue-for-heavy-tasks">B-05 Celery Job Queue for Heavy Tasks</h2>
+<ul>
+<li><code>POST /jobs/{type}</code> creates a job row and returns its id.</li>
+<li>Worker updates status and progress metadata.</li>
+<li><code>GET /jobs/{id}</code> shows <code>queued</code> or <code>running</code> states and results when done.</li>
+</ul>
+<h2 id="b-06-audit-trail-logger-worm">B-06 Audit-Trail Logger (WORM)</h2>
+<ul>
+<li>Hash-chain every state-changing call and background action.</li>
+<li>Store logs in append-only storage with daily root export.</li>
+<li>Provide a CLI to verify the log chain and detect tampering.</li>
+</ul>
+<h2 id="b-07-prometheus-grafana-metrics">B-07 Prometheus &amp; Grafana Metrics</h2>
+<ul>
+<li>Expose <code>/metrics</code> in Prometheus format for latency, errors and queue length.</li>
+<li>Commit a Grafana dashboard JSON to the repository.</li>
+<li>Extend <code>docker-compose</code> with <code>prom/prometheus</code> and <code>grafana/grafana</code> services.</li>
+</ul>
+<h2 id="b-08-load-test-harness-locust">B-08 Load-Test Harness (Locust)</h2>
+<ul>
+<li>CI job fails if 95th percentile latency &gt; 300 ms for <code>/elections</code> and WS lag &gt; 1 s.</li>
+<li>Produce a load test report artifact using Locust.</li>
+</ul>
+<h2 id="b-09-admin-dashboard-role-based-access">B-09 Admin Dashboard &amp; Role-Based Access</h2>
+<ul>
+<li>Secure admin-only HTTP interface under <code>/admin/*</code>.</li>
+<li>Users table stores email and role.</li>
+<li>Middleware checks the <code>admin</code> claim in JWTs; non-admins receive HTTP 403.</li>
+<li>Endpoints to manage users and read system metrics:</li>
+<li><code>GET /admin/users</code> lists users and roles.</li>
+<li><code>POST /admin/users</code> creates a user with role <code>admin</code> or <code>viewer</code>.</li>
+<li><code>PUT /admin/users/{id}</code> changes a user role.</li>
+<li><code>DELETE /admin/users/{id}</code> removes a user.</li>
+<li><code>GET /admin/metrics</code> shows request rate and queue stats.</li>
+<li>Swagger groups these routes under an "Admin operations" tag.</li>
+<li>Unit tests cover authorization and error cases.</li>
+</ul>
+<h2 id="b-10-email-sms-notification-service">B-10 Email &amp; SMS Notification Service</h2>
+<ul>
+<li>Event hooks publish notifications for new elections, closing windows and final tallies.</li>
+<li>Celery worker sends templated email via SendGrid and optional SMS via Twilio.</li>
+<li><code>GET /notifications/status/{job_id}</code> reports <code>{queued|sent|failed}</code> with up to three retries.</li>
+<li>Notifications table tracks payloads, attempts and errors.</li>
+<li>Integration tests mock the mail and SMS providers.</li>
+</ul>
+<h2 id="b-11-graphql-proxy-layer">B-11 GraphQL Proxy Layer</h2>
+<ul>
+<li><code>/graphql</code> endpoint wraps existing REST APIs.</li>
+<li>Supports queries for elections, users and metrics plus mutations to create or delete users.</li>
+<li>Schema validation rejects unknown fields; playground disabled in production.</li>
+<li>Implement with Ariadne or Strawberry and generate type definitions.</li>
+<li>Unit tests target resolver functions with 90% coverage.</li>
+</ul>
+<h2 id="b-12-backend-cli-for-admins-typer">B-12 Backend CLI for Admins (Typer)</h2>
+<ul>
+<li>Command <code>backend-admin</code> provides subcommands:</li>
+<li><code>healthcheck</code> to ping Postgres, Redis and RabbitMQ.</li>
+<li><code>list-users --role=admin</code> to print users with a given role.</li>
+<li><code>migrate</code> runs Alembic migrations.</li>
+<li><code>seed-demo</code> inserts demo data.</li>
+<li>Returns exit code 0 on success and includes README examples.</li>
+<li>Implement using Typer and SQLAlchemy Core with unit tests for each command.</li>
+</ul>
+<h2 id="b-13-zero-knowledge-proof-api">B-13 Zero-Knowledge Proof API</h2>
+<ul>
+<li><code>/api/zk/{circuit}</code> <code>POST</code> accepts JSON, returns proof + pubSignals.</li>
+<li>Runs in Celery worker with concurrency = 2 × CPU.</li>
+<li>Proofs cached in Redis keyed by input SHA-256.</li>
+</ul>
+<h2 id="b-14-evm-event-indexer">B-14 EVM Event Indexer</h2>
+<ul>
+<li>Async task reading ElectionManager logs, upserts Postgres, broadcasts WebSocket.</li>
+</ul>
+<h2 id="b-15-rate-limit-bypass-for-internal-ips">B-15 Rate-Limit Bypass for Internal IPs</h2>
+<ul>
+<li>CIDR whitelist via env var.</li>
+</ul>
+<h2 id="b-16-grpc-proof-service">B-16 gRPC Proof Service</h2>
+<ul>
+<li>gRPC wrapper around <code>/api/zk/*</code> for micro-service internal calls.</li>
+<li>Proto definitions and Python server implementation.</li>
+<li>Depends on <strong>C-06</strong>.</li>
+</ul>
+<h2 id="b-17-streaming-blocks-listener">B-17 Streaming Blocks Listener</h2>
+<ul>
+<li>Async generator that yields new block and remaining time.</li>
+<li>Replaces current polling; lag on Anvil must be ≤ 1 s.</li>
+<li>Depends on <strong>SC-04</strong>.</li>
+</ul>
+<h2 id="b-18-oauth2-token-cache-revocation">B-18 OAuth2 Token Cache Revocation</h2>
+<ul>
+<li>Store JTI → revoked boolean respecting <code>exp</code> and <code>nbf</code> claims.</li>
+<li>Flush revoked entries via nightly cron.</li>
+<li>100 % unit test coverage.</li>
+<li>Depends on <strong>B-01</strong>.</li>
+</ul>
+<h2 id="b-19-restgraphql-deprecation-layer">B-19 REST→GraphQL Deprecation Layer</h2>
+<ul>
+<li>Add deprecation headers and metrics to REST endpoints.</li>
+<li>REST calls must log a warning after hitting <code>/elections</code>.</li>
+<li>Depends on <strong>B-11</strong>.</li>
+</ul>
+<h2 id="b-20-vault-based-secrets">B-20 Vault-Based Secrets</h2>
+<ul>
+<li>Swap environment secrets for HashiCorp Vault.</li>
+<li>GitHub Actions inject the token.</li>
+<li>Ensure zero secrets appear in logs.</li>
+<li>No dependencies.</li>
+</ul>
+<h2 id="b-21-openid-verifiable-credentials">B-21 OpenID → Verifiable Credentials</h2>
+<ul>
+<li>Replace dummy JWT with EU eIDAS Verifiable Credential.</li>
+<li><code>python-jose</code> verifies the JWS signature.</li>
+<li>Option for a mock credential without connecting to eIDAS.</li>
+<li>AC: smoke test signs and verifies a real VC.</li>
+<li>Depends on <strong>B-01</strong>.</li>
+</ul>
+<h2 id="b-22-oauth-pkce-mtls">B-22 OAuth PKCE &amp; mTLS</h2>
+<ul>
+<li>Add S256 code challenge parameter to the OAuth flow.</li>
+<li>Optional mTLS on the token endpoint.</li>
+<li>Integration test using mitm-proxy.</li>
+<li>Depends on <strong>B-01</strong>.</li>
+</ul>
+<h2 id="b-23-hierarchical-rbac">B-23 Hierarchical RBAC</h2>
+<ul>
+<li>Roles: viewer → editor → admin.</li>
+<li>Implement using FastAPI dependency injection.</li>
+<li>Unit tests cover 100% of RBAC code.</li>
+<li>Depends on <strong>B-09</strong>.</li>
+</ul>
+<h2 id="b-24-off-chain-voting-simulation">B-24 Off-chain Voting Simulation</h2>
+<ul>
+<li><code>/simulate</code> returns gas+fee and expected tally.</li>
+<li>Runs as a Celery job.</li>
+<li>Result must be within ≤ 2% diff vs on-chain test.</li>
+<li>Depends on <strong>C-03</strong>.</li>
+</ul>
+<h2 id="b-25-live-metrics-websocket">B-25 Live Metrics WebSocket</h2>
+<ul>
+<li><code>/ws/metrics</code> pushes Prometheus counters for FE devtools overlay.</li>
+<li>Depends on <strong>B-07</strong>.</li>
+</ul>
+<h2 id="b-26-rest-deprecation-proxy">B-26 REST Deprecation Proxy</h2>
+<ul>
+<li>Returns HTTP 299 Deprecated header with link to GraphQL.</li>
+<li>Middleware test verifies the header.</li>
+<li>Depends on <strong>B-19</strong>.</li>
+</ul>
+<h2 id="b-27-pydantic-v2-migration">B-27 Pydantic v2 Migration</h2>
+<ul>
+<li>Drop v1 compatibility.</li>
+<li>Benchmark shows ≥ 10% performance gain.</li>
+<li>No dependencies.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
