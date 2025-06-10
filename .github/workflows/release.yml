@@ -1,38 +1,50 @@
+# .github/workflows/release.yml
 name: Release
+
 on:
   push:
     tags:
       - 'v*'
+
 permissions:
   contents: write
   packages: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code (with full history)
+        uses: actions/checkout@v4
         with:
-          submodules: recursive
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: ghcr.io/${{ github.repository }}/orchestrator:${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Compute checksums
         run: sha256sum proofs/*.zkey > checksums.txt
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+
+      - name: Upload checksums.txt
+        uses: actions/upload-release-asset@v1
         with:
-          files: |
-            checksums.txt
-            proofs/*.zkey
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: checksums.txt
+          asset_name: checksums.txt
+          asset_content_type: text/plain
+
+      - name: Upload proof artifacts
+        run: |
+          for file in proofs/*.zkey; do
+            gh release upload "${{ github.ref_name }}" "$file"
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
