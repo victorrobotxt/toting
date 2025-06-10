@@ -46,6 +46,8 @@ export default function MintPage() {
         try {
             const provider = new ethers.providers.Web3Provider((window as any).ethereum);
             await provider.send("eth_requestAccounts", []);
+            const net = await provider.getNetwork();
+            console.log(`[mint.tsx] connected chainId: ${net.chainId}`);
             const signer = provider.getSigner();
 
             // 1. Fetch the eligibility proof required for minting.

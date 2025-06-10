@@ -109,4 +109,3 @@ This means the EntryPoint doesn't have a deposit for your smart wallet. The
 frontend now attempts to deposit `0.01` ETH automatically before sending a
 UserOperation. If you still see this error, ensure your connected account has
 sufficient ETH on Anvil and retry.
-
