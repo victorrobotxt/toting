@@ -98,6 +98,9 @@ jobs:
         # This assumes a root-level script in package.json: "type-check": "yarn --cwd packages/frontend type-check"
         run: yarn type-check
 
+      - name: Type-check backend
+        run: mypy packages/backend
+
       - name: Run unit, fuzz & invariant tests
         run: forge test --use ${{ matrix.solc }}
 
