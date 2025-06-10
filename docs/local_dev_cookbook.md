@@ -97,3 +97,9 @@ docker-compose exec anvil /app/scripts/setup_env.sh
 docker-compose restart frontend
 ```
 
+If you **still** see the error, make sure your wallet (e.g. MetaMask) is
+connected to the local Anvil network. The setup script starts Anvil with chain
+ID `31337`. If your wallet is pointed at a different chain (such as `1337`),
+the frontend will query the wrong network and the factory contract will appear
+missing.
+
