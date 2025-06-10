@@ -47,7 +47,7 @@ jobs:
         run: docker compose build orchestrator
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v1
+        uses: aquasecurity/setup-trivy@v0.2.3
 
       - name: Run Trivy scan
         run: ./scripts/scan-trivy.sh toting-orchestrator
