@@ -1,4 +1,0 @@
-packages/frontend/packages.json
-packages/frontend/tsconfig.json
-*ProofWalletAPI.ts
-packages/frontend/__tests__/proof.wallet.revert.test.js

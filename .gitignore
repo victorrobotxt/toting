@@ -25,3 +25,4 @@ broadcast/
 
 package-lock.json
 **/package-lock.json
+packages/backend/__pycache__/
