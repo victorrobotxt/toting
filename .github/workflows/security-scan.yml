@@ -33,7 +33,7 @@ jobs:
         run: pip-audit -r packages/backend/requirements.txt
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
         working-directory: packages/frontend
 
       - name: Audit Node dependencies
