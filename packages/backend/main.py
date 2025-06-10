@@ -18,6 +18,8 @@ from eth_account.messages import encode_defunct
 from eth_abi import encode as abi_encode
 from web3.middleware import geth_poa_middleware
 import hashlib
+import sentry_sdk
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from .utils.ipfs import pin_json, cid_from_meta_hash, fetch_json
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -27,6 +29,8 @@ from pythonjsonlogger import jsonlogger
 handler = logging.StreamHandler()
 handler.setFormatter(jsonlogger.JsonFormatter())
 logging.basicConfig(level=logging.INFO, handlers=[handler])
+
+sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"))
 
 from .db import SessionLocal, Base, engine, Election as DbElection, ProofRequest, ProofAudit
 from .schemas import (
@@ -44,6 +48,7 @@ from sqlalchemy.exc import IntegrityError
 
 
 app = FastAPI()
+app.add_middleware(SentryAsgiMiddleware)
 
 Instrumentator().instrument(app).expose(app)
 
