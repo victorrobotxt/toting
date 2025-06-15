@@ -21,6 +21,7 @@ class BatchTallyInput(BaseModel):
 class CreateElectionSchema(BaseModel):
     # The frontend will now send the full JSON metadata as a string
     metadata: str = Field(..., example='{"title": "My Election", "options": []}')
+    verifier: Optional[str] = Field(None, example="0xabc123...")
 
 class UpdateElectionSchema(BaseModel):
     status: Optional[str] = Field(None, example="open")
@@ -32,6 +33,7 @@ class ElectionSchema(BaseModel):
     start: int
     end: int
     status: str
+    verifier: Optional[str] = None
     tally: Optional[str] = None
     # We don't need to expose the full metadata in the list view
 

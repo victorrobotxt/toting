@@ -37,6 +37,7 @@ class Election(Base):
     end = Column(BigInteger, nullable=False)
     status = Column(String, nullable=False, default="pending", index=True)
     tally = Column(String, nullable=True)
+    verifier = Column(String, nullable=True)
 
     __table_args__ = (
         Index("idx_status", "status"),

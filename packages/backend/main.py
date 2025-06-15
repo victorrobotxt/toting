@@ -385,21 +385,15 @@ def create_election(
     cid = pin_json(payload.metadata)
     digest = hashlib.sha256(payload.metadata.encode()).digest()
     meta_hash = digest
+    verifier_addr = Web3.to_checksum_address(payload.verifier) if payload.verifier else Web3.to_checksum_address('0x' + '0'*40)
     
     # 2. Build & send the on-chain transaction
     account = Account.from_key(PRIVATE_KEY)
     contract = get_manager_contract()
     
     try:
-        # --- THIS IS THE FIX ---
-        # Instead of a high-level function call which can be ambiguous with proxies,
-        # we manually encode the calldata. This is the Python equivalent of the
-        # `abi.encodeCall` fix already present in your `FullFlow.t.sol` test.
-        # This ensures the proxy receives the exact, intended function call.
-        encoded_calldata = contract.encodeABI(
-            fn_name='createElection',
-            args=[meta_hash, '0x0000000000000000000000000000000000000000']
-        )
+
+        encoded_calldata = contract.encodeABI(fn_name='createElection', args=[meta_hash, verifier_addr])
 
         tx = {
             "to": ELECTION_MANAGER, # The address of the proxy contract
@@ -445,7 +439,7 @@ def create_election(
     # 4. Read the start/end from the contract
     try:
         election_data = contract.functions.elections(on_chain_id).call()
-        start_block, end_block = election_data[0], election_data[1]
+        start_block, end_block, chain_verifier = election_data[0], election_data[1], election_data[2]
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -459,6 +453,7 @@ def create_election(
         start=start_block,
         end=end_block,
         status="pending",
+        verifier=Web3.to_checksum_address(chain_verifier),
     )
     db.add(db_election)
     try:

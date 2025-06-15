@@ -47,6 +47,7 @@ interface ElectionDetails {
     id: number;
     meta: string; // This is the hash
     status: string;
+    verifier?: string;
 }
 
 // --- SWR Fetchers ---
@@ -160,7 +161,8 @@ function VotePage() {
                 voteProofResult.proof,
                 voteProofResult.pubSignals,
                 eligibilityProofResult.proof,
-                eligibilityProofResult.pubSignals
+                eligibilityProofResult.pubSignals,
+                election?.verifier
             );
 
             setReceipt(userOpHash);

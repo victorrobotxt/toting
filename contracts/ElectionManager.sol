@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import "./TallyVerifier.sol";
 import "./interfaces/IMACI.sol";
+import "./interfaces/IEligibilityVerifier.sol";
 
 contract ElectionManager {
     IMACI public immutable maci;
@@ -13,12 +14,13 @@ contract ElectionManager {
         uint256[2] result;
     }
 
-    event ElectionCreated(uint id, bytes32 indexed meta);
+    event ElectionCreated(uint id, bytes32 indexed meta, address verifier);
     event Tally(uint256 id, uint256 A, uint256 B);
 
     struct E {
         uint128 start;
         uint128 end;
+        IEligibilityVerifier verifier;
     }
     mapping(uint => E) public elections;
     mapping(uint => TallyResult) public tallies;
@@ -38,12 +40,13 @@ contract ElectionManager {
         tallyVerifier = TallyVerifier(address(0)); // wire up real verifier later
     }
 
-    function createElection(bytes32 meta) external {
+    function createElection(bytes32 meta, IEligibilityVerifier verifier) external {
         elections[nextId] = E(
             uint128(block.number),
-            uint128(block.number + 7200)
+            uint128(block.number + 7200),
+            verifier
         );
-        emit ElectionCreated(nextId, meta);
+        emit ElectionCreated(nextId, meta, address(verifier));
         unchecked {
             nextId++;
         }

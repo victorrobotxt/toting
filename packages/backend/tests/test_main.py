@@ -46,7 +46,7 @@ def setup_db():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
-    db.add(Election(id=1, meta="0x" + "a" * 64, start=0, end=1000000, status="pending"))
+    db.add(Election(id=1, meta="0x" + "a" * 64, start=0, end=1000000, status="pending", verifier="0x" + "0" * 40))
     from backend.db import Circuit
 
     db.add(
@@ -87,7 +87,7 @@ def mock_web3():
         # Configure the contract mock
         mock_contract = MagicMock()
         mock_contract.events.ElectionCreated().process_receipt.return_value = [MagicMock(**mock_event_log)]
-        mock_contract.functions.elections().call.return_value = (123, 123 + 1_000_000)
+        mock_contract.functions.elections().call.return_value = (123, 123 + 1_000_000, "0x" + "0"*40)
         
         # Configure the web3 instance mock
         mock_web3_instance.eth.contract.return_value = mock_contract
@@ -139,9 +139,9 @@ def test_create_and_update_election(mock_web3):
     # The mock_web3 fixture now correctly simulates the contract call and event
     mock_contract = mock_web3.eth.contract.return_value
     # Configure the mock to return the correct start/end blocks for the `elections(id)` call
-    mock_contract.functions.elections(99).call.return_value = (123, 123 + 1_000_000)
+    mock_contract.functions.elections(99).call.return_value = (123, 123 + 1_000_000, "0x" + "0"*40)
 
-    payload = {"metadata": "{\"title\": \"Test\", \"options\": []}"}
+    payload = {"metadata": "{\"title\": \"Test\", \"options\": []}", "verifier": "0x" + "0" * 40}
     # Pass the admin headers with the request
     r = client.post("/elections", json=payload, headers=headers)
     
@@ -167,7 +167,7 @@ def test_create_election_fails_for_non_admin(mock_web3):
     user_token = jwt.encode({"email": "user@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256")
     headers = {"Authorization": f"Bearer {user_token}"}
     
-    payload = {"metadata": "{\"title\": \"Bad\"}"}
+    payload = {"metadata": "{\"title\": \"Bad\"}", "verifier": "0x" + "0" * 40}
     r = client.post("/elections", json=payload, headers=headers)
     
     assert r.status_code == 403
