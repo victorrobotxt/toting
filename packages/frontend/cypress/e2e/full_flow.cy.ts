@@ -10,6 +10,23 @@ describe('Full E2E Flow: Create Election and Vote', () => {
   });
   const electionId = 0; // The first election created will have ID 0
 
+  // Helper to fetch the predicted wallet address for the mock voter
+  function getPredictedWallet() {
+    return cy
+      .exec("grep NEXT_PUBLIC_WALLET_FACTORY ../../.env.deployed | cut -d '=' -f2")
+      .then(({ stdout }) => {
+        const factory = stdout.trim();
+        return cy.exec('cast wallet address --mnemonic mnemonic.txt').then(({ stdout }) => {
+          const owner = stdout.trim();
+          return cy
+            .exec(
+              `cast call --rpc-url http://localhost:8545 ${factory} \"getAddress(address,uint256)(address)\" ${owner} 0`
+            )
+            .then(({ stdout }) => stdout.trim());
+        });
+      });
+  }
+
   it('allows an admin to create an election and a user to vote in it via AA', () => {
     // --- 1. Admin logs in and creates the election ---
     cy.visit('/');
@@ -54,15 +71,9 @@ describe('Full E2E Flow: Create Election and Vote', () => {
     cy.url().should('include', '/dashboard');
 
     // Assert the smart wallet starts with zero ETH balance
-    cy.exec("grep NEXT_PUBLIC_WALLET_FACTORY ../../.env.deployed | cut -d '=' -f2").then(({stdout}) => {
-      const factory = stdout.trim();
-      return cy.exec('cast wallet address --mnemonic mnemonic.txt').then(({stdout}) => {
-        const owner = stdout.trim();
-        return cy.exec(`cast call --rpc-url http://localhost:8545 ${factory} \"getAddress(address,uint256)(address)\" ${owner} 0`).then(({stdout}) => {
-          const wallet = stdout.trim();
-          return cy.exec(`cast balance --rpc-url http://localhost:8545 ${wallet}`).its('stdout');
-        });
-      });
+    getPredictedWallet().then((wallet) => {
+      cy.wrap(wallet).as('wallet');
+      return cy.exec(`cast balance --rpc-url http://localhost:8545 ${wallet}`).its('stdout');
     }).then((balance) => {
       expect(balance.trim()).to.eq('0');
     });
@@ -82,6 +93,36 @@ describe('Full E2E Flow: Create Election and Vote', () => {
     // The most important check: The UserOperation was successfully sent.
     // We give it a long timeout to allow for proofs and bundling.
     cy.contains('UserOp Hash:', { timeout: 30000 }).should('be.visible');
-    cy.contains(/0x[a-fA-F0-9]{64}/).should('be.visible'); // Verify a hex hash is displayed
+    cy.contains(/0x[a-fA-F0-9]{64}/)
+      .should('be.visible')
+      .invoke('text')
+      .then((txt) => {
+        const hash = txt.match(/0x[a-fA-F0-9]{64}/)?.[0];
+        if (hash) {
+          cy.wrap(hash).as('userOpHash');
+        }
+      });
+
+    // --- 6. Validate on-chain state via cast ---
+    cy.get('@wallet').then((wallet) => {
+      cy.exec(`cast code --rpc-url http://localhost:8545 ${wallet}`).its('stdout').then((code) => {
+        expect(code.trim()).to.not.eq('0x');
+      });
+    });
+
+    cy.exec("grep NEXT_PUBLIC_ELECTION_MANAGER ../../.env.deployed | cut -d '=' -f2").then(({ stdout }) => {
+      const manager = stdout.trim().toLowerCase();
+      return cy
+        .exec(
+          "cast rpc --rpc-url http://localhost:8545 eth_getBlockByNumber latest true | jq -r '.transactions[-1].hash'"
+        )
+        .then(({ stdout }) => stdout.trim())
+        .then((txHash) => {
+          return cy.exec(`cast receipt --rpc-url http://localhost:8545 ${txHash}`).then(({ stdout }) => {
+            expect(stdout.toLowerCase()).to.include(manager.slice(2));
+            expect(stdout).to.include('status: 0x1');
+          });
+        });
+    });
   });
 });
