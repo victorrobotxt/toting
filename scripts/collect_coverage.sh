@@ -16,7 +16,11 @@ if [ ! -f .env ]; then
 fi
 source .env
 
-forge coverage --report lcov --report-file "$COV_DIR/forge.lcov" -vv
+# The Forge coverage command can consume a significant amount of memory on
+# larger projects. The `--ir-minimum` flag enables minimal IR based
+# optimisations which substantially reduces the memory footprint while still
+# producing an accurate coverage report.
+forge coverage --ir-minimum --report lcov --report-file "$COV_DIR/forge.lcov" -vv
 
 # Python coverage
 echo "Running backend tests with coverage..."
