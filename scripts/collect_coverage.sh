@@ -8,8 +8,14 @@ mkdir -p "$COV_DIR/node" "$COV_DIR/python"
 
 # Forge coverage
 echo "Running solidity coverage..."
-# --- FIX: Use the updated forge coverage command syntax ---
-forge coverage --report lcov --report-file "$COV_DIR/forge.lcov"
+# Source environment variables if .env file exists, so forge tests can find them.
+if [ -f .env ]; then
+    echo "Sourcing .env file for forge coverage..."
+    source .env
+else
+    echo "Warning: .env file not found. Coverage may fail if tests require env vars."
+fi
+forge coverage --report lcov --report-file "$COV_DIR/forge.lcov" -vv
 
 # Python coverage
 echo "Running backend tests with coverage..."

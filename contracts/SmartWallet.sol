@@ -59,8 +59,7 @@ contract SmartWallet is BaseAccount {
                 s := mload(add(signature, 0x40))
                 v := byte(0, mload(add(signature, 0x60)))
             }
-            bytes32 digest = ECDSA.toEthSignedMessageHash(hash);
-            address recovered = ecrecover(digest, v, r, s);
+            address recovered = ecrecover(hash, v, r, s);
             return recovered == owner;
         }
         if (signature.length == 96) {

@@ -84,6 +84,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         onlyDuringElection(id)
     {
         maci.publishMessage(abi.encode(msg.sender, vote, nonce, vcProof));
+        badge.safeMint(msg.sender, id);
     }
 
     /// @notice External tally call used by owner
@@ -106,6 +107,8 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         uint256[7] memory pubSignals
     ) internal {
         require(!tallies[id].tallied, "already tallied");
+        Election memory e = _elections[id];
+        require(block.number > e.end, "Election not over");
         IVotingStrategy strategy = strategies[id];
         require(address(strategy) != address(0), "no strategy");
         uint256[] memory dynamicPubSignals = new uint256[](7);

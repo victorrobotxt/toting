@@ -115,12 +115,6 @@ contract FullFlowTest is Test {
         return id;
     }
 
-    // --- FIX: Refactor UserOp generation to avoid "stack too deep" errors. ---
-    // The logic is split into smaller, more manageable helper functions. This
-    // reduces the number of local variables in any single function frame, which
-    // is the root cause of the stack error, especially with coverage enabled
-    // which can disable some compiler optimizations like the `viaIR` pipeline.
-
     /// @dev Helper to build the `initCode` for deploying a wallet.
     function _buildInitCode() internal view returns (bytes memory) {
         // Dummy proof data, as our TestVerifier always returns true.
@@ -135,32 +129,17 @@ contract FullFlowTest is Test {
         return abi.encodePacked(address(factory), factoryCalldata);
     }
 
-    /// @dev Helper to build the `callData` for the wallet's batch execution.
+    /// @dev Helper to build the `callData` for the wallet's execution.
     function _buildCallData(uint256 eid, uint256 ballotNonce, uint256 vote, bytes memory vcProof)
         internal
         view
         returns (bytes memory)
     {
-        // Call 1: Enqueue the message via the manager
+        // Call: Enqueue the message via the manager. The manager will mint the badge.
         bytes memory mgrCall = abi.encodeWithSelector(manager.enqueueMessage.selector, eid, vote, ballotNonce, vcProof);
 
-        // Call 2: Mint the participation badge
-        address badgeAddr = address(manager.badge());
-        bytes memory badgeCall = abi.encodeWithSelector(ParticipationBadge.safeMint.selector, voterWallet, eid);
-
-        // Assemble the batch call
-        address[] memory dests = new address[](2);
-        dests[0] = address(manager);
-        dests[1] = badgeAddr;
-
-        uint256[] memory values = new uint256[](2); // Both calls send 0 ETH
-
-        bytes[] memory calls = new bytes[](2);
-        calls[0] = mgrCall;
-        calls[1] = badgeCall;
-
-        bytes4 execBatchSelector = SmartWallet.executeBatch.selector;
-        return abi.encodeWithSelector(execBatchSelector, dests, values, calls);
+        // The wallet executes a single call to the manager contract.
+        return abi.encodeWithSelector(SmartWallet.execute.selector, address(manager), 0, mgrCall);
     }
 
     /// @dev Builds and signs a UserOperation.
@@ -204,9 +183,10 @@ contract FullFlowTest is Test {
         vm.expectEmit(false, false, false, true, address(maci));
         emit MockMACI.Message(expectedMsg);
 
+        // We also expect the ParticipationBadge to be minted by the manager
         ParticipationBadge badge = manager.badge();
-        vm.expectEmit(true, true, true, true, address(badge));
-        emit ParticipationBadge.BadgeMinted(voterWallet, 0, eid);
+        vm.expectEmit(true, true, true, false, address(badge));
+        emit ParticipationBadge.BadgeMinted(voterWallet, op.nonce, eid);
 
         UserOperation[] memory ops = new UserOperation[](1);
         ops[0] = op;
@@ -215,6 +195,7 @@ contract FullFlowTest is Test {
         // 3. post‑conditions
         assertTrue(voterWallet.code.length > 0, "wallet deployed");
         assertEq(entryPoint.getNonce(voterWallet, 0), 1, "nonce bumped");
+        assertEq(badge.balanceOf(voterWallet), 1, "badge should be minted");
     }
 
     /* --------------------------------------------------------------------- */

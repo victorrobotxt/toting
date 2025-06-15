@@ -110,10 +110,6 @@ contract MultiUserFlowTest is Test {
         return id;
     }
 
-    // --- FIX: Refactor UserOp generation to avoid "stack too deep" errors. ---
-    // The same refactoring pattern from FullFlow.t.sol is applied here to
-    // split the logic into smaller functions and reduce stack usage.
-
     /// @dev Helper to build the `initCode` for deploying a wallet.
     function _buildInitCode(address voter) internal view returns (bytes memory) {
         uint256[2] memory a;
@@ -126,9 +122,8 @@ contract MultiUserFlowTest is Test {
         return abi.encodePacked(address(factory), factoryCalldata);
     }
 
-    /// @dev Helper to build the `callData` for the wallet's batch execution.
+    /// @dev Helper to build the `callData` for the wallet's execution.
     function _buildCallData(
-        address wallet,
         uint256 eid,
         uint256 ballotNonce,
         uint256 vote,
@@ -141,23 +136,8 @@ contract MultiUserFlowTest is Test {
             ballotNonce,
             vcProof
         );
-        bytes memory badgeCall = abi.encodeWithSelector(
-            ParticipationBadge.safeMint.selector,
-            wallet,
-            eid
-        );
 
-        address[] memory dests = new address[](2);
-        dests[0] = address(manager);
-        dests[1] = address(manager.badge());
-
-        uint256[] memory values = new uint256[](2);
-
-        bytes[] memory calls = new bytes[](2);
-        calls[0] = mgrCall;
-        calls[1] = badgeCall;
-
-        return abi.encodeWithSelector(SmartWallet.executeBatch.selector, dests, values, calls);
+        return abi.encodeWithSelector(SmartWallet.execute.selector, address(manager), 0, mgrCall);
     }
     
     /// @dev Builds and signs a UserOperation.
@@ -172,8 +152,8 @@ contract MultiUserFlowTest is Test {
     ) internal returns (UserOperation memory op, bytes32 opHash) {
         op.sender = wallet;
         op.nonce = entryPoint.getNonce(wallet, 0);
-        op.initCode = _buildInitCode(voter);
-        op.callData = _buildCallData(wallet, eid, ballotNonce, vote, vcProof);
+        op.initCode = wallet.code.length > 0 ? bytes("") : _buildInitCode(voter);
+        op.callData = _buildCallData(eid, ballotNonce, vote, vcProof);
         op.callGasLimit = 1_000_000;
         op.verificationGasLimit = 1_500_000;
         op.preVerificationGas = 50_000;
@@ -216,7 +196,7 @@ contract MultiUserFlowTest is Test {
 
         // replay with old nonce
         (UserOperation memory op2, ) = _buildOp(voterA, voterAKey, voterAWallet, eid, 2, 0, bytes("p"));
-        op2.nonce = 0;
+        op2.nonce = 0; // Use old nonce
         bytes32 h2 = entryPoint.getUserOpHash(op2);
         (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(voterAKey, h2);
         op2.signature = abi.encodePacked(r2, s2, v2);
@@ -246,7 +226,6 @@ contract MultiUserFlowTest is Test {
         uint256[7] memory inputs;
 
         vm.prank(admin);
-        // --- FIX: The error message was changed in ElectionManagerV2 ---
         vm.expectRevert(bytes("Election not over"));
         manager.tallyVotes(eid, a, b, c, inputs);
     }
@@ -273,6 +252,7 @@ contract MultiUserFlowTest is Test {
 
         // non-owner cannot tally
         vm.prank(voterA);
+        vm.roll(block.number + 2_000_000); // ensure election is over
         vm.expectRevert("Ownable: caller is not the owner");
         manager.tallyVotes(eid, a, b, c, inputs);
     }
