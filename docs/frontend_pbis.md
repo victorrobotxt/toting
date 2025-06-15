@@ -65,7 +65,7 @@ The following product backlog items (PBIs) capture upcoming frontend work.
 - `AuthProvider` listens for the message, stores the token and eligibility, then redirects to `/dashboard`.
 
 ## F-20 Dashboard & Navbar Adjustments Post-Login
-- Navbar shows “Logout” when authenticated and guards protected pages.
+- Navbar shows an **Account** menu when authenticated and guards protected pages.
 - Logged-in users visiting `/login` are redirected to `/dashboard` automatically.
 
 ## F-21 Eligibility & Voting Links Only Visible When Eligible
