@@ -8,7 +8,6 @@ import {TotingDAO} from "../contracts/TotingDAO.sol";
 import {ElectionManagerV2} from "../contracts/ElectionManagerV2.sol";
 import {MockMACI} from "../contracts/MockMACI.sol";
 import {IMACI} from "../contracts/interfaces/IMACI.sol";
-// --- FIX: Add import for IVotingStrategy ---
 import {IVotingStrategy} from "../contracts/interfaces/IVotingStrategy.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {TimelockController} from "@openzeppelin/contracts/governance/TimelockController.sol";
@@ -44,9 +43,13 @@ contract TotingDAOTest is Test {
         bytes[] memory calldatas = new bytes[](1);
         bytes32 meta = bytes32(uint256(0x42));
         
-        // --- FIX: Update the calldata to include the strategy parameter ---
-        // We pass address(0) for the strategy since this test only cares about governance flow.
-        calldatas[0] = abi.encodeCall(ElectionManagerV2.createElection, (meta, IVotingStrategy(address(0))));
+        // --- FIX: Use abi.encodeWithSignature to resolve the function overload ambiguity ---
+        // The IVotingStrategy is passed as a simple address.
+        calldatas[0] = abi.encodeWithSignature(
+            "createElection(bytes32,address)",
+            meta,
+            address(0)
+        );
         
         string memory desc = "create election";
 
