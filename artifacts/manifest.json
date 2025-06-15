@@ -1,23 +1,32 @@
 {
   "eligibility": {
-    "bn254": {"hash": "25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027", "r1cs": "artifacts/bn254/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.r1cs", "wasm": "artifacts/bn254/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.wasm", "zkey": "artifacts/bn254/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.zkey"},
-    "bls12-381": {"hash": "487b33a46e5f8f873fea36eb05142f4da0ee9f5e39668273a4c8be047bb360ff", "r1cs": "artifacts/bls12-381/eligibility/487b33a46e5f8f873fea36eb05142f4da0ee9f5e39668273a4c8be047bb360ff/eligibility.r1cs", "wasm": "artifacts/bls12-381/eligibility/487b33a46e5f8f873fea36eb05142f4da0ee9f5e39668273a4c8be047bb360ff/eligibility.wasm", "zkey": "artifacts/bls12-381/eligibility/487b33a46e5f8f873fea36eb05142f4da0ee9f5e39668273a4c8be047bb360ff/eligibility.zkey"}
+    "hash": "25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027",
+    "r1cs": "artifacts/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.r1cs",
+    "wasm": "artifacts/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.wasm",
+    "zkey": "artifacts/eligibility/25b0686db46b862d4eaeb224f49627fa315492cd7ba1caec1739c7622547b027/eligibility.zkey"
   },
   "voice_check": {
-    "bn254": {"hash": "cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f", "r1cs": "artifacts/bn254/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.r1cs", "wasm": "artifacts/bn254/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.wasm", "zkey": "artifacts/bn254/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.zkey"},
-    "bls12-381": {"hash": "cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f", "r1cs": "artifacts/bls12-381/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.r1cs", "wasm": "artifacts/bls12-381/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.wasm", "zkey": "artifacts/bls12-381/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.zkey"}
+    "hash": "cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f",
+    "r1cs": "artifacts/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.r1cs",
+    "wasm": "artifacts/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.wasm",
+    "zkey": "artifacts/voice_check/cee6d78333dee228017d9ae65281844a9daaf65c3a8a9ce00b8c4de5e9d8766f/voice_check.zkey"
   },
   "batch_tally": {
-    "bn254": {"hash": "0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9", "r1cs": "artifacts/bn254/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.r1cs", "wasm": "artifacts/bn254/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.wasm", "zkey": "artifacts/bn254/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.zkey"},
-    "bls12-381": {"hash": "60b61e0692334033d3e68078dd495fd388cc0292f93d64119ac44b0ece7863c6", "r1cs": "artifacts/bls12-381/batch_tally/60b61e0692334033d3e68078dd495fd388cc0292f93d64119ac44b0ece7863c6/batch_tally.r1cs", "wasm": "artifacts/bls12-381/batch_tally/60b61e0692334033d3e68078dd495fd388cc0292f93d64119ac44b0ece7863c6/batch_tally.wasm", "zkey": "artifacts/bls12-381/batch_tally/60b61e0692334033d3e68078dd495fd388cc0292f93d64119ac44b0ece7863c6/batch_tally.zkey"}
-  }
-  ,
+    "hash": "0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9",
+    "r1cs": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.r1cs",
+    "wasm": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.wasm",
+    "zkey": "artifacts/batch_tally/0079db54cbac930828c998c637bb910c7a963a60bda797c0fbfd0b9c5d66f6f9/batch_tally.zkey"
+  },
   "merkle": {
-    "bn254": {"hash": "87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb", "r1cs": "artifacts/bn254/merkle/87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb/merkle.r1cs", "wasm": "artifacts/bn254/merkle/87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb/merkle.wasm", "zkey": "artifacts/bn254/merkle/87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb/merkle.zkey"},
-    "bls12-381": {"hash": "f65fa88f52d81f4458619f269a697e88e27b263e2e4e4a87fd5538017d7608e0", "r1cs": "artifacts/bls12-381/merkle/f65fa88f52d81f4458619f269a697e88e27b263e2e4e4a87fd5538017d7608e0/merkle.r1cs", "wasm": "artifacts/bls12-381/merkle/f65fa88f52d81f4458619f269a697e88e27b263e2e4e4a87fd5538017d7608e0/merkle.wasm", "zkey": "artifacts/bls12-381/merkle/f65fa88f52d81f4458619f269a697e88e27b263e2e4e4a87fd5538017d7608e0/merkle.zkey"}
+    "hash": "87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb",
+    "r1cs": "artifacts/merkle/87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb/merkle.r1cs",
+    "wasm": "artifacts/merkle/87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb/merkle.wasm",
+    "zkey": "artifacts/merkle/87b6db79b00abb8add86ade75d4e011ac1c9caa2f490bb9c05237a1a3ae801cb/merkle.zkey"
   },
   "qv_tally": {
-    "bn254": {"hash": "39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da", "r1cs": "artifacts/bn254/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.r1cs", "wasm": "artifacts/bn254/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.wasm", "zkey": "artifacts/bn254/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.zkey"},
-    "bls12-381": {"hash": "39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da", "r1cs": "artifacts/bls12-381/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.r1cs", "wasm": "artifacts/bls12-381/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.wasm", "zkey": "artifacts/bls12-381/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.zkey"}
+    "hash": "39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da",
+    "r1cs": "artifacts/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.r1cs",
+    "wasm": "artifacts/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.wasm",
+    "zkey": "artifacts/qv_tally/39bdad9054ac063397919b0d87ac73f56530890657703e1312a1a52f1db447da/qv_tally.zkey"
   }
 }
