@@ -1,0 +1,55 @@
+name: Test Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  collect-coverage:
+    name: Collect and Upload Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install Node.js dependencies
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+
+      - name: Install Python dependencies
+        run: pip install -r packages/backend/requirements.txt
+
+      - name: Make coverage script executable
+        run: chmod +x scripts/collect_coverage.sh
+
+      - name: Run unified coverage script
+        id: run-coverage
+        run: ./scripts/collect_coverage.sh
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-report
+          path: coverage/coverage.lcov
+          if-no-files-found: error
