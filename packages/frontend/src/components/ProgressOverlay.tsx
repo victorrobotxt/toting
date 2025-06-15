@@ -1,7 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { apiUrl } from '../lib/api';
 
-export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDone: () => void }) {
+export default function ProgressOverlay({
+  jobId,
+  onDone,
+}: {
+  jobId: string;
+  onDone: () => void;
+}) {
   const [progress, setProgress] = useState(0);
   const onDoneCalled = useRef(false);
 
@@ -29,14 +35,14 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
           ws.close();
         }
       } catch (e) {
-        console.error("Failed to parse WebSocket message:", e);
+        console.error('Failed to parse WebSocket message:', e);
         handleDone();
         ws.close();
       }
     };
 
     ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
+      console.error('WebSocket error:', err);
       handleDone();
     };
 
@@ -45,7 +51,10 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
     };
 
     return () => {
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      if (
+        ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING
+      ) {
         ws.close();
       }
     };
@@ -58,22 +67,15 @@ export default function ProgressOverlay({ jobId, onDone }: { jobId: string; onDo
         inset: 0,
         background: 'rgba(0,0,0,0.4)',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 2000,
+        color: 'white',
       }}
     >
-      <div
-        style={{
-          background: 'white',
-          padding: '1rem',
-          borderRadius: '8px',
-          minWidth: '200px',
-          textAlign: 'center',
-        }}
-      >
-        <p>Processing... {progress}%</p>
-      </div>
+      <div className="spinner" style={{ marginBottom: '1rem' }} />
+      <p>{progress}%</p>
     </div>
   );
 }

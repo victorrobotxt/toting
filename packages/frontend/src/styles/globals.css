@@ -124,3 +124,18 @@ body {
     transform: translateX(300%);
   }
 }
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 6px solid var(--muted);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
