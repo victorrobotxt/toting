@@ -1,6 +1,7 @@
 pragma circom 2.2.2;
 
 include "../../node_modules/circomlib/circuits/comparators.circom";
+// Uses Poseidon hashes (Arkworks params) for any commitments
 
 // Circuit that verifies provided square roots and totals them.
 
