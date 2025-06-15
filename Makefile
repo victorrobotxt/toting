@@ -10,4 +10,3 @@ witness: witness-builder
 $(WITNESS_BIN) voice_check_js/generate_witness.js voice_check_js/voice_check.wasm examples/inputs examples/wtns
 
 ci-witness-speed: witness
-

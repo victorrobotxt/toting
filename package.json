@@ -10,7 +10,8 @@
     "snarkjs": "^0.7.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "@ffmpeg/ffmpeg": "^0.12.4"
   },
   "dependencies": {
     "@account-abstraction/sdk": "^0.6.0",
@@ -27,7 +28,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "test": "node test/setupEnvReuse.test.js && node test/setupEnvRedeploy.test.js && node test/circuitProperty.test.js && npx tsc -p services/relay-daemon",
+    "test": "node test/setupEnvReuse.test.js && node test/setupEnvRedeploy.test.js && node test/circuitProperty.test.js && node test/noMiMC.test.js && npx tsc -p services/relay-daemon",
     "commitlint": "commitlint"
   },
   "packageManager": "yarn@1.22.22"

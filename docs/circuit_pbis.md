@@ -29,7 +29,7 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Output artifacts in `artifacts/{name}/{hash}/` with Git LFS-friendly `.gitignore` stub.
 - CI job checks hash drift vs. committed verifier.
 
-## C-05 Proof Fuzzing Harness
+## C-05 Proof Fuzzing Harness *(Implemented)*
 - Negative-testing with `ffmpeg-wasm` noise.
 - Generate 1 000 random bad witnesses per circuit; ensure verifier reverts.
 
@@ -40,11 +40,19 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Solidity verifier auto-generated and unit-tested in Foundry.
 
 ## C-07 Poseidon Hash Refactor
+This circuit checks a commitment's inclusion in a Merkle tree and
+derives a nullifier from the same secret used in the commitment. The
+public inputs are the Merkle root and resulting nullifier. Witnesses
+contain the secret and Merkle path. A Poseidon-based proof ensures the
+nullifier cannot be forged while keeping the secret private. The
+Solidity verifier is generated from the Groth16 key and exercised in a
+Foundry test that attempts 1 000 deposits with a reused nullifier,
+expecting reverts after the first.
 - Replace MiMC in all circuits with Poseidon (Arkworks params 3,5).
 - Proof size must remain unchanged.
 - Benchmarks ≤ 5 % slower than baseline.
 
-## C-08 Recursive Batch-Tally v2
+## C-08 Recursive Batch-Tally v2 *(Implemented)*
 - Halo2 or Plonk recursion proof that rolls 8 × `C-03` tallies into one.
 - Constraint budget ≤ 2 M.
 - Prove & verify under 30 s on CI.
