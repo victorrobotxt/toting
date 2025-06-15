@@ -24,7 +24,8 @@ export FOUNDRY_PROFILE=coverage
 # larger projects. To keep the memory footprint manageable we run coverage
 # separately for each test file and concatenate the resulting LCOV reports.
 :> "$COV_DIR/forge.lcov"
-for test_file in $(find test -name '*.t.sol'); do
+# Skip expensive invariant test during coverage
+for test_file in $(find test -name '*.t.sol' ! -name 'AuditInvariant.t.sol'); do
     echo "\n--- Running coverage for $test_file ---"
     forge coverage --ir-minimum \
         --match-path "$test_file" \
