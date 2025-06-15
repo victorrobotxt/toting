@@ -15,6 +15,7 @@ export default function AdminElectionForm({ onCreated }: { onCreated?: (e: Elect
   const { showToast } = useToast();
   const { mutate } = useSWRConfig();
   const [meta, setMeta] = useState('');
+  const [verifier, setVerifier] = useState('');
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
@@ -32,7 +33,7 @@ export default function AdminElectionForm({ onCreated }: { onCreated?: (e: Elect
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ metadata: meta }),
+      body: JSON.stringify({ metadata: meta, verifier }),
     });
     if (res.ok) {
       const data: Election = await res.json();
@@ -53,6 +54,14 @@ export default function AdminElectionForm({ onCreated }: { onCreated?: (e: Elect
         onChange={(e) => setMeta(e.target.value)}
         rows={10}
         style={{ fontFamily: 'monospace', border: '1px solid #ccc', padding: '0.5rem' }}
+      />
+      <label htmlFor="verifier">Eligibility Verifier (optional)</label>
+      <input
+        id="verifier"
+        value={verifier}
+        onChange={(e) => setVerifier(e.target.value)}
+        placeholder="0x..."
+        style={{ border: '1px solid #ccc', padding: '0.25rem' }}
       />
       <button onClick={submit} disabled={loading || !meta.trim()}>
         {loading ? 'Submitting...' : 'Create'}

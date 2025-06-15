@@ -21,6 +21,7 @@ interface ProofWalletApiParams extends
         factoryAddress?: string;
         zkProof?: ZkProof;
         pubSignals?: string[];
+        eligibilityVerifier?: string;
     }
 
 /**
@@ -31,6 +32,7 @@ export class ProofWalletAPI extends SimpleAccountAPI {
   zkProof?: ZkProof;
   pubSignals?: string[];
   factoryAddress?: string;
+  eligibilityVerifier?: string;
 
   constructor(params: ProofWalletApiParams) {
     super({
@@ -41,6 +43,7 @@ export class ProofWalletAPI extends SimpleAccountAPI {
     this.factoryAddress = params.factoryAddress ?? WALLET_FACTORY_ADDRESS;
     this.zkProof = params.zkProof;
     this.pubSignals = params.pubSignals;
+    this.eligibilityVerifier = params.eligibilityVerifier;
   }
 
   /**
@@ -70,6 +73,18 @@ export class ProofWalletAPI extends SimpleAccountAPI {
 
     const factory = new ethers.Contract(this.factoryAddress, FACTORY_ABI, this.provider);
     const ownerAddress = await this.owner.getAddress();
+
+    if (this.eligibilityVerifier) {
+      const verifier = new ethers.Contract(
+        this.eligibilityVerifier,
+        ["function isEligible(address) view returns (bool)"],
+        this.provider
+      );
+      const ok: boolean = await verifier.isEligible(ownerAddress);
+      if (!ok) {
+        throw new Error("Eligibility verifier rejected this address");
+      }
+    }
     
     // --- ADDED LOGGING FOR DEBUGGING ---
     console.log(`[ProofWalletAPI] Calling getAddress on factory: ${this.factoryAddress}`);

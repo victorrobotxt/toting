@@ -75,7 +75,8 @@ export async function bundleUserOp(
     target: string,
     data: string,
     eligibilityProof?: ZkProof,
-    eligibilityPubSignals?: string[]
+    eligibilityPubSignals?: string[],
+    eligibilityVerifier?: string
 ): Promise<string> {
     const provider = signer.provider!;
 
@@ -106,6 +107,7 @@ export async function bundleUserOp(
         owner: signer,
         zkProof: eligibilityProof,
         pubSignals: eligibilityPubSignals,
+        eligibilityVerifier
     });
 
     await ensurePrefund(api, signer);
@@ -181,7 +183,8 @@ export async function bundleSubmitVote(
     voteProof: ethers.BytesLike,
     votePubSignals: string[],
     eligibilityProof?: ZkProof,
-    eligibilityPubSignals?: string[]
+    eligibilityPubSignals?: string[],
+    eligibilityVerifier?: string
 ): Promise<string> {
     const nonce = votePubSignals.length > 0 ? parseInt(votePubSignals[0], 10) : Date.now();
     
@@ -205,6 +208,7 @@ export async function bundleSubmitVote(
         cfg.electionManager,
         callData,
         eligibilityProof,
-        eligibilityPubSignals
+        eligibilityPubSignals,
+        eligibilityVerifier
     );
 }

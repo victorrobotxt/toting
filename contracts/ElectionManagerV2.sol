@@ -7,6 +7,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
 import "./TallyVerifier.sol";
 import "./interfaces/IMACI.sol";
+import "./interfaces/IEligibilityVerifier.sol";
 
 /// @title Upgradeable ElectionManager
 /// @notice Version 2 of ElectionManager using UUPS proxy pattern
@@ -27,6 +28,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     struct Election {
         uint128 start;
         uint128 end;
+        IEligibilityVerifier verifier;
     }
 
     mapping(uint256 => Election) public elections;
@@ -50,13 +52,14 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         _;
     }
 
-    function createElection(bytes32 meta) external onlyOwner {
+    function createElection(bytes32 meta, IEligibilityVerifier verifier) external onlyOwner {
         elections[nextId] = Election(
             uint128(block.number),
             // Dramatically increase election duration for local development
-            uint128(block.number + 1_000_000)
+            uint128(block.number + 1_000_000),
+            verifier
         );
-        emit ElectionCreated(nextId, meta);
+        emit ElectionCreated(nextId, meta, address(verifier));
         unchecked {
             nextId++;
         }
@@ -92,7 +95,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         tallied = true;
     }
 
-    event ElectionCreated(uint256 indexed id, bytes32 meta);
+    event ElectionCreated(uint256 indexed id, bytes32 meta, address verifier);
     event Tally(uint256 indexed id, uint256 A, uint256 B);
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
