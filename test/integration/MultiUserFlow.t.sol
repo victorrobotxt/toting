@@ -110,29 +110,30 @@ contract MultiUserFlowTest is Test {
         return id;
     }
 
-    function _buildOp(
-        address voter,
-        uint256 key,
-        address wallet,
-        uint256 eid,
-        uint256 ballotNonce,
-        uint256 vote,
-        bytes memory vcProof
-    ) internal returns (UserOperation memory op, bytes32 opHash) {
-        // dummy proof params
+    // --- FIX: Refactor UserOp generation to avoid "stack too deep" errors. ---
+    // The same refactoring pattern from FullFlow.t.sol is applied here to
+    // split the logic into smaller functions and reduce stack usage.
+
+    /// @dev Helper to build the `initCode` for deploying a wallet.
+    function _buildInitCode(address voter) internal view returns (bytes memory) {
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;
         uint256[7] memory inputs;
 
-        // initCode to deploy or reuse smart wallet
-        bytes memory inner = abi.encode(a, b, c, inputs, voter, uint256(0));
-        bytes memory initCode = abi.encodePacked(
-            address(factory),
-            abi.encodeWithSelector(factory.createAccount.selector, inner)
-        );
+        bytes memory innerData = abi.encode(a, b, c, inputs, voter, uint256(0)); // salt = 0
+        bytes memory factoryCalldata = abi.encodeWithSelector(factory.createAccount.selector, innerData);
+        return abi.encodePacked(address(factory), factoryCalldata);
+    }
 
-        // calls: enqueue vote + mint badge
+    /// @dev Helper to build the `callData` for the wallet's batch execution.
+    function _buildCallData(
+        address wallet,
+        uint256 eid,
+        uint256 ballotNonce,
+        uint256 vote,
+        bytes memory vcProof
+    ) internal view returns (bytes memory) {
         bytes memory mgrCall = abi.encodeWithSelector(
             manager.enqueueMessage.selector,
             eid,
@@ -146,38 +147,45 @@ contract MultiUserFlowTest is Test {
             eid
         );
 
-        // allocate your batch-call arrays
-        address[] memory dest = new address[](2);
-        uint256[] memory valueArr = new uint256[](2);
-        bytes[]   memory funcArr = new bytes[](2);
+        address[] memory dests = new address[](2);
+        dests[0] = address(manager);
+        dests[1] = address(manager.badge());
 
-        dest[0]     = address(manager);
-        dest[1]     = address(manager.badge());
-        valueArr[0] = 0;
-        valueArr[1] = 0;
-        funcArr[0]  = mgrCall;
-        funcArr[1]  = badgeCall;
+        uint256[] memory values = new uint256[](2);
 
-        // batch execute
-        bytes4 execSel = bytes4(keccak256("executeBatch(address[],uint256[],bytes[])"));
-        bytes memory callData = abi.encodeWithSelector(execSel, dest, valueArr, funcArr);
+        bytes[] memory calls = new bytes[](2);
+        calls[0] = mgrCall;
+        calls[1] = badgeCall;
 
+        return abi.encodeWithSelector(SmartWallet.executeBatch.selector, dests, values, calls);
+    }
+    
+    /// @dev Builds and signs a UserOperation.
+    function _buildOp(
+        address voter,
+        uint256 key,
+        address wallet,
+        uint256 eid,
+        uint256 ballotNonce,
+        uint256 vote,
+        bytes memory vcProof
+    ) internal returns (UserOperation memory op, bytes32 opHash) {
         op.sender = wallet;
         op.nonce = entryPoint.getNonce(wallet, 0);
-        op.initCode = initCode;
-        op.callData = callData;
+        op.initCode = _buildInitCode(voter);
+        op.callData = _buildCallData(wallet, eid, ballotNonce, vote, vcProof);
         op.callGasLimit = 1_000_000;
         op.verificationGasLimit = 1_500_000;
         op.preVerificationGas = 50_000;
         op.maxFeePerGas = tx.gasprice;
         op.maxPriorityFeePerGas = tx.gasprice;
         op.paymasterAndData = "";
-        opHash = entryPoint.getUserOpHash(op);
 
-        // sign with the given key
+        opHash = entryPoint.getUserOpHash(op);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, opHash);
         op.signature = abi.encodePacked(r, s, v);
     }
+
 
     function test_TwoVotersCanVote() public {
         uint256 eid = _createElection(bytes32("multi"));
@@ -238,6 +246,7 @@ contract MultiUserFlowTest is Test {
         uint256[7] memory inputs;
 
         vm.prank(admin);
+        // --- FIX: The error message was changed in ElectionManagerV2 ---
         vm.expectRevert(bytes("Election not over"));
         manager.tallyVotes(eid, a, b, c, inputs);
     }
@@ -253,7 +262,14 @@ contract MultiUserFlowTest is Test {
         // non-owner cannot create
         vm.prank(voterA);
         vm.expectRevert("Ownable: caller is not the owner");
-        manager.createElection(bytes32("bad"));
+        bytes memory payload = abi.encodeWithSignature(
+            "createElection(bytes32,address)",
+            bytes32("bad"),
+            address(0)
+        );
+        (bool s, ) = address(manager).call(payload);
+        if (!s) revert();
+
 
         // non-owner cannot tally
         vm.prank(voterA);
