@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { ethers } from 'ethers';
+import { JsonRpcProvider, Interface, Log, id } from 'ethers';
 import { Pool } from 'pg';
 import express from 'express';
 import { Gauge, Counter, collectDefaultMetrics, register } from 'prom-client';
@@ -36,8 +36,8 @@ const programId = new PublicKey((idl as any).metadata.address);
 (idl as any).address = programId.toBuffer();
 
 // --- EVM & Postgres setup ---
-const ethProvider = new ethers.providers.JsonRpcProvider(EVM_RPC, { chainId: CHAIN_ID, name: 'local' });
-const iface       = new ethers.utils.Interface(['event Tally(uint256 indexed id, uint256 A, uint256 B)']);
+const ethProvider = new JsonRpcProvider(EVM_RPC, { chainId: CHAIN_ID, name: 'local' });
+const iface       = new Interface(['event Tally(uint256 indexed id, uint256 A, uint256 B)']);
 const pool        = new Pool({ connectionString: POSTGRES_URL });
 
 // --- Parse Solana secret key ---
@@ -147,7 +147,7 @@ async function setLastBlock(b: number) {
 }
 
 async function addDeadLetter(
-  log: ethers.providers.Log,
+  log: Log,
   payload: any,
   err: any,
   attempts: number
@@ -166,8 +166,8 @@ async function addDeadLetter(
 
 // --- Bridge Logic ---
 async function bridgeTally(
-  A: ethers.BigNumber,
-  B: ethers.BigNumber,
+  A: bigint,
+  B: bigint,
   blockHash: string
 ) {
   const [electionPDA] = PublicKey.findProgramAddressSync(
@@ -213,11 +213,13 @@ async function main() {
           address: ELECTION_MANAGER,
           fromBlock: last + 1,
           toBlock: confirmed,
-          topics: [iface.getEventTopic('Tally')],
+          topics: [id('Tally(uint256,uint256,uint256)')],
         });
 
         for (const log of logs) {
-          const { args: [id, A, B] } = iface.parseLog(log);
+          const parsed = iface.parseLog(log);
+          if (!parsed) continue;
+          const [id, A, B] = parsed.args as any as [bigint, bigint, bigint];
           console.log(`Found Tally #${id} @${log.blockNumber}`);
 
           let attempt = 0, max = 5;
