@@ -19,6 +19,7 @@ import {IVotingStrategy} from "../../contracts/interfaces/IVotingStrategy.sol";
 import {IMACI} from "../../contracts/interfaces/IMACI.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /// @notice Always‑true verifier used in tests
 contract TestVerifier is Verifier {
@@ -99,9 +100,6 @@ contract FullFlowTest is Test {
 
         vm.prank(admin);
 
-        // --- FIX: Use abi.encodeWithSignature to resolve the overload ambiguity. ---
-        // This explicitly tells the compiler which function to encode. Contract types
-        // like IVotingStrategy are treated as 'address' in the signature string.
         bytes memory calldataToProxy = abi.encodeWithSignature(
             "createElection(bytes32,address)",
             meta,
@@ -178,21 +176,35 @@ contract FullFlowTest is Test {
         bytes memory proof = bytes("stub-proof");
         (UserOperation memory op,) = _buildOp(eid, ballotNonce, vote, proof);
 
-        // We *expect* MACI to receive exactly one encrypted message.
+        // --- FIX: Expect all events in the correct order ---
+
+        // 1. The AA flow first executes the initCode, creating the wallet and emitting WalletMinted.
+        vm.expectEmit(true, true, false, false, address(factory)); // checkTopic1=owner, checkTopic2=wallet
+        emit WalletFactory.WalletMinted(voter, voterWallet);
+
+        // 2. Then, the wallet's callData is executed, which emits the MACI message.
         bytes memory expectedMsg = abi.encode(voterWallet, vote, ballotNonce, proof);
         vm.expectEmit(false, false, false, true, address(maci));
         emit MockMACI.Message(expectedMsg);
 
-        // We also expect the ParticipationBadge to be minted by the manager
+        // 3. The manager then mints the participation badge, which emits two events.
         ParticipationBadge badge = manager.badge();
+        
+        // 3a. First, the ERC721 Transfer event from the base contract.
+        vm.expectEmit(true, true, true, false, address(badge));
+        // The first token minted has ID 0, which matches the op.nonce for the first transaction.
+        emit IERC721.Transfer(address(0), voterWallet, op.nonce);
+
+        // 3b. Second, our custom BadgeMinted event.
         vm.expectEmit(true, true, true, false, address(badge));
         emit ParticipationBadge.BadgeMinted(voterWallet, op.nonce, eid);
+
 
         UserOperation[] memory ops = new UserOperation[](1);
         ops[0] = op;
         entryPoint.handleOps(ops, payable(admin));
 
-        // 3. post‑conditions
+        // 4. post‑conditions
         assertTrue(voterWallet.code.length > 0, "wallet deployed");
         assertEq(entryPoint.getNonce(voterWallet, 0), 1, "nonce bumped");
         assertEq(badge.balanceOf(voterWallet), 1, "badge should be minted");
