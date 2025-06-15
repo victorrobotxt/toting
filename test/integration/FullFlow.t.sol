@@ -99,11 +99,14 @@ contract FullFlowTest is Test {
 
         vm.prank(admin);
 
-        // --- FIX: Replace the ambiguous high-level call with an explicit low-level call ---
-        // This ensures the calldata sent to the proxy is correctly formatted with the
-        // function selector, preventing the state corruption seen in the test trace.
-
-        bytes memory calldataToProxy = abi.encodeCall(manager.createElection, (meta, IVotingStrategy(address(qvStrategy))));
+        // --- FIX: Use abi.encodeWithSignature to resolve the overload ambiguity. ---
+        // This explicitly tells the compiler which function to encode. Contract types
+        // like IVotingStrategy are treated as 'address' in the signature string.
+        bytes memory calldataToProxy = abi.encodeWithSignature(
+            "createElection(bytes32,address)",
+            meta,
+            address(qvStrategy)
+        );
         (bool success, ) = address(manager).call(calldataToProxy);
         require(success, "createElection call to proxy failed");
 
