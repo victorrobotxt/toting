@@ -5,14 +5,13 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeab
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 // --- FIX: Import the local placeholder file we just created. ---
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
-import "./TallyVerifier.sol";
 import "./interfaces/IMACI.sol";
+import "./interfaces/IVotingStrategy.sol";
 
 /// @title Upgradeable ElectionManager
 /// @notice Version 2 of ElectionManager using UUPS proxy pattern
 contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     IMACI public maci;
-    TallyVerifier public tallyVerifier;
     bool public tallied; // slot from V1
 
     constructor() {
@@ -30,6 +29,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     }
 
     mapping(uint256 => Election) public elections;
+    mapping(uint256 => IVotingStrategy) public strategies;
     mapping(uint256 => TallyResult) public tallies;
     uint256 public nextId;
     uint256[2] public result; // [A, B] tally result
@@ -41,7 +41,6 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     function initialize(IMACI _maci, address initialOwner) public initializer {
         __Ownable_init(initialOwner);
         maci = _maci;
-        tallyVerifier = TallyVerifier(address(0));
     }
 
     modifier onlyDuringElection(uint256 id) {
@@ -50,12 +49,13 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         _;
     }
 
-    function createElection(bytes32 meta) external onlyOwner {
+    function createElection(bytes32 meta, IVotingStrategy strategy) external onlyOwner {
         elections[nextId] = Election(
             uint128(block.number),
             // Dramatically increase election duration for local development
             uint128(block.number + 1_000_000)
         );
+        strategies[nextId] = strategy;
         emit ElectionCreated(nextId, meta);
         unchecked {
             nextId++;
@@ -76,18 +76,17 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         uint256[2] calldata a,
         uint256[2][2] calldata b,
         uint256[2] calldata c,
-        uint256[7] calldata pubSignals
+        uint256[] calldata pubSignals
     ) external onlyOwner {
         require(!tallies[id].tallied, "already tallied");
-        require(
-            tallyVerifier.verifyProof(a, b, c, pubSignals),
-            "invalid tally proof"
-        );
-        result[0] = pubSignals[0];
-        result[1] = pubSignals[1];
-        tallies[id].result[0] = pubSignals[0];
-        tallies[id].result[1] = pubSignals[1];
-        emit Tally(id, pubSignals[0], pubSignals[1]);
+        IVotingStrategy strategy = strategies[id];
+        require(address(strategy) != address(0), "no strategy");
+        uint256[2] memory tally = strategy.tallyVotes(a, b, c, pubSignals);
+        result[0] = tally[0];
+        result[1] = tally[1];
+        tallies[id].result[0] = tally[0];
+        tallies[id].result[1] = tally[1];
+        emit Tally(id, tally[0], tally[1]);
         tallies[id].tallied = true;
         tallied = true;
     }
