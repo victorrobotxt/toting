@@ -33,12 +33,8 @@ export default function LoginPage() {
       const res = await fetch(apiUrl('/auth/initiate'), { redirect: 'manual' });
       const location = res.status >= 300 && res.status < 400 ? res.headers.get('Location') : undefined;
       if (res.ok && res.headers.get('content-type')?.includes('text/html') && !location) {
-        const html = await res.text();
-        const popup = window.open('', 'login', 'width=500,height=600');
-        if (popup) {
-          popup.document.write(html);
-          popup.document.close();
-        }
+        // Backend is in mock mode – show the modal instead of the raw HTML form.
+        openMock();
         return;
       }
       const url = location || apiUrl('/auth/initiate');
