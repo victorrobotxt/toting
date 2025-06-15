@@ -53,7 +53,7 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Generic gadget library for `0 ≤ value ≤ 2³²-1` usable by other circuits.
 - Fuzz harness must find zero false negatives/positives.
 
-## C-10 Parallel Witness Builder
+## C-10 Parallel Witness Builder *(Implemented)*
 - Rust `rayon` based `build_witness` saturating all cores.
 - 2 × speed-up vs serial.
 - Integrated in Makefile with CI proving speed shortcut.

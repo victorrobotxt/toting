@@ -26,3 +26,5 @@ broadcast/
 package-lock.json
 **/package-lock.json
 packages/backend/__pycache__/
+target/
+examples/wtns/
