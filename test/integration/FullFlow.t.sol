@@ -53,7 +53,7 @@ contract FullFlowTest is Test {
     function setUp() public {
         entryPoint = new EntryPoint();
         maci       = new MockMACI();
-        factory    = new WalletFactory(entryPoint, new TestVerifier());
+        factory    = new WalletFactory(entryPoint, new TestVerifier(), "bn254");
 
         // ── Deploy upgradeable manager (proxy + impl) ──────────────────────
         ElectionManagerV2 impl = new ElectionManagerV2();

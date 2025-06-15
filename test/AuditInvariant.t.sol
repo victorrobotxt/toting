@@ -41,7 +41,7 @@ contract AuditInvariant is Test {
 
         entryPoint = new EntryPoint();
         verifier = new TestVerifier();
-        factory = new WalletFactory(entryPoint, verifier);
+        factory = new WalletFactory(entryPoint, verifier, "bn254");
 
         ElectionManagerV2 implementation = new ElectionManagerV2();
         MockMACI maci = new MockMACI();

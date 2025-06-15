@@ -3,6 +3,7 @@
 pragma solidity ^0.8.24;
 import "forge-std/Script.sol";
 import "../contracts/Verifier.sol";
+import "../contracts/VerifierBLS.sol";
 import "../contracts/WalletFactory.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
 
@@ -38,14 +39,22 @@ contract DeployFactory is Script {
         address entryPointAddress = vm.envAddress("ENTRYPOINT_ADDRESS");
         require(entryPointAddress != address(0), "ENTRYPOINT_ADDRESS env var not set");
 
+        // Determine which curve to use for the verifier
+        string memory curve = vm.envOr("CURVE", string("bn254"));
+        Verifier verifier;
+        if (keccak256(bytes(curve)) == keccak256(bytes("bls12-381"))) {
+            verifier = new VerifierBLS();
+        } else {
+            verifier = new UnsafeVerifierStub(allowedChain);
+        }
+
         // Start broadcasting transactions signed with this specific private key.
         vm.startBroadcast(deployerPrivateKey);
 
-        UnsafeVerifierStub vs = new UnsafeVerifierStub(allowedChain);
         WalletFactory factory = new WalletFactory(
-            // Pass the real EntryPoint address to the constructor
             EntryPoint(payable(entryPointAddress)),
-            vs
+            verifier,
+            curve
         );
         console.log("Factory deployed at:", address(factory));
         

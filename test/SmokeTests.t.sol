@@ -28,7 +28,7 @@ contract SmokeTests is Test {
     function setUp() public {
         entryPoint = new EntryPoint();
         verifier = new TestVerifier();
-        factory = new WalletFactory(entryPoint, verifier);
+        factory = new WalletFactory(entryPoint, verifier, "bn254");
     }
 
     function test_MintWallet() public {
