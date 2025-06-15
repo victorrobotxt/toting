@@ -9,7 +9,7 @@ const appLink = '/app';
 if (!fs.existsSync(appLink)) fs.symlinkSync(root, appLink);
 
 const envFile = path.join(appLink, '.env');
-fs.writeFileSync(envFile, 'ORCHESTRATOR_KEY=0x01\n');
+fs.writeFileSync(envFile, 'ORCHESTRATOR_KEY=0x01\nSOLANA_BRIDGE_SK=[]\n');
 
 const deployedFile = path.join(appLink, '.env.deployed');
 fs.writeFileSync(deployedFile, 'ELECTION_MANAGER=0x0\nNEXT_PUBLIC_ELECTION_MANAGER=0x0\nNEXT_PUBLIC_WALLET_FACTORY=0x0\nNEXT_PUBLIC_ENTRYPOINT=0x0\n');

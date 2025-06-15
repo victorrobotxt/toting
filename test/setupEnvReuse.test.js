@@ -16,7 +16,7 @@ try {
 }
 
 const envFile = path.join(appLink, '.env');
-fs.writeFileSync(envFile, 'ORCHESTRATOR_KEY=0x01\n');
+fs.writeFileSync(envFile, 'ORCHESTRATOR_KEY=0x01\nSOLANA_BRIDGE_SK=[]\n');
 
 const deployedFile = path.join(appLink, '.env.deployed');
 const ADDR_ENTRY = '0x1111111111111111111111111111111111111111';
