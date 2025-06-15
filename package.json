@@ -10,7 +10,8 @@
     "snarkjs": "^0.7.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "@ffmpeg/ffmpeg": "^0.12.4"
   },
   "dependencies": {
     "@account-abstraction/sdk": "^0.6.0",

@@ -68,6 +68,10 @@ BLS12-381 artifact set; BN254 is the default.
 
 See [docs/audit](docs/audit/README.md) for the outline of the upcoming formal audit process.
 
+### Proof Fuzzing Harness
+
+Run `node scripts/proof_fuzz_harness.js` to generate 1,000 invalid witnesses for every circuit. The script uses `ffmpeg-wasm` to produce random noise and asserts that `snarkjs` rejects each witness. Set `FUZZ_ITERS` to override the iteration count during testing.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

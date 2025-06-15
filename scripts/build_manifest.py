@@ -9,7 +9,6 @@ import sys
 
 ARTIFACTS_DIR = "artifacts"
 PTAU_FILE = os.environ.get("PTAU_FILE", "pot12_final.ptau")
-CURVE = os.environ.get("CURVE", "bn254").lower()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dry-run", action="store_true", help="only check manifest")
@@ -28,8 +27,11 @@ for cfile in glob.glob("circuits/**/*.circom", recursive=True):
     with open(cfile, "rb") as f:
         h = hashlib.sha256(f.read()).hexdigest()
     name = os.path.splitext(os.path.basename(cfile))[0]
-    out_dir = os.path.join(ARTIFACTS_DIR, CURVE, name, h)
+    out_dir = os.path.join(ARTIFACTS_DIR, name, h)
     os.makedirs(out_dir, exist_ok=True)
+    if not os.path.exists(os.path.join(out_dir, '.gitignore')):
+        with open(os.path.join(out_dir, '.gitignore'), 'w') as f:
+            f.write('*\n!.gitignore\n')
     r1cs = os.path.join(out_dir, f"{name}.r1cs")
     wasm = os.path.join(out_dir, f"{name}.wasm")
     zkey = os.path.join(out_dir, f"{name}.zkey")
@@ -72,7 +74,7 @@ for cfile in glob.glob("circuits/**/*.circom", recursive=True):
             print(f"skip {cfile}: snarkjs setup failed")
             had_error = True
             continue
-    manifest.setdefault(name, {})[CURVE] = {
+    manifest[name] = {
         "hash": h,
         "r1cs": r1cs,
         "wasm": wasm,

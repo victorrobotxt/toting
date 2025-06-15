@@ -16,8 +16,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
       - name: Check manifest
         run: |
-          for curve in bn254 bls12-381; do
-            CURVE=$curve python scripts/build_manifest.py --dry-run
-          done
+          make circuits
+      - name: Check verifier
+        run: scripts/check_verifier.sh
