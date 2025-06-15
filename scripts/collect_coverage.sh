@@ -16,11 +16,22 @@ if [ ! -f .env ]; then
 fi
 source .env
 
+# Use a dedicated Foundry profile with optimizations disabled to reduce
+# memory usage during coverage runs.
+export FOUNDRY_PROFILE=coverage
+
 # The Forge coverage command can consume a significant amount of memory on
-# larger projects. The `--ir-minimum` flag enables minimal IR based
-# optimisations which substantially reduces the memory footprint while still
-# producing an accurate coverage report.
-forge coverage --ir-minimum --report lcov --report-file "$COV_DIR/forge.lcov" -vv
+# larger projects. To keep the memory footprint manageable we run coverage
+# separately for each test file and concatenate the resulting LCOV reports.
+:> "$COV_DIR/forge.lcov"
+for test_file in $(find test -name '*.t.sol'); do
+    echo "\n--- Running coverage for $test_file ---"
+    forge coverage --ir-minimum \
+        --match-path "$test_file" \
+        --report lcov --report-file "$COV_DIR/tmp.lcov" -vv
+    cat "$COV_DIR/tmp.lcov" >> "$COV_DIR/forge.lcov"
+    forge clean >/dev/null
+done
 
 # Python coverage
 echo "Running backend tests with coverage..."
