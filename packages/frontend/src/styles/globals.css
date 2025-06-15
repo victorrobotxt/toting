@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 :root {
-  --bg: #ffffff;
-  --text: #000000;
-  --primary: #2563eb;
-  --muted: #e5e7eb;
+  --color-background: #ffffff;
+  --color-text: #000000;
+  --color-primary: #2563eb;
+  --color-muted: #e5e7eb;
 }
 .dark {
-  --bg: #000000;
-  --text: #ffffff;
-  --primary: #3b82f6;
-  --muted: #374151;
+  --color-background: #000000;
+  --color-text: #ffffff;
+  --color-primary: #3b82f6;
+  --color-muted: #374151;
 }
 body {
-  background-color: var(--bg);
-  color: var(--text);
+  background-color: var(--color-background);
+  color: var(--color-text);
   transition: background-color 0.2s, color 0.2s;
 }
 .switch {
@@ -38,13 +38,13 @@ body {
   transition: transform 0.2s;
 }
 .switch.on {
-  background: var(--primary);
+  background: var(--color-primary);
 }
 .switch.on .thumb {
   transform: translateX(18px);
 }
 .switch.off {
-  background: var(--muted);
+  background: var(--color-muted);
 }
 .switch.off .thumb {
   transform: translateX(0px);
@@ -86,7 +86,7 @@ body {
   width: 200px;
   height: 100%;
   padding: 1rem;
-  background: var(--bg);
+  background: var(--color-background);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -124,7 +124,6 @@ body {
     transform: translateX(300%);
   }
 }
-
 .spinner {
   width: 48px;
   height: 48px;
@@ -138,4 +137,47 @@ body {
   to {
     transform: rotate(360deg);
   }
+.auth-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.auth-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.auth-option-btn {
+  flex: 1 1 150px;
+  max-width: 200px;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid var(--primary);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+}
+
+.auth-option-btn.primary {
+  background: var(--primary);
+  color: var(--bg);
+}
+
+.auth-option-btn span {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.auth-option-btn small {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: inherit;
 }

@@ -1,12 +1,12 @@
 import React from 'react';
+import NoDataIllustration from '../assets/no_data.svg';
+import CancelIllustration from '../assets/cancel.svg';
+import EmptyIllustration from '../assets/empty.svg';
 
 export function NoElections() {
   return (
-    <div style={{textAlign:'center', padding:'2rem'}}>
-      <svg width="120" height="80" role="img" aria-label="no elections illustration">
-        <circle cx="40" cy="40" r="40" fill="#e5e7eb" />
-        <rect x="80" y="10" width="30" height="60" fill="#e5e7eb" />
-      </svg>
+    <div style={{ textAlign: 'center', padding: '2rem' }}>
+      <img src={NoDataIllustration} alt="No elections" style={{ width: '12rem', maxWidth: '100%' }} />
       <p>No elections yet</p>
     </div>
   );
@@ -14,11 +14,8 @@ export function NoElections() {
 
 export function NotEligible() {
   return (
-    <div style={{textAlign:'center', padding:'2rem'}}>
-      <svg width="120" height="80" role="img" aria-label="not eligible illustration">
-        <circle cx="60" cy="40" r="40" fill="#e5e7eb" />
-        <line x1="20" y1="20" x2="100" y2="60" stroke="red" strokeWidth="8" />
-      </svg>
+    <div style={{ textAlign: 'center', padding: '2rem' }}>
+      <img src={CancelIllustration} alt="Not eligible" style={{ width: '12rem', maxWidth: '100%' }} />
       <p>Not eligible</p>
     </div>
   );
@@ -26,11 +23,8 @@ export function NotEligible() {
 
 export function NoProofs() {
   return (
-    <div style={{textAlign:'center', padding:'2rem'}}>
-      <svg width="120" height="80" role="img" aria-label="no proofs illustration">
-        <rect x="10" y="10" width="100" height="60" fill="#e5e7eb" />
-        <path d="M20 20 L100 20 L60 60 Z" fill="#fff" stroke="#ccc" />
-      </svg>
+    <div style={{ textAlign: 'center', padding: '2rem' }}>
+      <img src={EmptyIllustration} alt="No proofs" style={{ width: '12rem', maxWidth: '100%' }} />
       <p>No proofs yet</p>
     </div>
   );
