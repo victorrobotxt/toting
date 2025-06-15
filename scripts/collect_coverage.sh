@@ -8,7 +8,8 @@ mkdir -p "$COV_DIR/node" "$COV_DIR/python"
 
 # Forge coverage
 echo "Running solidity coverage..."
-forge coverage --lcov > "$COV_DIR/forge.lcov"
+# --- FIX: Use the updated forge coverage command syntax ---
+forge coverage --report lcov --report-file "$COV_DIR/forge.lcov"
 
 # Python coverage
 echo "Running backend tests with coverage..."
