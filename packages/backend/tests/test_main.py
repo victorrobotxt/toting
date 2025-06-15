@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 from unittest.mock import MagicMock, patch
+
 import web3
 
 # Some versions of Web3 omit the geth_poa_middleware helper. Provide a noop
@@ -28,11 +29,13 @@ os.environ["ELECTION_MANAGER"] = "0x" + "a" * 40
 os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
 os.environ["CELERY_BROKER"] = "memory://"
 os.environ["CELERY_BACKEND"] = "cache+memory://"
+# use a minimal manifest to satisfy proof module
 os.environ["PROOF_QUOTA"] = "3"
-# Use a very small manifest so the proof module loads without relying on large artifacts
-_manifest_path = os.path.join(os.path.dirname(__file__), "test_manifest.json")
+
+_manifest_path = os.path.join(os.path.dirname(__file__), "dummy_manifest.json")
 with open(_manifest_path, "w") as f:
-    json.dump({"eligibility": {"bn254": {"hash": "hash"}}}, f)
+    json.dump({"eligibility": {"bn254": {"hash": "dummy"}}}, f)
+
 os.environ["CIRCUIT_MANIFEST"] = _manifest_path
 
 # allow "packages" imports
@@ -402,3 +405,44 @@ def test_list_proofs():
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, list) and len(data) >= 1
+
+
+def test_admin_callback_role():
+    """Ensure /auth/callback issues an admin token for the admin email."""
+    r = client.get("/auth/callback", params={"user": "admin@example.com"})
+    assert r.status_code == 200
+    token = r.json()["id_token"]
+    claims = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=["HS256"])
+    assert claims["role"] == "admin"
+
+
+def test_get_election_not_found():
+    r = client.get("/elections/9999")
+    assert r.status_code == 404
+
+
+def test_proof_requires_authentication():
+    r = client.post("/api/zk/eligibility", json={"foo": "bar"})
+    assert r.status_code == 401
+
+
+def test_invalid_json_payload():
+    token = jwt.encode({"email": "bad@example.com", "role": "user"}, os.environ["JWT_SECRET"], algorithm="HS256")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    r = client.post("/api/zk/eligibility", data="not-json", headers=headers)
+    assert r.status_code == 400
+
+
+def test_job_status_transition():
+    with patch("backend.main.celery_app.AsyncResult") as mock_ar:
+        pending = MagicMock(state="PENDING", info={})
+        started = MagicMock(state="STARTED", info={"progress": 50})
+        done = MagicMock(state="SUCCESS", result={"proof": "0x", "pubSignals": []})
+        mock_ar.side_effect = [pending, started, done]
+        jid = "xyz"
+        r = client.get(f"/api/zk/eligibility/{jid}")
+        assert r.json()["status"] == "pending"
+        r = client.get(f"/api/zk/eligibility/{jid}")
+        assert r.json()["status"] == "started"
+        r = client.get(f"/api/zk/eligibility/{jid}")
+        assert r.json()["status"] == "done"
