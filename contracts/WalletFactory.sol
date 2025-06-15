@@ -15,6 +15,8 @@ contract WalletFactory {
     EntryPoint public entryPoint;
     /// @notice Proof verifier contract
     Verifier public verifier;
+    /// @notice Curve identifier (bn254 or bls12-381)
+    string public curve;
     /// @notice Tracks the wallet deployed for each EOA
     mapping(address => address) public walletOf;
 
@@ -22,9 +24,11 @@ contract WalletFactory {
 
     /// @param _entryPoint Address of the ERC‑4337 entry point
     /// @param _verifier Zero‑knowledge proof verifier
-    constructor(EntryPoint _entryPoint, Verifier _verifier) {
+    /// @param _curve Curve identifier string
+    constructor(EntryPoint _entryPoint, Verifier _verifier, string memory _curve) {
         entryPoint = _entryPoint;
         verifier = _verifier;
+        curve = _curve;
     }
 
     /// @notice Deploy a wallet using ABI‑encoded proof parameters
