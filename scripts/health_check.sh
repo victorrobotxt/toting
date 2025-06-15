@@ -12,69 +12,68 @@ trap cleanup EXIT
 echo "Starting docker compose stack..."
 docker compose up -d
 
-# Wait for health of required services
-for svc in "${SERVICES[@]}"; do
-  echo "Waiting for $svc to be healthy..."
-  cid=$(docker compose ps -q "$svc")
-  if [ -z "$cid" ]; then
-    echo "Service $svc not found" >&2
-    exit 1
+check_health() {
+  local service=$1
+  local cid
+  cid=$(docker compose ps -q "$service")
+  if [[ -z "$cid" ]]; then
+    echo "Service $service not found" >&2
+    return 1
   fi
-  for i in {1..30}; do
-    status=$(docker inspect --format='{{.State.Health.Status}}' "$cid" 2>/dev/null || echo unknown)
-    if [ "$status" = "healthy" ]; then
-      echo "$svc is healthy"
-      break
+  echo "Waiting for $service to be healthy..."
+  for i in {1..60}; do
+    status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}running{{end}}' "$cid" 2>/dev/null || echo "unknown")
+    if [[ "$status" == "healthy" ]]; then
+      echo "$service is healthy"
+      return 0
     fi
-    sleep 5
+    sleep 2
   done
-  if [ "$status" != "healthy" ]; then
-    echo "Service $svc failed to become healthy" >&2
-    docker compose ps
-    exit 1
-  fi
+  echo "Service $service failed to become healthy" >&2
+  return 1
+}
+
+for svc in "${SERVICES[@]}"; do
+  check_health "$svc"
 done
 
-# Check backend endpoint
 echo "Checking backend /elections endpoint..."
 for i in {1..30}; do
-  code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/elections || true)
-  if [ "$code" = "200" ]; then
+  code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/elections || echo "")
+  if [[ "$code" == "200" ]]; then
     echo "Backend responded with 200"
     break
   fi
-  sleep 5
+  echo "Waiting for backend..."
+  sleep 2
+  if [[ "$i" -eq 30 ]]; then
+    echo "Backend failed to respond with 200" >&2
+    exit 1
+  fi
 done
-if [ "$code" != "200" ]; then
-  echo "Backend health check failed with status $code" >&2
-  exit 1
-fi
 
-# Check frontend root page
 echo "Checking frontend at http://localhost:3000..."
 for i in {1..30}; do
-  code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 || true)
-  if [ "$code" = "200" ]; then
+  code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000 || echo "")
+  if [[ "$code" == "200" ]]; then
     echo "Frontend responded with 200"
     break
   fi
-  sleep 5
-done
-if [ "$code" != "200" ]; then
-  echo "Frontend health check failed with status $code" >&2
-  exit 1
-fi
-
-check_logs() {
-  svc=$1
-  echo "Checking logs for $svc..."
-  if docker compose logs "$svc" | grep -iE 'fatal|error|traceback'; then
-    echo "Errors detected in $svc logs" >&2
-    return 1
+  echo "Waiting for frontend..."
+  sleep 2
+  if [[ "$i" -eq 30 ]]; then
+    echo "Frontend failed to respond with 200" >&2
+    exit 1
   fi
-}
+done
 
-check_logs bundler
-check_logs orchestrator
+echo "Checking logs for bundler and orchestrator..."
+for svc in bundler orchestrator; do
+  if docker compose logs "$svc" 2>&1 | grep -iE 'fatal|error|traceback'; then
+    echo "Errors detected in $svc logs" >&2
+    exit 1
+  fi
+  echo "$svc logs look clean"
+done
 
 echo "All services healthy."
