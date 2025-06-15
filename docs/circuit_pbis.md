@@ -39,6 +39,15 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Rejects duplicate nullifier in 1 000 negative tests.
 - Solidity verifier auto-generated and unit-tested in Foundry.
 
+This circuit checks a commitment's inclusion in a Merkle tree and
+derives a nullifier from the same secret used in the commitment. The
+public inputs are the Merkle root and resulting nullifier. Witnesses
+contain the secret and Merkle path. A Poseidon-based proof ensures the
+nullifier cannot be forged while keeping the secret private. The
+Solidity verifier is generated from the Groth16 key and exercised in a
+Foundry test that attempts 1 000 deposits with a reused nullifier,
+expecting reverts after the first.
+
 ## C-07 Poseidon Hash Refactor
 - Replace MiMC in all circuits with Poseidon (Arkworks params 3,5).
 - Proof size must remain unchanged.
