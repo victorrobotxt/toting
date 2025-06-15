@@ -95,6 +95,15 @@ jobs:
           done
           python scripts/check_manifest.py
 
+      - name: Benchmark proof compression
+        run: python scripts/proof_compression_benchmark.py
+
+      - name: Upload compression CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: proof-compression-${{ matrix.node }}-solc${{ matrix.solc }}
+          path: compression.csv
+
       # ─── 4. TEST & ANALYSIS ──────────────────────────────────────────────────
       - name: Type-check frontend
         # This assumes a root-level script in package.json: "type-check": "yarn --cwd packages/frontend type-check"
