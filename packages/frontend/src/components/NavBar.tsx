@@ -1,12 +1,11 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '../lib/AuthProvider';
-import ThemeToggle from './ThemeToggle';
 import AuthChip from './AuthChip';
 import AccountMenu from './AccountMenu';
 
 export default function NavBar() {
-  const { isLoggedIn, eligibility, logout, role } = useAuth();
+  const { isLoggedIn, eligibility, role } = useAuth();
   const [open, setOpen] = useState(false);
 
   const links = (
@@ -46,15 +45,15 @@ export default function NavBar() {
           <div className="drawer" onClick={(e) => e.stopPropagation()}>
             {links}
             {isLoggedIn ? (
-              <button onClick={() => { setOpen(false); logout(); }}>Logout</button>
+              <AccountMenu />
             ) : (
               <Link href="/login" onClick={() => setOpen(false)}>Log in with eID</Link>
             )}
-            <ThemeToggle />
-            <AuthChip />
           </div>
         </div>
       )}
+      <ThemeToggle />
+      <AuthChip />
       {(role === 'admin' || role === 'verifier') && (
         <div style={{background:'red',color:'white',textAlign:'center',padding:'0.25rem'}}>frontend-only role, not enforced</div>
       )}
