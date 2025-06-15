@@ -981,6 +981,7 @@
 <li>Rejects duplicate nullifier in 1 000 negative tests.</li>
 <li>Solidity verifier auto-generated and unit-tested in Foundry.</li>
 </ul>
+<h2 id="c-07-poseidon-hash-refactor">C-07 Poseidon Hash Refactor</h2>
 <p>This circuit checks a commitment's inclusion in a Merkle tree and
 derives a nullifier from the same secret used in the commitment. The
 public inputs are the Merkle root and resulting nullifier. Witnesses
@@ -988,13 +989,10 @@ contain the secret and Merkle path. A Poseidon-based proof ensures the
 nullifier cannot be forged while keeping the secret private. The
 Solidity verifier is generated from the Groth16 key and exercised in a
 Foundry test that attempts 1 000 deposits with a reused nullifier,
-expecting reverts after the first.</p>
-<h2 id="c-07-poseidon-hash-refactor">C-07 Poseidon Hash Refactor</h2>
-<ul>
-<li>Replace MiMC in all circuits with Poseidon (Arkworks params 3,5).</li>
-<li>Proof size must remain unchanged.</li>
-<li>Benchmarks ≤ 5 % slower than baseline.</li>
-</ul>
+expecting reverts after the first.
+- Replace MiMC in all circuits with Poseidon (Arkworks params 3,5).
+- Proof size must remain unchanged.
+- Benchmarks ≤ 5 % slower than baseline.</p>
 <h2 id="c-08-recursive-batch-tally-v2">C-08 Recursive Batch-Tally v2</h2>
 <ul>
 <li>Halo2 or Plonk recursion proof that rolls 8 × <code>C-03</code> tallies into one.</li>
