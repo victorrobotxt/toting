@@ -115,48 +115,64 @@ contract FullFlowTest is Test {
         return id;
     }
 
-    /// @dev Builds a fully‑signed UserOperation that (a) deploys the wallet
-    ///      and (b) forwards an encrypted ballot to `ElectionManagerV2`.
-    function _buildOp(uint256 eid, uint256 ballotNonce, uint256 vote, bytes memory vcProof)
-        internal
-        returns (UserOperation memory op, bytes32 opHash)
-    {
-        // InitCode — deterministic wallet deployment via factory
+    // --- FIX: Refactor UserOp generation to avoid "stack too deep" errors. ---
+    // The logic is split into smaller, more manageable helper functions. This
+    // reduces the number of local variables in any single function frame, which
+    // is the root cause of the stack error, especially with coverage enabled
+    // which can disable some compiler optimizations like the `viaIR` pipeline.
+
+    /// @dev Helper to build the `initCode` for deploying a wallet.
+    function _buildInitCode() internal view returns (bytes memory) {
+        // Dummy proof data, as our TestVerifier always returns true.
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;
         uint256[7] memory inputs;
 
-        bytes memory inner = abi.encode(a, b, c, inputs, voter, uint256(0)); // salt = 0
-        bytes memory initCode =
-            abi.encodePacked(address(factory), abi.encodeWithSelector(factory.createAccount.selector, inner));
+        bytes memory innerData = abi.encode(a, b, c, inputs, voter, uint256(0)); // salt = 0
+        bytes memory factoryCalldata = abi.encodeWithSelector(factory.createAccount.selector, innerData);
 
-        // Smart‑wallet batch call: enqueue message then mint badge
+        return abi.encodePacked(address(factory), factoryCalldata);
+    }
+
+    /// @dev Helper to build the `callData` for the wallet's batch execution.
+    function _buildCallData(uint256 eid, uint256 ballotNonce, uint256 vote, bytes memory vcProof)
+        internal
+        view
+        returns (bytes memory)
+    {
+        // Call 1: Enqueue the message via the manager
         bytes memory mgrCall = abi.encodeWithSelector(manager.enqueueMessage.selector, eid, vote, ballotNonce, vcProof);
 
+        // Call 2: Mint the participation badge
         address badgeAddr = address(manager.badge());
         bytes memory badgeCall = abi.encodeWithSelector(ParticipationBadge.safeMint.selector, voterWallet, eid);
 
-        address[] memory dest = new address[](2);
-        dest[0] = address(manager);
-        dest[1] = badgeAddr;
+        // Assemble the batch call
+        address[] memory dests = new address[](2);
+        dests[0] = address(manager);
+        dests[1] = badgeAddr;
 
-        uint256[] memory valueArr = new uint256[](2);
-        valueArr[0] = 0;
-        valueArr[1] = 0;
+        uint256[] memory values = new uint256[](2); // Both calls send 0 ETH
 
-        bytes[] memory funcArr = new bytes[](2);
-        funcArr[0] = mgrCall;
-        funcArr[1] = badgeCall;
+        bytes[] memory calls = new bytes[](2);
+        calls[0] = mgrCall;
+        calls[1] = badgeCall;
 
-        bytes4 execSel = bytes4(keccak256("executeBatch(address[],uint256[],bytes[])"));
-        bytes memory callData = abi.encodeWithSelector(execSel, dest, valueArr, funcArr);
+        bytes4 execBatchSelector = SmartWallet.executeBatch.selector;
+        return abi.encodeWithSelector(execBatchSelector, dests, values, calls);
+    }
 
-        // Populate UserOp
+    /// @dev Builds and signs a UserOperation.
+    function _buildOp(uint256 eid, uint256 ballotNonce, uint256 vote, bytes memory vcProof)
+        internal
+        returns (UserOperation memory op, bytes32 opHash)
+    {
+        // Populate UserOp using the helper functions
         op.sender = voterWallet;
         op.nonce = entryPoint.getNonce(voterWallet, 0);
-        op.initCode = initCode;
-        op.callData = callData;
+        op.initCode = _buildInitCode();
+        op.callData = _buildCallData(eid, ballotNonce, vote, vcProof);
         op.callGasLimit = 1_000_000;
         op.verificationGasLimit = 1_500_000;
         op.preVerificationGas = 50_000;
@@ -164,6 +180,7 @@ contract FullFlowTest is Test {
         op.maxPriorityFeePerGas = tx.gasprice;
         op.paymasterAndData = bytes("");
 
+        // Sign the UserOp
         opHash = entryPoint.getUserOpHash(op);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(voterKey, opHash);
         op.signature = abi.encodePacked(r, s, v);
