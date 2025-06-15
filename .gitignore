@@ -28,3 +28,7 @@ package-lock.json
 packages/backend/__pycache__/
 target/
 examples/wtns/
+
+# Voice check proving key files
+proofs/voice_check_final.zkey
+proofs/voice_verification_key.json
