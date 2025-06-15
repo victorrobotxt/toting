@@ -7,10 +7,11 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
 import "./interfaces/IMACI.sol";
 import "./interfaces/IVotingStrategy.sol";
+import "./interfaces/IAutomationCompatible.sol";
 
 /// @title Upgradeable ElectionManager
 /// @notice Version 2 of ElectionManager using UUPS proxy pattern
-contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable, IAutomationCompatible {
     IMACI public maci;
     bool public tallied; // slot from V1
 
@@ -71,6 +72,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         maci.publishMessage(abi.encode(msg.sender, vote, nonce, vcProof));
     }
 
+    /// @notice External tally call used by owner
     function tallyVotes(
         uint256 id,
         uint256[2] calldata a,
@@ -78,6 +80,17 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         uint256[2] calldata c,
         uint256[] calldata pubSignals
     ) external onlyOwner {
+        _tallyVotes(id, a, b, c, pubSignals);
+    }
+
+    /// @dev Internal tally logic shared with performUpkeep
+    function _tallyVotes(
+        uint256 id,
+        uint256[2] memory a,
+        uint256[2][2] memory b,
+        uint256[2] memory c,
+        uint256[7] memory pubSignals
+    ) internal {
         require(!tallies[id].tallied, "already tallied");
         IVotingStrategy strategy = strategies[id];
         require(address(strategy) != address(0), "no strategy");
@@ -93,6 +106,36 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
 
     event ElectionCreated(uint256 indexed id, bytes32 meta);
     event Tally(uint256 indexed id, uint256 A, uint256 B);
+
+    /// @inheritdoc IAutomationCompatible
+    function checkUpkeep(bytes calldata checkData)
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory performData)
+    {
+        uint256 id = abi.decode(checkData, (uint256));
+        Election memory e = elections[id];
+        upkeepNeeded =
+            block.number > uint256(e.end) &&
+            !tallies[id].tallied;
+        performData = checkData;
+    }
+
+    /// @inheritdoc IAutomationCompatible
+    function performUpkeep(bytes calldata performData) external override {
+        (
+            uint256 id,
+            uint256[2] memory a,
+            uint256[2][2] memory b,
+            uint256[2] memory c,
+            uint256[7] memory pubSignals
+        ) = abi.decode(
+            performData,
+            (uint256, uint256[2], uint256[2][2], uint256[2], uint256[7])
+        );
+        _tallyVotes(id, a, b, c, pubSignals);
+    }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

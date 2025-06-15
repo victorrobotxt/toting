@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../lib/AuthProvider';
 import AuthChip from './AuthChip';
 import AccountMenu from './AccountMenu';
+import ThemeToggle from './ThemeToggle';
 
 export default function NavBar() {
   const { isLoggedIn, eligibility, role } = useAuth();

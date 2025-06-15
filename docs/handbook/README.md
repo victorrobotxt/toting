@@ -109,6 +109,7 @@ Individual scripts can be run with:
 
 ```bash
 forge script script/DeployFactory.s.sol --fork-url $RPC_URL --broadcast
+forge script script/DeployTimelockManager.s.sol --fork-url $RPC_URL --broadcast
 ```
 
 ## Regenerating Proofs
