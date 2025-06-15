@@ -9,10 +9,13 @@ export default function DesignTokens() {
 
   useEffect(() => {
     const theme: Theme = (resolvedTheme as Theme) || 'light';
-    const set = tokens[theme];
-    for (const [key, value] of Object.entries(set)) {
-      document.documentElement.style.setProperty(`--${key}`, value);
-    }
+    const sets = tokens[theme];
+
+    Object.entries(sets).forEach(([category, values]) => {
+      Object.entries(values as Record<string, string>).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(`--${category}-${key}`, value);
+      });
+    });
   }, [resolvedTheme]);
 
   return null;
