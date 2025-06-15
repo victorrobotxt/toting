@@ -124,3 +124,48 @@ body {
     transform: translateX(300%);
   }
 }
+
+.auth-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.auth-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.auth-option-btn {
+  flex: 1 1 150px;
+  max-width: 200px;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid var(--primary);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+}
+
+.auth-option-btn.primary {
+  background: var(--primary);
+  color: var(--bg);
+}
+
+.auth-option-btn span {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.auth-option-btn small {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: inherit;
+}
