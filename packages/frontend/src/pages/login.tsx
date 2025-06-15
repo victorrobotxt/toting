@@ -21,6 +21,18 @@ export default function LoginPage() {
     };
   }, [isLoggedIn, router]);
 
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data && e.data.error) {
+        if (poll) window.clearInterval(poll);
+        setFlowAborted(true);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
   const openMock = () => {
     setMode('mock');
     setShowMock(true);

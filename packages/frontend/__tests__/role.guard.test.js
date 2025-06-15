@@ -4,6 +4,7 @@ import router from 'next-router-mock';
 import NavBar from '../src/components/NavBar';
 import withAuth from '../src/components/withAuth';
 import { AuthProvider } from '../src/lib/AuthProvider';
+import { I18nProvider } from '../src/lib/I18nProvider';
 
 jest.mock('next/router', () => require('next-router-mock'));
 
@@ -23,9 +24,11 @@ describe('role based guards', () => {
     sessionStorage.setItem('eligibility', 'true');
     sessionStorage.setItem('auth_mode', 'eid');
     const { getByText } = render(
-      <AuthProvider>
-        <NavBar />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <NavBar />
+        </AuthProvider>
+      </I18nProvider>
     );
     expect(getByText('Create Election')).toBeInTheDocument();
   });
@@ -35,9 +38,11 @@ describe('role based guards', () => {
     sessionStorage.setItem('eligibility', 'true');
     sessionStorage.setItem('auth_mode', 'eid');
     const { getByText } = render(
-      <AuthProvider>
-        <NavBar />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <NavBar />
+        </AuthProvider>
+      </I18nProvider>
     );
     expect(getByText('Verifier Panel')).toBeInTheDocument();
   });
@@ -47,9 +52,11 @@ describe('role based guards', () => {
     sessionStorage.setItem('eligibility', 'true');
     sessionStorage.setItem('auth_mode', 'eid');
     const { queryByText } = render(
-      <AuthProvider>
-        <NavBar />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <NavBar />
+        </AuthProvider>
+      </I18nProvider>
     );
     expect(queryByText('Verifier Panel')).toBeNull();
   });
@@ -59,9 +66,11 @@ describe('role based guards', () => {
     sessionStorage.setItem('eligibility', 'true');
     sessionStorage.setItem('auth_mode', 'eid');
     const { queryByText } = render(
-      <AuthProvider>
-        <NavBar />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <NavBar />
+        </AuthProvider>
+      </I18nProvider>
     );
     expect(queryByText('Create Election')).toBeNull();
   });
@@ -72,9 +81,11 @@ describe('role based guards', () => {
     sessionStorage.setItem('auth_mode', 'eid');
     const Protected = withAuth(() => <p>secret</p>, ['verifier']);
     const { getByText } = render(
-      <AuthProvider>
-        <Protected />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <Protected />
+        </AuthProvider>
+      </I18nProvider>
     );
     expect(getByText(/403/)).toBeInTheDocument();
   });

@@ -1,5 +1,5 @@
 {
-  "login.retry": "Login window closed.",
+  "login.retry": "Login cancelled or window closed.",
   "login.retryBtn": "Retry",
   "login.switch": "Switch to Mock",
   "account.logout": "Logout",
