@@ -32,7 +32,8 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         IEligibilityVerifier verifier;
     }
 
-    mapping(uint256 => Election) public elections;
+    // Internal mapping; public getter provided below for compatibility
+    mapping(uint256 => Election) private _elections;
     mapping(uint256 => IVotingStrategy) public strategies;
     mapping(uint256 => TallyResult) public tallies;
     uint256 public nextId;
@@ -45,33 +46,37 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     function initialize(IMACI _maci, address initialOwner) public initializer {
         __Ownable_init(initialOwner);
         maci = _maci;
-        // tallyVerifier = TallyVerifier(address(0)); // <-- FIX: Removed this line.
         badge = new ParticipationBadge();
         badge.transferOwnership(address(this));
     }
 
+    /// @notice Public getter returns only start and end for backward compatibility
+    function elections(uint256 id) public view returns (uint128 start, uint128 end) {
+        Election storage e = _elections[id];
+        return (e.start, e.end);
+    }
+
     modifier onlyDuringElection(uint256 id) {
-        Election memory e = elections[id];
+        Election memory e = _elections[id];
         require(block.number >= uint256(e.start) && block.number <= uint256(e.end), "closed");
         _;
     }
 
-    // --- FIX: The signature now correctly accepts an IVotingStrategy ---
-    function createElection(bytes32 meta, IVotingStrategy strategy) external onlyOwner {
-        // The IEligibilityVerifier is no longer used, so we create the struct with a null address for it.
-        elections[nextId] = Election(
+    /// @notice Creates an election with default (zero) voting strategy
+    function createElection(bytes32 meta) external onlyOwner {
+        createElection(meta, IVotingStrategy(address(0)));
+    }
+
+    /// @notice Creates an election with specified voting strategy
+    function createElection(bytes32 meta, IVotingStrategy strategy) public onlyOwner {
+        _elections[nextId] = Election(
             uint128(block.number),
-            // Dramatically increase election duration for local development
             uint128(block.number + 1_000_000),
             IEligibilityVerifier(address(0))
         );
-
-        strategies[nextId] = strategy; // This now works correctly.
-        // The event's 'verifier' field will now hold the strategy address.
+        strategies[nextId] = strategy;
         emit ElectionCreated(nextId, meta, address(strategy));
-        unchecked {
-            nextId++;
-        }
+        unchecked { nextId++; }
     }
 
     function enqueueMessage(uint256 id, uint256 vote, uint256 nonce, bytes calldata vcProof)
@@ -103,7 +108,6 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         require(!tallies[id].tallied, "already tallied");
         IVotingStrategy strategy = strategies[id];
         require(address(strategy) != address(0), "no strategy");
-        // Convert fixed-size array to dynamic array
         uint256[] memory dynamicPubSignals = new uint256[](7);
         for (uint i = 0; i < 7; i++) {
             dynamicPubSignals[i] = pubSignals[i];
@@ -129,7 +133,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         returns (bool upkeepNeeded, bytes memory performData)
     {
         uint256 id = abi.decode(checkData, (uint256));
-        Election memory e = elections[id];
+        Election memory e = _elections[id];
         upkeepNeeded =
             block.number > uint256(e.end) &&
             !tallies[id].tallied;
