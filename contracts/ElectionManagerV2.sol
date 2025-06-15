@@ -103,7 +103,12 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         require(!tallies[id].tallied, "already tallied");
         IVotingStrategy strategy = strategies[id];
         require(address(strategy) != address(0), "no strategy");
-        uint256[2] memory tally = strategy.tallyVotes(a, b, c, pubSignals);
+        // Convert fixed-size array to dynamic array
+        uint256[] memory dynamicPubSignals = new uint256[](7);
+        for (uint i = 0; i < 7; i++) {
+            dynamicPubSignals[i] = pubSignals[i];
+        }
+        uint256[2] memory tally = strategy.tallyVotes(a, b, c, dynamicPubSignals);
         result[0] = tally[0];
         result[1] = tally[1];
         tallies[id].result[0] = tally[0];
