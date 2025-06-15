@@ -6,11 +6,18 @@ import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 from unittest.mock import MagicMock, patch
-import web3.middleware
 
-# provide a stub for geth_poa_middleware when using Web3 v7
+import web3
+
+# Some versions of Web3 omit the geth_poa_middleware helper. Provide a noop
+# implementation so the application can import successfully during tests.
 if not hasattr(web3.middleware, "geth_poa_middleware"):
-    web3.middleware.geth_poa_middleware = lambda make_request, w3: make_request
+    def geth_poa_middleware(make_request, w3):
+        def middleware(method, params):
+            return make_request(method, params)
+        return middleware
+
+    web3.middleware.geth_poa_middleware = geth_poa_middleware
 
 # set env vars before importing app
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
@@ -24,9 +31,11 @@ os.environ["CELERY_BROKER"] = "memory://"
 os.environ["CELERY_BACKEND"] = "cache+memory://"
 # use a minimal manifest to satisfy proof module
 os.environ["PROOF_QUOTA"] = "3"
+
 _manifest_path = os.path.join(os.path.dirname(__file__), "dummy_manifest.json")
 with open(_manifest_path, "w") as f:
     json.dump({"eligibility": {"bn254": {"hash": "dummy"}}}, f)
+
 os.environ["CIRCUIT_MANIFEST"] = _manifest_path
 
 # allow "packages" imports
