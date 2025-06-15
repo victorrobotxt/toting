@@ -72,6 +72,10 @@ See [docs/audit](docs/audit/README.md) for the outline of the upcoming formal au
 
 Run `node scripts/proof_fuzz_harness.js` to generate 1,000 invalid witnesses for every circuit. The script uses `ffmpeg-wasm` to produce random noise and asserts that `snarkjs` rejects each witness. Set `FUZZ_ITERS` to override the iteration count during testing.
 
+## Test Coverage
+
+Run `scripts/collect_coverage.sh` to execute all tests (Solidity, Python and Node) and generate a consolidated `coverage/coverage.lcov` report. The script also executes the `scripts/qv_verifier_e2e.js` end-to-end test which was previously unused.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
