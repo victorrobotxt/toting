@@ -9,6 +9,7 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 import "@account-abstraction/contracts/core/Helpers.sol";
 import {BabyJubjubSig} from "./lib/BabyJubjubSig.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 
 contract SmartWallet is BaseAccount {
     address public owner;
@@ -96,6 +97,11 @@ contract SmartWallet is BaseAccount {
         }
     }
     /*───────────────────────────────────────────────────────────────────*/
+
+    /// @notice Allow the wallet to receive ERC721 tokens
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+        return IERC721Receiver.onERC721Received.selector;
+    }
 
     receive() external payable {}
 }
