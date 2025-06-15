@@ -29,7 +29,7 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Output artifacts in `artifacts/{name}/{hash}/` with Git LFS-friendly `.gitignore` stub.
 - CI job checks hash drift vs. committed verifier.
 
-## C-05 Proof Fuzzing Harness
+## C-05 Proof Fuzzing Harness *(Implemented)*
 - Negative-testing with `ffmpeg-wasm` noise.
 - Generate 1 000 random bad witnesses per circuit; ensure verifier reverts.
 
