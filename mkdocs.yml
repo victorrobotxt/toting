@@ -10,6 +10,7 @@ nav:
   - ADR-002 Event Sourcing: adr-002-event-sourcing.md
   - Threat Model: threat_model.md
   - Local-Dev Cookbook: local_dev_cookbook.md
+  - C-13 E2E Circuit Docs: c13_e2e_circuit_docs.md
   - PBIs:
       - Backend: backend_pbis.md
       - Frontend: frontend_pbis.md
