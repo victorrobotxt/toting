@@ -137,6 +137,7 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
 .auth-selector {
   display: flex;
   flex-direction: column;
