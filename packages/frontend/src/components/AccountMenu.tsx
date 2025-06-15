@@ -20,7 +20,7 @@ export default function AccountMenu() {
         <span style={{width:24,height:24,borderRadius:'9999px',background:'#ccc',display:'inline-block'}} />
       </button>
       {open && (
-        <div style={{ position:'absolute', right:0, marginTop:'0.5rem', background:'var(--bg)', border:'1px solid var(--muted)', borderRadius:'4px', padding:'0.5rem', display:'flex', flexDirection:'column', gap:'0.5rem' }}>
+        <div style={{ position:'absolute', right:0, marginTop:'0.5rem', background:'var(--color-background)', border:'1px solid var(--color-muted)', borderRadius:'4px', padding:'0.5rem', display:'flex', flexDirection:'column', gap:'0.5rem' }}>
           <button onClick={logout}>{t('account.logout')}</button>
           <button onClick={toggleMode}>{t('account.switch')}</button>
           {role === 'admin' && (
