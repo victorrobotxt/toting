@@ -68,7 +68,12 @@ function ElectionDetail() {
             <p>Start: {data.start}</p>
             <p>End: {data.end}</p>
             <p>Status: {data.status}</p>
-            {data.tally && <p>Tally: {data.tally}</p>}
+            {data.tally && (
+              <p>
+                Tally: {data.tally}{' '}
+                <Link href={`/elections/${data.id}/results`}>View Results</Link>
+              </p>
+            )}
             {data.status === 'open' && eligibility && (
               <Link href={`/vote?id=${data.id}`}>Vote</Link>
             )}

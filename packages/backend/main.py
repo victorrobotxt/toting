@@ -371,7 +371,10 @@ def create_election(
         # we manually encode the calldata. This is the Python equivalent of the
         # `abi.encodeCall` fix already present in your `FullFlow.t.sol` test.
         # This ensures the proxy receives the exact, intended function call.
-        encoded_calldata = contract.encodeABI(fn_name='createElection', args=[meta_hash])
+        encoded_calldata = contract.encodeABI(
+            fn_name='createElection',
+            args=[meta_hash, '0x0000000000000000000000000000000000000000']
+        )
 
         tx = {
             "to": ELECTION_MANAGER, # The address of the proxy contract
