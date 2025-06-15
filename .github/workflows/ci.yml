@@ -261,8 +261,22 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.lcov
 
+  # ===========================================================================
+  # JOB 4: LOCAL STACK HEALTH CHECK
+  # Brings up the Docker Compose stack and verifies service health.
+  # ===========================================================================
+  devstack:
+    name: Local Stack Health Check
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Run health check script
+        run: scripts/health_check.sh
+
   # =========================================================================================
-  # JOB 4: VISUAL REGRESSION
+  # JOB 5: VISUAL REGRESSION
   # Runs on PRs after a successful build to check for unintended visual changes.
   # =========================================================================================
   visual:
