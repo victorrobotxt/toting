@@ -203,17 +203,28 @@ function VotePage() {
                                 This election is not currently open for voting. (Status: {election.status})
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
-                                {metadata.options.map((option, index) => (
-                                    <button 
-                                        key={option.id} 
-                                        onClick={() => cast(index)} 
-                                        disabled={loading}
-                                        className="btn btn-primary"
-                                    >
-                                        Vote for {option.label}
-                                    </button>
-                                ))}
+                            <div className="flex flex-col gap-4 mt-6">
+                                {metadata.options.map((option, index) => {
+                                    const colors = [
+                                        'bg-green-600 hover:bg-green-700 focus:ring-green-300',
+                                        'bg-red-600 hover:bg-red-700 focus:ring-red-300',
+                                        'bg-blue-600 hover:bg-blue-700 focus:ring-blue-300',
+                                        'bg-purple-600 hover:bg-purple-700 focus:ring-purple-300'
+                                    ];
+                                    const colour = colors[index % colors.length];
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => cast(index)}
+                                            disabled={loading}
+                                            className={
+                                                `w-full p-6 rounded-lg shadow text-white text-lg font-semibold transition-colors focus:outline-none focus:ring-2 ${colour} disabled:opacity-50`
+                                            }
+                                        >
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </>

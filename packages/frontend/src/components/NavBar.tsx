@@ -36,6 +36,8 @@ export default function NavBar() {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem', alignItems:'center' }}>
           {isLoggedIn ? <AccountMenu /> : <Link href="/login">Log in with eID</Link>}
+          <ThemeToggle />
+          <AuthChip />
         </div>
       </nav>
       {open && (
@@ -50,6 +52,7 @@ export default function NavBar() {
           </div>
         </div>
       )}
+      <ThemeToggle />
       <AuthChip />
       {(role === 'admin' || role === 'verifier') && (
         <div style={{background:'red',color:'white',textAlign:'center',padding:'0.25rem'}}>frontend-only role, not enforced</div>
