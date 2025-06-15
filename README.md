@@ -29,8 +29,9 @@ See [docs/handbook](docs/handbook/README.md) for instructions on running service
 Copy `.env.example` to `.env` and update the values before starting the stack. The backend refuses to run with the placeholder secrets when `USE_REAL_OAUTH=true`.
 
 The backend exposes a simple mock OAuth login for local testing. By default
-`docker-compose` starts the API with `USE_REAL_OAUTH=false`, serving a minimal
-form at `/auth/initiate` that lets you enter an email. Set
+`docker-compose` starts the API with `USE_REAL_OAUTH=false`. The frontend
+intercepts `/auth/initiate` and shows a **Mock Login** modal instead of
+navigating to the raw HTML form. Set
 `USE_REAL_OAUTH=true` to redirect to the configured `GRAO_BASE_URL` instead. The
 `GRAO_REDIRECT_URI` environment variable should match your frontend callback
 page (by default `http://localhost:3000/auth/callback`).
@@ -41,7 +42,7 @@ The backend exposes several REST endpoints used by the frontend:
 
 | Method | Path | Description |
 |-------|------|-------------|
-| `GET` | `/auth/initiate` | Start OAuth login (mock form in local mode). |
+| `GET` | `/auth/initiate` | Start OAuth login (returns mock form in local mode; shown via modal). |
 | `GET` | `/auth/callback` | Finalize login, returns `{id_token, eligibility}`. |
 | `GET` | `/elections` | List elections. |
 | `POST` | `/elections` | Create a new election. |

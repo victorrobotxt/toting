@@ -9,6 +9,8 @@ export default function MockLoginModal({ onClose }: { onClose: () => void }) {
   const emailRef = useRef<HTMLInputElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const emailRegex = /^[^@]+@[^@]+\.[^@]+$/;
+  const isValid = emailRegex.test(email);
 
   useEffect(() => {
     emailRef.current?.focus();
@@ -33,7 +35,7 @@ export default function MockLoginModal({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   const submit = async () => {
-    if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) { setError('invalid email'); return; }
+    if (!isValid) { setError('invalid email'); return; }
     const res = await fetch(`${apiUrl('/auth/callback')}?user=${encodeURIComponent(email)}`);
     const data = await res.json();
     if (data.id_token) {
@@ -46,6 +48,7 @@ export default function MockLoginModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
         position: 'fixed',
         top: 0,
@@ -59,6 +62,7 @@ export default function MockLoginModal({ onClose }: { onClose: () => void }) {
       }}
     >
       <div
+        onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="mocklogin-title"
@@ -73,11 +77,11 @@ export default function MockLoginModal({ onClose }: { onClose: () => void }) {
           ref={emailRef}
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => { setEmail(e.target.value); if (error) setError(''); }}
           placeholder="Email"
         />
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-          <button ref={submitRef} onClick={submit} aria-label="Submit mock login">
+          <button ref={submitRef} onClick={submit} disabled={!isValid} aria-label="Submit mock login">
             Login
           </button>
           <button ref={cancelRef} onClick={onClose} aria-label="Cancel mock login">
