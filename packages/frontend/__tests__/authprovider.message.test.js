@@ -23,6 +23,7 @@ describe('postMessage login', () => {
         <Dummy />
       </AuthProvider>
     );
+    await act(async () => {});
     const evt = new MessageEvent('message', {
       origin: window.location.origin,
       data: { id_token: 'jwt', eligibility: true }
