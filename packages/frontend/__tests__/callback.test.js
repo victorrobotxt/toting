@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react';
 import router from 'next-router-mock';
-import CallbackPage from '../src/pages/callback';
+import CallbackPage from '../src/pages/auth/callback';
 
 jest.mock('next/router', () => require('next-router-mock'));
 
