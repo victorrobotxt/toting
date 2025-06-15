@@ -1,5 +1,5 @@
 pragma circom 2.2.2;
-// All hashes use Poseidon (Arkworks) ensuring MiMC is fully removed
+// All hashes use Poseidon (Arkworks) only
 
 // Simple tally circuit that verifies square roots of vote sums.
 template QVTally(n) {
