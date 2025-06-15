@@ -1,0 +1,13 @@
+digraph {
+    rankdir=LR;
+    node [shape=circle];
+    sums0 [label="sums[0]"];
+    sums1 [label="sums[1]"];
+    results0 [label="results[0]"];
+    results1 [label="results[1]"];
+    main [shape=box,label="QVTally"];
+    sums0 -> results0;
+    results0 -> main;
+    sums1 -> results1;
+    results1 -> main;
+}

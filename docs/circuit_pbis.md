@@ -70,6 +70,7 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 ## C-13 E2E Circuit Docs
 - Architecture doc with constraint graphs, input tables and trusted setup workflow.
 - Published as MkDocs site with diagrams exported from Circom graph.
+- See [C-13 E2E Circuit Documentation](c13_e2e_circuit_docs.md).
 
 ## C-14 Multi-Proof Aggregator
 - Groth16 → BLS12-381 aggregator that rolls up ≤ 512 vote proofs into one.
