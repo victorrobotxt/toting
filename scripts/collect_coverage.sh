@@ -9,12 +9,13 @@ mkdir -p "$COV_DIR/node" "$COV_DIR/python"
 # Forge coverage
 echo "Running solidity coverage..."
 # Source environment variables if .env file exists, so forge tests can find them.
-if [ -f .env ]; then
-    echo "Sourcing .env file for forge coverage..."
-    source .env
-else
-    echo "Warning: .env file not found. Coverage may fail if tests require env vars."
+# --- FIX: Create .env from example if it does not exist ---
+if [ ! -f .env ]; then
+    echo "Warning: .env file not found. Creating from .env.example for coverage run."
+    cp .env.example .env
 fi
+source .env
+
 forge coverage --report lcov --report-file "$COV_DIR/forge.lcov" -vv
 
 # Python coverage

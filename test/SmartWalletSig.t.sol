@@ -1,3 +1,4 @@
+// test/SmartWalletSig.t.sol
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
@@ -32,8 +33,8 @@ contract SmartWalletSigTest is Test {
 
     function testValidSignature() public {
         bytes32 msgHash = keccak256("dummy userOp");
-        bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_KEY, ethHash);
+        // FIX: Sign the raw hash, not the EIP-191 prefixed hash.
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_KEY, msgHash);
         // abi.encode pads each value to 32 bytes resulting in a 96-byte
         // array which the wallet interprets as a Baby-Jubjub signature.
         // Use abi.encodePacked to produce the standard 65-byte secp256k1
@@ -45,8 +46,8 @@ contract SmartWalletSigTest is Test {
 
     function testInvalidSignature() public {
         bytes32 msgHash = keccak256("dummy userOp");
-        bytes32 ethHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xBEEF, ethHash);
+        // FIX: Sign the raw hash for consistency.
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xBEEF, msgHash);
         // Use the packed encoding for the secp256k1 signature to avoid the
         // 96-byte padded encoding which would be treated as an EdDSA
         // signature by the wallet. Signatures are encoded in r || s || v order.
