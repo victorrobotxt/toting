@@ -89,6 +89,31 @@ PRIVATE_KEY = os.getenv("ORCHESTRATOR_KEY")
 ELECTION_MANAGER = Web3.to_checksum_address(os.getenv("ELECTION_MANAGER"))
 PAYMASTER = Web3.to_checksum_address(os.getenv("PAYMASTER", "0x" + "0" * 40))
 
+# Push Protocol configuration
+PUSH_API_URL = os.getenv("PUSH_API_URL", "https://backend.epns.io/apis/v1/payloads")
+PUSH_CHANNEL = os.getenv("PUSH_CHANNEL")
+PUSH_ENV = os.getenv("PUSH_ENV", "staging")
+
+def send_push_notification(title: str, body: str, recipients: list[str] | None = None) -> None:
+    """Send a notification via Push Protocol if configured."""
+    if not PUSH_CHANNEL:
+        logging.info("Push Protocol not configured; skipping notification")
+        return
+    payload = {
+        "senderType": 0,
+        "type": 4 if recipients else 1,
+        "identityType": 2,
+        "notification": {"title": title, "body": body},
+        "payload": {"title": title, "body": body, "cta": "", "img": ""},
+        "recipients": [f"eip155:{CHAIN_ID}:{r}" for r in recipients] if recipients else None,
+        "channel": f"eip155:{CHAIN_ID}:{PUSH_CHANNEL}",
+        "env": PUSH_ENV,
+    }
+    try:
+        httpx.post(PUSH_API_URL, json=payload, timeout=10)
+    except Exception as exc:
+        logging.error(f"Push notification failed: {exc}")
+
 
 # Instantiate the Web3 object
 web3 = Web3(Web3.HTTPProvider(EVM_RPC))
@@ -367,11 +392,7 @@ def create_election(
     contract = get_manager_contract()
     
     try:
-        # --- THIS IS THE FIX ---
-        # Instead of a high-level function call which can be ambiguous with proxies,
-        # we manually encode the calldata. This is the Python equivalent of the
-        # `abi.encodeCall` fix already present in your `FullFlow.t.sol` test.
-        # This ensures the proxy receives the exact, intended function call.
+
         encoded_calldata = contract.encodeABI(fn_name='createElection', args=[meta_hash, verifier_addr])
 
         tx = {
@@ -448,6 +469,10 @@ def create_election(
         )
 
     db.refresh(db_election)
+    send_push_notification(
+        "New Election Created",
+        f"Election {on_chain_id} is now open"
+    )
     return db_election
 
 @app.get("/elections/{election_id}", response_model=ElectionSchema)

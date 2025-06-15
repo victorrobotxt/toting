@@ -32,6 +32,25 @@ contract VerifyingPaymaster is BasePaymaster {
 
     mapping(address => uint256) public senderNonce;
 
+    struct SponsorDeposit {
+        address sponsor;
+        uint256 amount;
+    }
+
+    mapping(uint256 => SponsorDeposit) public sponsorDeposits;
+
+    function deposit(uint256 electionId) external payable {
+        require(msg.value > 0, "empty");
+        SponsorDeposit storage info = sponsorDeposits[electionId];
+        if (info.sponsor == address(0)) {
+            info.sponsor = msg.sender;
+        } else {
+            require(info.sponsor == msg.sender, "not sponsor");
+        }
+        info.amount += msg.value;
+        entryPoint.depositTo{value: msg.value}(address(this));
+    }
+
     function pack(UserOperation calldata userOp) internal pure returns (bytes memory ret) {
         // lighter signature scheme. must match UserOp.ts#packUserOp
         bytes calldata pnd = userOp.paymasterAndData;
@@ -78,7 +97,6 @@ contract VerifyingPaymaster is BasePaymaster {
      */
     function _validatePaymasterUserOp(UserOperation calldata userOp, bytes32 /*userOpHash*/, uint256 requiredPreFund)
     internal override returns (bytes memory context, uint256 validationData) {
-        (requiredPreFund);
 
         (uint48 validUntil, uint48 validAfter, bytes calldata signature) = parsePaymasterAndData(userOp.paymasterAndData);
         //ECDSA library supports both 64 and 65-byte long signatures.
@@ -92,13 +110,28 @@ contract VerifyingPaymaster is BasePaymaster {
             return ("",_packValidationData(true,validUntil,validAfter));
         }
 
-        //no need for other on-chain validation: entire UserOp should have been checked
-        // by the external service prior to signing it.
-        return ("",_packValidationData(false,validUntil,validAfter));
+        uint256 electionId = parseElectionId(userOp.callData);
+        SponsorDeposit storage info = sponsorDeposits[electionId];
+        require(info.amount >= requiredPreFund, "insufficient deposit");
+        return (abi.encode(electionId), _packValidationData(false,validUntil,validAfter));
     }
 
     function parsePaymasterAndData(bytes calldata paymasterAndData) public pure returns(uint48 validUntil, uint48 validAfter, bytes calldata signature) {
         (validUntil, validAfter) = abi.decode(paymasterAndData[VALID_TIMESTAMP_OFFSET:SIGNATURE_OFFSET],(uint48, uint48));
         signature = paymasterAndData[SIGNATURE_OFFSET:];
+    }
+
+    function parseElectionId(bytes calldata callData) public pure returns (uint256 electionId) {
+        electionId = abi.decode(callData[4:36], (uint256));
+    }
+
+    function _postOp(PostOpMode /*mode*/, bytes calldata context, uint256 actualGasCost) internal override {
+        uint256 electionId = abi.decode(context, (uint256));
+        SponsorDeposit storage info = sponsorDeposits[electionId];
+        if (actualGasCost >= info.amount) {
+            info.amount = 0;
+        } else {
+            info.amount -= actualGasCost;
+        }
     }
 }

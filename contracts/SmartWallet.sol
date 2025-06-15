@@ -86,6 +86,16 @@ contract SmartWallet is BaseAccount {
         (bool success,) = dest.call{value: value}(func);
         require(success, "SmartWallet: execute failed");
     }
+
+    /// @notice Execute multiple calls in order
+    function executeBatch(address[] calldata dest, uint256[] calldata value, bytes[] calldata func) external payable {
+        _requireFromEntryPointOrOwner();
+        require(dest.length == func.length && dest.length == value.length, "len mismatch");
+        for (uint256 i = 0; i < dest.length; i++) {
+            (bool success,) = dest[i].call{value: value[i]}(func[i]);
+            require(success, "SmartWallet: execute failed");
+        }
+    }
     /*───────────────────────────────────────────────────────────────────*/
 
     receive() external payable {}
