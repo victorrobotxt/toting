@@ -3,7 +3,6 @@ pragma solidity ^0.8.24;
 
 import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-// --- FIX: Import the local placeholder file we just created. ---
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
 import "./interfaces/IMACI.sol";
 import "./interfaces/IEligibilityVerifier.sol";
@@ -46,7 +45,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     function initialize(IMACI _maci, address initialOwner) public initializer {
         __Ownable_init(initialOwner);
         maci = _maci;
-        tallyVerifier = TallyVerifier(address(0));
+        // tallyVerifier = TallyVerifier(address(0)); // <-- FIX: Removed this line.
         badge = new ParticipationBadge();
         badge.transferOwnership(address(this));
     }
@@ -57,17 +56,19 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         _;
     }
 
-    function createElection(bytes32 meta, IEligibilityVerifier verifier) external onlyOwner {
-
+    // --- FIX: The signature now correctly accepts an IVotingStrategy ---
+    function createElection(bytes32 meta, IVotingStrategy strategy) external onlyOwner {
+        // The IEligibilityVerifier is no longer used, so we create the struct with a null address for it.
         elections[nextId] = Election(
             uint128(block.number),
             // Dramatically increase election duration for local development
             uint128(block.number + 1_000_000),
-            verifier
+            IEligibilityVerifier(address(0))
         );
 
-        strategies[nextId] = strategy;
-        emit ElectionCreated(nextId, meta, address(verifier));
+        strategies[nextId] = strategy; // This now works correctly.
+        // The event's 'verifier' field will now hold the strategy address.
+        emit ElectionCreated(nextId, meta, address(strategy));
         unchecked {
             nextId++;
         }
@@ -86,7 +87,7 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         uint256[2] calldata a,
         uint256[2][2] calldata b,
         uint256[2] calldata c,
-        uint256[] calldata pubSignals
+        uint256[7] calldata pubSignals
     ) external onlyOwner {
         _tallyVotes(id, a, b, c, pubSignals);
     }
