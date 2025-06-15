@@ -1,5 +1,6 @@
 pragma circom 2.1.6;
 
+// Uses Poseidon hash with Arkworks parameters (t=3,5) in place of MiMC
 include "../circomlib/circuits/eddsaposeidon.circom";
 include "../circomlib/circuits/poseidon.circom";
 

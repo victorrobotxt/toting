@@ -39,7 +39,7 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Rejects duplicate nullifier in 1 000 negative tests.
 - Solidity verifier auto-generated and unit-tested in Foundry.
 
-## C-07 Poseidon Hash Refactor
+## C-07 Poseidon Hash Refactor *(Implemented)*
 - Replace MiMC in all circuits with Poseidon (Arkworks params 3,5).
 - Proof size must remain unchanged.
 - Benchmarks ≤ 5 % slower than baseline.

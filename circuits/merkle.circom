@@ -1,6 +1,7 @@
 pragma circom 2.1.6;
 
 // Simplified Merkle proof template using Poseidon
+// Arkworks parameters (t=3,5) ensure compatibility with other circuits
 include "poseidon.circom";
 
 template MerkleProof(depth) {
