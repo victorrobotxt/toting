@@ -6,6 +6,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 import "../contracts/ElectionManagerV2.sol";
+import "../contracts/interfaces/IVotingStrategy.sol";
 
 // --- FIX: Inherit from Test instead of Script ---
 contract TestCreateElection is Test {
@@ -34,7 +35,7 @@ contract TestCreateElection is Test {
         
         console.log("Broadcasting createElection transaction as owner:", deployer);
         vm.startBroadcast(deployerPrivateKey);
-        manager.createElection(meta);
+        manager.createElection(meta, IVotingStrategy(address(0)));
         vm.stopBroadcast();
         console.log("Transaction broadcasted.");
 

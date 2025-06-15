@@ -83,7 +83,7 @@ async function main() {
   // 2. Test the ElectionManager interactions
   const mgr = new ethers.Contract(EMGR!, EMGR_ABI, wallet);
   const meta = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('demo-election'));
-  const tx2 = await mgr.createElection(meta, { gasLimit: 5_000_000 });
+  const tx2 = await mgr.createElection(meta, ethers.constants.AddressZero, { gasLimit: 5_000_000 });
   console.log('⏳ createElection tx', tx2.hash);
   const rcpt2 = await tx2.wait();
   const evt2 = rcpt2.logs.map(l => mgr.interface.parseLog(l)).find(e => e.name === 'ElectionCreated');

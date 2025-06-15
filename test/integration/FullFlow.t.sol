@@ -12,12 +12,26 @@ import {SmartWallet} from "../../contracts/SmartWallet.sol";
 import {ElectionManagerV2} from "../../contracts/ElectionManagerV2.sol";
 import {MockMACI} from "../../contracts/MockMACI.sol";
 import {Verifier} from "../../contracts/Verifier.sol";
+import {TallyVerifier} from "../../contracts/TallyVerifier.sol";
+import {QuadraticVotingStrategy} from "../../contracts/strategies/QuadraticVotingStrategy.sol";
+import {IVotingStrategy} from "../../contracts/interfaces/IVotingStrategy.sol";
 import {IMACI} from "../../contracts/interfaces/IMACI.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 
 /// @notice Always‑true verifier used in tests
 contract TestVerifier is Verifier {
+    function verifyProof(
+        uint256[2] calldata,
+        uint256[2][2] calldata,
+        uint256[2] calldata,
+        uint256[7] calldata
+    ) public pure override returns (bool) {
+        return true;
+    }
+}
+
+contract TestTallyVerifier is TallyVerifier {
     function verifyProof(
         uint256[2] calldata,
         uint256[2][2] calldata,
@@ -39,6 +53,7 @@ contract FullFlowTest is Test {
     WalletFactory       public factory;
     ElectionManagerV2   public manager;
     MockMACI            public maci;
+    QuadraticVotingStrategy public qvStrategy;
 
     address internal admin     = vm.addr(1);
     uint256 internal adminKey  = 1;
@@ -54,6 +69,7 @@ contract FullFlowTest is Test {
         entryPoint = new EntryPoint();
         maci       = new MockMACI();
         factory    = new WalletFactory(entryPoint, new TestVerifier(), "bn254");
+        qvStrategy = new QuadraticVotingStrategy(new TestTallyVerifier());
 
         // ── Deploy upgradeable manager (proxy + impl) ──────────────────────
         ElectionManagerV2 impl = new ElectionManagerV2();
@@ -83,7 +99,7 @@ contract FullFlowTest is Test {
         // --- FIX: Replace the ambiguous high-level call with an explicit low-level call ---
         // This ensures the calldata sent to the proxy is correctly formatted with the
         // function selector, preventing the state corruption seen in the test trace.
-        bytes memory calldataToProxy = abi.encodeCall(manager.createElection, (meta));
+        bytes memory calldataToProxy = abi.encodeCall(manager.createElection, (meta, IVotingStrategy(address(qvStrategy))));
         (bool success, ) = address(manager).call(calldataToProxy);
         require(success, "createElection call to proxy failed");
         
