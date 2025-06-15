@@ -6,6 +6,7 @@ import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.s
 // --- FIX: Import the local placeholder file we just created. ---
 import {OwnableUpgradeable} from "./utils/OwnableUpgradeable.sol";
 import "./interfaces/IMACI.sol";
+import "./ParticipationBadge.sol";
 import "./interfaces/IVotingStrategy.sol";
 import "./interfaces/IAutomationCompatible.sol";
 
@@ -14,6 +15,7 @@ import "./interfaces/IAutomationCompatible.sol";
 contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable, IAutomationCompatible {
     IMACI public maci;
     bool public tallied; // slot from V1
+    ParticipationBadge public badge;
 
     constructor() {
         _disableInitializers();
@@ -36,12 +38,15 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
     uint256[2] public result; // [A, B] tally result
 
     /// @custom:storage-gap
-    uint256[50] private __gap;
+    uint256[49] private __gap;
 
     /// @dev initializer replaces constructor for upgradeable contracts
     function initialize(IMACI _maci, address initialOwner) public initializer {
         __Ownable_init(initialOwner);
         maci = _maci;
+        tallyVerifier = TallyVerifier(address(0));
+        badge = new ParticipationBadge();
+        badge.transferOwnership(address(this));
     }
 
     modifier onlyDuringElection(uint256 id) {
@@ -63,12 +68,10 @@ contract ElectionManagerV2 is Initializable, UUPSUpgradeable, OwnableUpgradeable
         }
     }
 
-    function enqueueMessage(
-        uint256 id,
-        uint256 vote,
-        uint256 nonce,
-        bytes calldata vcProof
-    ) external onlyDuringElection(id) {
+    function enqueueMessage(uint256 id, uint256 vote, uint256 nonce, bytes calldata vcProof)
+        external
+        onlyDuringElection(id)
+    {
         maci.publishMessage(abi.encode(msg.sender, vote, nonce, vcProof));
     }
 
