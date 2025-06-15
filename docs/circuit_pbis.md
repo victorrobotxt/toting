@@ -44,7 +44,7 @@ The following product backlog items (PBIs) outline planned improvements to the Z
 - Proof size must remain unchanged.
 - Benchmarks ≤ 5 % slower than baseline.
 
-## C-08 Recursive Batch-Tally v2
+## C-08 Recursive Batch-Tally v2 *(Implemented)*
 - Halo2 or Plonk recursion proof that rolls 8 × `C-03` tallies into one.
 - Constraint budget ≤ 2 M.
 - Prove & verify under 30 s on CI.
