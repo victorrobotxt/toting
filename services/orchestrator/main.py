@@ -18,6 +18,30 @@ POLL_INTERVAL_S = 10
 CURVE = os.environ.get("CURVE", "bn254")
 MANIFEST_PATH = "/app/artifacts/manifest.json"
 
+# Push Protocol configuration
+PUSH_API_URL = os.getenv("PUSH_API_URL", "https://backend.epns.io/apis/v1/payloads")
+PUSH_CHANNEL = os.getenv("PUSH_CHANNEL")
+PUSH_ENV = os.getenv("PUSH_ENV", "staging")
+
+def send_push(title: str, body: str):
+    if not PUSH_CHANNEL:
+        print("Push Protocol not configured; skipping notification")
+        return
+    payload = {
+        "senderType": 0,
+        "type": 1,
+        "identityType": 2,
+        "notification": {"title": title, "body": body},
+        "payload": {"title": title, "body": body, "cta": "", "img": ""},
+        "channel": f"eip155:{CHAIN_ID}:{PUSH_CHANNEL}",
+        "env": PUSH_ENV,
+    }
+    try:
+        import httpx
+        httpx.post(PUSH_API_URL, json=payload, timeout=10)
+    except Exception as exc:
+        print(f"Failed to send push notification: {exc}")
+
 
 # --- Load full ABI from the mounted artifact ---
 ABI_PATH = "/app/out/ElectionManagerV2.sol/ElectionManagerV2.json"
@@ -234,6 +258,10 @@ def main():
         
         # Submit proof on-chain
         submit_tally(w3, mgr, acct, proof_data, 0)
+        send_push(
+            "Tally Completed",
+            "Results have been tallied for election 0"
+        )
 
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"❌ Failed to generate or submit proof: {e}")
