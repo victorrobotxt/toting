@@ -1,3 +1,5 @@
+// cypress/e2e/full_flow.cy.ts
+
 describe('Full E2E Flow: Create Election and Vote', () => {
   // Use a valid JSON string for the metadata that matches the frontend's expectations
   const electionMeta = JSON.stringify({
@@ -122,6 +124,7 @@ describe('Full E2E Flow: Create Election and Vote', () => {
         .should('not.eq', '0x');
     });
 
+    // Fix: bring `manager` into scope for assertions by nesting inside the same closure
     cy.exec("grep NEXT_PUBLIC_ELECTION_MANAGER ../../.env.deployed | cut -d '=' -f2")
       .then(({ stdout }) => stdout.trim().toLowerCase())
       .then((manager) =>
@@ -133,11 +136,11 @@ describe('Full E2E Flow: Create Election and Vote', () => {
           .then((txHash) =>
             cy.exec(`cast receipt --rpc-url http://localhost:8545 ${txHash}`)
           )
-      )
-      .its('stdout')
-      .then((receipt) => {
-        expect(receipt.toLowerCase()).to.include(manager.slice(2));
-        expect(receipt).to.include('status: 0x1');
-      });
+          .its('stdout')
+          .then((receipt) => {
+            expect(receipt.toLowerCase()).to.include(manager.slice(2));
+            expect(receipt).to.include('status: 0x1');
+          })
+      );
   });
 });
