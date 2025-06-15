@@ -6,6 +6,17 @@ import pytest
 from fastapi.testclient import TestClient
 from jose import jwt
 from unittest.mock import MagicMock, patch
+import web3
+
+# Some versions of Web3 omit the geth_poa_middleware helper. Provide a noop
+# implementation so the application can import successfully during tests.
+if not hasattr(web3.middleware, "geth_poa_middleware"):
+    def geth_poa_middleware(make_request, w3):
+        def middleware(method, params):
+            return make_request(method, params)
+        return middleware
+
+    web3.middleware.geth_poa_middleware = geth_poa_middleware
 
 # set env vars before importing app
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
@@ -18,7 +29,11 @@ os.environ["CELERY_TASK_ALWAYS_EAGER"] = "1"
 os.environ["CELERY_BROKER"] = "memory://"
 os.environ["CELERY_BACKEND"] = "cache+memory://"
 os.environ["PROOF_QUOTA"] = "3"
-os.environ["CIRCUIT_MANIFEST"] = os.path.join(os.path.dirname(__file__), "..", "..", "..", "artifacts", "manifest.json")
+# Use a very small manifest so the proof module loads without relying on large artifacts
+_manifest_path = os.path.join(os.path.dirname(__file__), "test_manifest.json")
+with open(_manifest_path, "w") as f:
+    json.dump({"eligibility": {"bn254": {"hash": "hash"}}}, f)
+os.environ["CIRCUIT_MANIFEST"] = _manifest_path
 
 # allow "packages" imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
