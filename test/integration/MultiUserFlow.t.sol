@@ -145,15 +145,18 @@ contract MultiUserFlowTest is Test {
             wallet,
             eid
         );
-        address;
-        dest[0] = address(manager);
-        dest[1] = address(manager.badge());
-        uint256;
-        bytes;
+
+        // allocate your batch-call arrays
+        address[] memory dest = new address[](2);
+        uint256[] memory valueArr = new uint256[](2);
+        bytes[]   memory funcArr = new bytes[](2);
+
+        dest[0]     = address(manager);
+        dest[1]     = address(manager.badge());
         valueArr[0] = 0;
         valueArr[1] = 0;
-        funcArr[0] = mgrCall;
-        funcArr[1] = badgeCall;
+        funcArr[0]  = mgrCall;
+        funcArr[1]  = badgeCall;
 
         // batch execute
         bytes4 execSel = bytes4(keccak256("executeBatch(address[],uint256[],bytes[])"));
@@ -182,7 +185,7 @@ contract MultiUserFlowTest is Test {
         (UserOperation memory opA, ) = _buildOp(voterA, voterAKey, voterAWallet, eid, 111, 1, bytes("p"));
         (UserOperation memory opB, ) = _buildOp(voterB, voterBKey, voterBWallet, eid, 222, 0, bytes("q"));
 
-        UserOperation;
+        UserOperation[] memory ops = new UserOperation[](2);
         ops[0] = opA;
         ops[1] = opB;
         entryPoint.handleOps(ops, payable(admin));
@@ -199,7 +202,7 @@ contract MultiUserFlowTest is Test {
 
         // first vote
         (UserOperation memory op1, ) = _buildOp(voterA, voterAKey, voterAWallet, eid, 1, 1, bytes("p"));
-        UserOperation;
+        UserOperation[] memory single = new UserOperation[](1);
         single[0] = op1;
         entryPoint.handleOps(single, payable(admin));
 
@@ -219,7 +222,7 @@ contract MultiUserFlowTest is Test {
         uint256 eid = _createElection(bytes32("sig"));
 
         (UserOperation memory op, ) = _buildOp(voterA, attackerKey, voterAWallet, eid, 10, 1, bytes("p"));
-        UserOperation;
+        UserOperation[] memory arr = new UserOperation[](1);
         arr[0] = op;
 
         vm.expectRevert(abi.encodeWithSignature("FailedOp(uint256,string)", 0, "AA24 signature error"));
