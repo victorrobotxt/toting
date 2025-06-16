@@ -3,10 +3,15 @@ import json
 import time
 import subprocess
 import base64
+import pytest
 from web3 import Web3
 from eth_account import Account
-from solana.publickey import PublicKey
-from solana.rpc.api import Client
+
+try:
+    from solana.publickey import PublicKey
+    from solana.rpc.api import Client
+except Exception:  # pragma: no cover - optional dependency
+    pytest.skip("solana package not available", allow_module_level=True)
 
 EVM_RPC = os.getenv("EVM_RPC", "http://127.0.0.1:8545")
 SOLANA_RPC = os.getenv("SOLANA_RPC", "http://localhost:8899")
