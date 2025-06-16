@@ -5,20 +5,12 @@ const {execSync} = require('child_process');
 const assert = require('assert');
 
 const root = path.resolve(__dirname, '..');
-const appLink = '/app';
-try {
-  if (!fs.existsSync(appLink)) {
-    fs.symlinkSync(root, appLink);
-  }
-} catch (e) {
-  console.error('Failed to create /app symlink', e);
-  process.exit(1);
-}
+const appRoot = root;
 
-const envFile = path.join(appLink, '.env');
+const envFile = path.join(appRoot, '.env');
 fs.writeFileSync(envFile, 'ORCHESTRATOR_KEY=0x01\nSOLANA_BRIDGE_SK=[]\n');
 
-const deployedFile = path.join(appLink, '.env.deployed');
+const deployedFile = path.join(appRoot, '.env.deployed');
 const ADDR_ENTRY = '0x1111111111111111111111111111111111111111';
 const ADDR_MGR = '0x2222222222222222222222222222222222222222';
 const ADDR_FACTORY = '0x3333333333333333333333333333333333333333';
@@ -40,7 +32,7 @@ echo forge $@ >>${binDir}/forge.log
 exit 0
 `);
 
-const env = {...process.env, PATH: `${binDir}:${process.env.PATH}`};
+const env = {...process.env, APP_ROOT: appRoot, PATH: `${binDir}:${process.env.PATH}`};
 try {
   execSync('bash scripts/setup_env.sh anvil', {stdio:'inherit', env});
 } catch (e) {
@@ -56,4 +48,3 @@ assert(contents.includes(`NEXT_PUBLIC_WALLET_FACTORY=${ADDR_FACTORY}`), 'factory
 console.log('setup_env reuse test passed');
 
 fs.rmSync(binDir, {recursive:true, force:true});
-fs.unlinkSync(appLink);
