@@ -53,4 +53,20 @@ contract QVManagerTypedTest is Test {
         vm.prank(vm.addr(1));
         manager.submitTypedBallot(a, b, c, inputs, ballot, sig);
     }
+
+    function testTypedBallotBadSigReverts() public {
+        uint256[2] memory a;
+        uint256[2][2] memory b;
+        uint256[2] memory c;
+        uint256[7] memory inputs;
+        bytes memory ballot = hex"deadbeef";
+        bytes32 digest = manager.hashTypedDataV4(
+            keccak256(abi.encode(keccak256("Ballot(address voter, bytes32 ballotHash)"), vm.addr(1), keccak256(ballot)))
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(2, digest);
+        bytes memory sig = abi.encodePacked(r, s, v);
+        vm.prank(vm.addr(1));
+        vm.expectRevert("bad sig");
+        manager.submitTypedBallot(a, b, c, inputs, ballot, sig);
+    }
 }
