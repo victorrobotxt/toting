@@ -45,7 +45,10 @@ function run(cmd, args, capture = false) {
   await verifier.waitForDeployment();
   console.log('Verifier deployed at', await verifier.getAddress());
 
-  const wasm = 'voice_check_js/voice_check.wasm';
+  // Compile the circuit to ensure a valid wasm file
+  const circuitDir = mkdtempSync(join(tmpdir(), 'vc-circuit-'));
+  run('npx', ['-y', 'circom2', 'circuits/qv/voice_check.circom', '--wasm', '--r1cs', '-o', circuitDir]);
+  const wasm = join(circuitDir, 'voice_check_js/voice_check.wasm');
   const zkey = 'proofs/voice_check_final.zkey';
   if (!existsSync(zkey)) {
     run('bash', ['scripts/fetch_voice_keys.sh', 'proofs']);
