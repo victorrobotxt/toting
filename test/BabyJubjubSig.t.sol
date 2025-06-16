@@ -13,7 +13,7 @@ contract BabyJubjubSigTest is Test {
         return abi.encodePacked(r8x, r8y, s);
     }
 
-    function testVerifyValidSignature() public {
+    function testVerifyValidSignature() public pure {
         bytes32 digest = keccak256("msg");
         address owner = address(0x1234);
         bytes memory sig = _buildSig(digest, owner);
@@ -21,7 +21,7 @@ contract BabyJubjubSigTest is Test {
         assertTrue(ok, "valid signature should verify");
     }
 
-    function testVerifyRejectsBadLength() public {
+    function testVerifyRejectsBadLength() public pure {
         bytes32 digest = keccak256("msg");
         address owner = address(0x1234);
         bytes memory sig = hex"deadbeef"; // length != 96
@@ -29,7 +29,7 @@ contract BabyJubjubSigTest is Test {
         assertFalse(ok, "wrong length should fail");
     }
 
-    function testVerifyRejectsWrongComponents() public {
+    function testVerifyRejectsWrongComponents() public pure {
         bytes32 digest = keccak256("msg");
         address owner = address(0x1234);
         bytes memory sig = _buildSig(digest, owner);

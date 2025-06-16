@@ -12,7 +12,7 @@ contract QVVerifierTest is Test {
         verifier = new QVVerifier();
     }
 
-    function testVerifyProofAlwaysReturnsTrue() public {
+    function testVerifyProofAlwaysReturnsTrue() public view {
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;

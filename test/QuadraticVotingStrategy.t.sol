@@ -35,7 +35,7 @@ contract QuadraticVotingStrategyTest is Test {
         strategy = new QuadraticVotingStrategy(new GoodVerifier());
     }
 
-    function testTallyReturnsSignals() public {
+    function testTallyReturnsSignals() public view {
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;

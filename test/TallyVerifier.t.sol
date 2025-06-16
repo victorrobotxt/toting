@@ -12,7 +12,7 @@ contract TallyVerifierTest is Test {
         verifier = new TallyVerifier();
     }
 
-    function testVerifyProofAlwaysTrue() public {
+    function testVerifyProofAlwaysTrue() public view {
         uint256[2] memory a;
         uint256[2][2] memory b;
         uint256[2] memory c;

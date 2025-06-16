@@ -37,7 +37,7 @@ contract VerifyingPaymasterTest is Test {
         assertEq(remaining, 0.7 ether);
     }
 
-    function testParseFunctions() public {
+    function testParseFunctions() public view {
         uint48 validUntil = 10;
         uint48 validAfter = 5;
         bytes memory sig = hex"deadbeef";

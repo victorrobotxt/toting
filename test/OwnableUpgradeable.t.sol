@@ -25,7 +25,7 @@ contract OwnableUpgradeableTest is Test {
         mock.initialize(owner);
     }
 
-    function testInitialOwner() public {
+    function testInitialOwner() public view {
         assertEq(mock.owner(), owner);
     }
 
