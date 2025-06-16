@@ -50,4 +50,22 @@ npx -y c8 --reporter=lcov --report-dir="$COV_DIR/node" bash -c "npm test && node
 # Combine coverage
 cat "$COV_DIR/forge.lcov" "$COV_DIR/python/lcov.info" "$COV_DIR/node/lcov.info" > "$COV_DIR/coverage.lcov"
 
+# Filter out coverage data for tests and deployment scripts to keep the final
+# report focused on contract source files.
+awk '/^TN:/ { tn=$0; next }
+/^SF:/ {
+  path=substr($0,4);
+  if (path ~ /(script|scripts|test)\// || path ~ /\.s\.sol$/ || path ~ /\.t\.sol$/) {
+    skip=1
+  } else {
+    print tn
+    print $0
+    skip=0
+  }
+  next
+}
+$0=="end_of_record" { if(skip==0) print $0; next }
+skip==0 { print }' "$COV_DIR/coverage.lcov" > "$COV_DIR/coverage.filtered.lcov"
+mv "$COV_DIR/coverage.filtered.lcov" "$COV_DIR/coverage.lcov"
+
 echo "Combined coverage written to $COV_DIR/coverage.lcov"
