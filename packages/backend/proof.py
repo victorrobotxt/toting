@@ -70,6 +70,18 @@ if os.getenv("CELERY_TASK_ALWAYS_EAGER"):
 
 def _dummy_proof(circuit: str, inputs: dict) -> dict:
     """Fallback proof generator using deterministic hashes."""
+    # --- FIX: Implement the dummy proof logic here ---
+    data = json.dumps(inputs, sort_keys=True).encode()
+    h = hashlib.sha256(data).hexdigest()
+    if circuit == "eligibility":
+        dummy_a = [f"0x{h[0:8]}", f"0x{h[8:16]}"]
+        dummy_b = [[f"0x{h[16:24]}", f"0x{h[24:32]}"], [f"0x{h[32:40]}", f"0x{h[40:48]}"]]
+        dummy_c = [f"0x{h[48:56]}", f"0x{h[56:64]}"]
+        proof = {"a": dummy_a, "b": dummy_b, "c": dummy_c}
+    else:
+        proof = f"0x{h[:64]}"
+    pub = [int(h[i:i+8], 16) for i in range(0, 56, 8)]
+    return {"proof": proof, "pubSignals": pub}
 
 @signals.task_prerun.connect
 def _start_timer(task_id, task, **kwargs):
@@ -89,24 +101,7 @@ def _task_success(sender=None, result=None, **kwargs):
 def _task_failure(sender=None, exception=None, **kwargs):
     TASK_FAILURE.labels(sender.name).inc()
 
-@celery_app.task
-def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):
-    """
-    Dummy proof generator.
-    Returns a structured proof for 'eligibility' and a flat hex string for others.
-    """
-    data = json.dumps(inputs, sort_keys=True).encode()
-    h = hashlib.sha256(data).hexdigest()
-    if circuit == "eligibility":
-        dummy_a = [f"0x{h[0:8]}", f"0x{h[8:16]}"]
-        dummy_b = [[f"0x{h[16:24]}", f"0x{h[24:32]}"], [f"0x{h[32:40]}", f"0x{h[40:48]}"]]
-        dummy_c = [f"0x{h[48:56]}", f"0x{h[56:64]}"]
-        proof = {"a": dummy_a, "b": dummy_b, "c": dummy_c}
-    else:
-        proof = f"0x{h[:64]}"
-    pub = [int(h[i:i+8], 16) for i in range(0, 56, 8)]
-    return {"proof": proof, "pubSignals": pub}
-
+# --- FIX: Removed the first, incomplete @celery_app.task definition ---
 
 def _run_snarkjs_proof(wasm_path: str, zkey_path: str, inputs: dict):
     """Run snarkjs to generate a Groth16 proof and return (a,b,c,pub)."""
@@ -194,3 +189,4 @@ def generate_proof(circuit: str, inputs: dict, curve: str = "bn254"):
     db.close()
 
     return result
+    

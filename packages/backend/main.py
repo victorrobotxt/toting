@@ -120,8 +120,6 @@ web3 = Web3(Web3.HTTPProvider(EVM_RPC))
 # Add Proof-of-Authority middleware, required for many testnets and good practice for local dev.
 web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-
-# --- FIX: Lazily load the contract ABI to prevent startup race conditions ---
 EM_ABI = None
 PM_ABI = None
 
@@ -129,7 +127,10 @@ def get_manager_contract():
     """Helper to create a contract instance. Lazily loads the ABI."""
     global EM_ABI
     if EM_ABI is None:
-        ABI_PATH = "/app/out/ElectionManagerV2.sol/ElectionManagerV2.json"
+        # --- FIX: Use a relative path from the project root ---
+        # This makes the code work both inside Docker (where CWD is /app)
+        # and during local/CI testing (where CWD is the repo root).
+        ABI_PATH = "out/ElectionManagerV2.sol/ElectionManagerV2.json"
         if not os.path.exists(ABI_PATH):
             # This should not be hit due to the wait-loop in docker-compose,
             # but it's a robust guard against reloader race conditions.
@@ -140,6 +141,19 @@ def get_manager_contract():
             EM_ABI = EM_ARTIFACT["abi"]
     
     return web3.eth.contract(address=ELECTION_MANAGER, abi=EM_ABI)
+
+def get_paymaster_contract():
+    """Helper to create the Paymaster contract instance."""
+    global PM_ABI
+    if PM_ABI is None:
+        # --- FIX: Use a relative path from the project root ---
+        ABI_PATH = "out/VerifyingPaymaster.sol/VerifyingPaymaster.json"
+        if not os.path.exists(ABI_PATH):
+            raise RuntimeError(f"Could not load contract ABI from {ABI_PATH}")
+        with open(ABI_PATH) as f:
+            PM_ARTIFACT = json.load(f)
+            PM_ABI = PM_ARTIFACT["abi"]
+    return web3.eth.contract(address=PAYMASTER, abi=PM_ABI)
 
 def get_paymaster_contract():
     """Helper to create the Paymaster contract instance."""
