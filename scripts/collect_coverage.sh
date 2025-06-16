@@ -36,6 +36,7 @@ done
 
 # Python coverage
 echo "Running backend tests with coverage..."
+pip install --quiet -r packages/backend/requirements.txt
 pip install --quiet coverage pytest pytest-cov
 pytest packages/backend/tests \
   --cov=packages/backend \
