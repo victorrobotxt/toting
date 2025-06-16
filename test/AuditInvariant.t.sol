@@ -15,7 +15,7 @@ import {IMACI} from "../contracts/interfaces/IMACI.sol";
 contract TestVerifier is Verifier {
     function verifyProof(uint256[2] calldata, uint256[2][2] calldata, uint256[2] calldata, uint256[7] calldata)
         public
-        view
+        pure
         override
         returns (bool)
     {

@@ -13,7 +13,7 @@ contract TestVerifier is Verifier {
         uint256[2][2] calldata,
         uint256[2] calldata,
         uint256[7] calldata
-    ) public view override returns (bool) {
+    ) public pure override returns (bool) {
         return true;
     }
 }

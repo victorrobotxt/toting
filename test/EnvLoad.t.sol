@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 
 contract EnvLoad is Test {
-    function testEnvFileIsVisible() public {
+    function testEnvFileIsVisible() public view {
         // The real value is whatever scripts/setup_env.sh wrote.
         // We only care that it’s *defined* and parses as an address.
         address mgr = vm.envAddress("ELECTION_MANAGER");

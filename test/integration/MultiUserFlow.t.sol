@@ -149,7 +149,7 @@ contract MultiUserFlowTest is Test {
         uint256 ballotNonce,
         uint256 vote,
         bytes memory vcProof
-    ) internal returns (UserOperation memory op, bytes32 opHash) {
+    ) internal view returns (UserOperation memory op, bytes32 opHash) {
         op.sender = wallet;
         op.nonce = entryPoint.getNonce(wallet, 0);
         op.initCode = wallet.code.length > 0 ? bytes("") : _buildInitCode(voter);

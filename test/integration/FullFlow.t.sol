@@ -143,6 +143,7 @@ contract FullFlowTest is Test {
     /// @dev Builds and signs a UserOperation.
     function _buildOp(uint256 eid, uint256 ballotNonce, uint256 vote, bytes memory vcProof)
         internal
+        view
         returns (UserOperation memory op, bytes32 opHash)
     {
         // Populate UserOp using the helper functions
