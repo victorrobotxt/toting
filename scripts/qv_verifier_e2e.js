@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const { spawn, spawnSync } = require('child_process');
-const { readFileSync, writeFileSync, mkdtempSync } = require('fs');
+const { readFileSync, writeFileSync, mkdtempSync, existsSync } = require('fs');
 const { join } = require('path');
 const { tmpdir } = require('os');
 const { ethers, HDNodeWallet } = require('ethers');
@@ -31,9 +31,11 @@ function run(cmd, args, capture = false) {
   const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
   const wallet = HDNodeWallet.fromPhrase(mnemonic).connect(provider);
 
-  const artifact = JSON.parse(
-    readFileSync('out/QVVerifier.sol/QVVerifier.json', 'utf8'),
-  );
+  const artifactPath = 'out/QVVerifier.sol/QVVerifier.json';
+  if (!existsSync(artifactPath)) {
+    run('forge', ['build', '--silent']);
+  }
+  const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
   const factory = new ethers.ContractFactory(
     artifact.abi,
     artifact.bytecode.object,
@@ -45,6 +47,9 @@ function run(cmd, args, capture = false) {
 
   const wasm = 'voice_check_js/voice_check.wasm';
   const zkey = 'proofs/voice_check_final.zkey';
+  if (!existsSync(zkey)) {
+    run('bash', ['scripts/fetch_voice_keys.sh', 'proofs']);
+  }
 
   const tmp = mkdtempSync(join(tmpdir(), 'vc-'));
   const input = {
