@@ -31,20 +31,6 @@ function run(cmd, args, capture = false) {
   const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
   const wallet = HDNodeWallet.fromPhrase(mnemonic).connect(provider);
 
-  const artifactPath = 'out/QVVerifier.sol/QVVerifier.json';
-  if (!existsSync(artifactPath)) {
-    run('forge', ['build', '--silent']);
-  }
-  const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
-  const factory = new ethers.ContractFactory(
-    artifact.abi,
-    artifact.bytecode.object,
-    wallet,
-  );
-  const verifier = await factory.deploy();
-  await verifier.waitForDeployment();
-  console.log('Verifier deployed at', await verifier.getAddress());
-
   // Compile the circuit to ensure a valid wasm file
   const circuitDir = mkdtempSync(join(tmpdir(), 'vc-circuit-'));
   run('npx', ['-y', 'circom2', 'circuits/qv/voice_check.circom', '--wasm', '--r1cs', '-o', circuitDir]);
@@ -53,6 +39,28 @@ function run(cmd, args, capture = false) {
   if (!existsSync(zkey)) {
     run('bash', ['scripts/fetch_voice_keys.sh', 'proofs']);
   }
+
+  // Generate a real verifier contract from the proving key on the fly. This
+  // avoids committing the large auto-generated contract to the repository while
+  // still testing on-chain verification logic.
+  const contractDir = mkdtempSync(join(tmpdir(), 'vc-verifier-'));
+  const contractSol = join(contractDir, 'Verifier.sol');
+  run('npx', ['-y', 'snarkjs', 'zkey', 'export', 'solidityverifier', zkey, contractSol]);
+
+  // Compile just the generated verifier to keep build times minimal
+  const outDir = join(contractDir, 'out');
+  run('forge', ['build', '--skip', 'test', '--skip', 'script', '--out', outDir, '--contracts', contractSol]);
+  const artifactPath = join(outDir, 'Verifier.sol', 'Groth16Verifier.json');
+  const artifact = JSON.parse(readFileSync(artifactPath, 'utf8'));
+
+  const factory = new ethers.ContractFactory(
+    artifact.abi,
+    artifact.bytecode.object,
+    wallet,
+  );
+  const verifier = await factory.deploy();
+  await verifier.waitForDeployment();
+  console.log('Verifier deployed at', await verifier.getAddress());
 
   const tmp = mkdtempSync(join(tmpdir(), 'vc-'));
   const input = {
@@ -74,10 +82,8 @@ function run(cmd, args, capture = false) {
     true,
   ).trim();
   const [a, b, c, rawInputs] = JSON.parse('[' + cd + ']');
-  const inputs = new Array(7).fill('0');
-  for (let i = 0; i < Math.min(rawInputs.length, 7); i++) {
-    inputs[i] = rawInputs[i];
-  }
+  // The voice_check circuit exposes a single public signal (the `ok` output).
+  const inputs = [rawInputs[0] ?? '0'];
 
   const ok = await verifier.verifyProof(a, b, c, inputs);
   console.log('verifyProof(valid) =>', ok);
