@@ -31,7 +31,7 @@ contract SmartWalletSigTest is Test {
         wallet = new SigHelper(EntryPoint(payable(address(0))), ownerAddr);
     }
 
-    function testValidSignature() public {
+    function testValidSignature() public view {
         bytes32 msgHash = keccak256("dummy userOp");
         // FIX: Sign the raw hash, not the EIP-191 prefixed hash.
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(OWNER_KEY, msgHash);
@@ -44,7 +44,7 @@ contract SmartWalletSigTest is Test {
         assertTrue(ok, "correct key should validate");
     }
 
-    function testInvalidSignature() public {
+    function testInvalidSignature() public view {
         bytes32 msgHash = keccak256("dummy userOp");
         // FIX: Sign the raw hash for consistency.
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(0xBEEF, msgHash);
@@ -56,12 +56,12 @@ contract SmartWalletSigTest is Test {
         assertFalse(ok, "wrong key should fail");
     }
 
-    function testValidEdDSA() public {
+    function testValidEdDSA() public view {
         bool ok = wallet.isValid(ED_MSG, ED_SIG);
         assertTrue(ok, "eddsa signature should validate");
     }
 
-    function testInvalidEdDSA() public {
+    function testInvalidEdDSA() public view {
         bytes memory badSig = bytes.concat(ED_SIG, hex"00");
         bool ok = wallet.isValid(ED_MSG, badSig);
         assertFalse(ok, "malformed eddsa should fail");

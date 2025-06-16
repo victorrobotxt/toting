@@ -23,7 +23,7 @@ contract ElectionManagerUpgradeTest is Test {
         manager = ElectionManagerV2(address(proxy));
     }
 
-    function test_Upgrade() public {
+    function test_Upgrade() public view {
         // Placeholder for a real upgrade test
         assertTrue(manager.owner() == owner);
     }

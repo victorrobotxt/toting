@@ -11,10 +11,10 @@ contract UnsafeVerifierStub is Verifier {
     uint256 public immutable allowedChain;
     constructor(uint256 _chain) { allowedChain = _chain; }
     function verifyProof(
-        uint256[2] calldata a,
-        uint256[2][2] calldata b,
-        uint256[2] calldata c,
-        uint256[7] calldata pubSignals
+        uint256[2] calldata /* a */,
+        uint256[2][2] calldata /* b */,
+        uint256[2] calldata /* c */,
+        uint256[7] calldata /* pubSignals */
     ) public view override returns (bool) {
         require(block.chainid == allowedChain, "unsafe verifier");
         return true;
