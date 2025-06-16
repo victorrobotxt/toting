@@ -5,9 +5,12 @@
 # of the last command to exit with a non-zero status.
 set -euo pipefail
 
+# allow overriding the root directory (defaults to /app)
+APP_ROOT="${APP_ROOT:-/app}"
+
 # Determine network from first argument or default to "anvil"
 NETWORK_NAME="${1:-anvil}"
-CONFIG_FILE="/app/config/${NETWORK_NAME}.json"
+CONFIG_FILE="${APP_ROOT}/config/${NETWORK_NAME}.json"
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "🛑 Unknown network config: $NETWORK_NAME" >&2
     exit 1
@@ -21,8 +24,8 @@ FACTORY_PRE=$(jq -r '.walletFactory // empty' "$CONFIG_FILE")
 BUNDLER_URL=$(jq -r '.bundlerUrl // "http://localhost:3001/rpc"' "$CONFIG_FILE")
 
 # --- Pre-flight Check: Ensure running inside container ---
-if [ ! -d "/app" ] || [ ! -f "/app/foundry.toml" ]; then
-    echo "🛑 Error: This script must be run from a Docker container with the project root mounted at /app." >&2
+if [ ! -d "${APP_ROOT}" ] || [ ! -f "${APP_ROOT}/foundry.toml" ]; then
+    echo "🛑 Error: This script must be run from a Docker container with the project root mounted at ${APP_ROOT}." >&2
     exit 1
 fi
 
@@ -31,19 +34,19 @@ echo "🧹 Cleaning up previous Foundry build artifacts and cache..."
 forge clean
 
 # --- Pre-flight Check: Submodules ---
-if [ ! -f "/app/lib/account-abstraction/contracts/core/EntryPoint.sol" ]; then
-    echo "🛑 Error: Git submodules not found in /app/lib/." >&2
+if [ ! -f "${APP_ROOT}/lib/account-abstraction/contracts/core/EntryPoint.sol" ]; then
+    echo "🛑 Error: Git submodules not found in ${APP_ROOT}/lib/." >&2
     # ... (rest of error message)
     exit 1
 fi
 
-if [ ! -f /app/.env ]; then
+if [ ! -f ${APP_ROOT}/.env ]; then
     echo "🛑 .env file not found. Please copy .env.example to .env on your host."
     exit 1
 fi
 
 # Load environment variables from .env file
-export $(grep -v '^#' /app/.env | xargs)
+export $(grep -v '^#' ${APP_ROOT}/.env | xargs)
 
 # --- Generate Solana Bridge Key if not present ---
 if [ "${SOLANA_BRIDGE_SK}" == "[]" ]; then
@@ -59,7 +62,7 @@ if [ "${SOLANA_BRIDGE_SK}" == "[]" ]; then
     )
     
     # Use sed to update the .env file in-place. The `|` is used as a separator to avoid issues with `/` in paths.
-    sed -i "s|^SOLANA_BRIDGE_SK=\\[\\]|SOLANA_BRIDGE_SK=${NEW_SK}|" /app/.env
+    sed -i "s|^SOLANA_BRIDGE_SK=\\[\\]|SOLANA_BRIDGE_SK=${NEW_SK}|" ${APP_ROOT}/.env
     echo "✅ New Solana bridge key generated and saved to .env"
     # Re-export the new value for the current script session
     export SOLANA_BRIDGE_SK="$NEW_SK"
@@ -82,8 +85,8 @@ done
 echo "✅ RPC is ready for $NETWORK_NAME."
 
 # --- Patch the incorrect import path in the account-abstraction submodule ---
-echo "🩹 Patching import path in /app/lib/account-abstraction/contracts/core/EntryPoint.sol..."
-ENTRYPOINT_SOL="/app/lib/account-abstraction/contracts/core/EntryPoint.sol"
+echo "🩹 Patching import path in ${APP_ROOT}/lib/account-abstraction/contracts/core/EntryPoint.sol..."
+ENTRYPOINT_SOL="${APP_ROOT}/lib/account-abstraction/contracts/core/EntryPoint.sol"
 if [ -f "$ENTRYPOINT_SOL" ]; then
     sed -i 's|@openzeppelin/contracts/utils/ReentrancyGuard.sol|@openzeppelin/contracts/security/ReentrancyGuard.sol|g' "$ENTRYPOINT_SOL"
     echo "✅ Import path patched."
@@ -98,7 +101,7 @@ echo "📦 Deploying contracts..."
 # exist on chain. If they do, reuse them instead of deploying again. This keeps
 # the addresses stable across repeated runs and prevents the frontend from using
 # stale values.
-DEPLOYED_ENV_FILE="/app/.env.deployed"
+DEPLOYED_ENV_FILE="${APP_ROOT}/.env.deployed"
 if [ -n "$ENTRYPOINT_PRE" ]; then ENTRYPOINT_ADDR="$ENTRYPOINT_PRE"; fi
 if [ -n "$MGR_PRE" ]; then MGR_ADDR="$MGR_PRE"; fi
 if [ -n "$FACTORY_PRE" ]; then FACTORY_ADDR="$FACTORY_PRE"; fi
@@ -197,7 +200,7 @@ else
 fi
 
 # --- Generate .env.deployed file ---
-DEPLOYED_ENV_FILE="/app/.env.deployed"
+DEPLOYED_ENV_FILE="${APP_ROOT}/.env.deployed"
 echo "📝 Generating environment file at $DEPLOYED_ENV_FILE"
 
 { 
@@ -212,7 +215,7 @@ echo "📝 Generating environment file at $DEPLOYED_ENV_FILE"
 echo "✅ .env.deployed created."
 
 # --- Append to main .env file (for manual forge/foundry commands) ---
-MAIN_ENV_FILE="/app/.env"
+MAIN_ENV_FILE="${APP_ROOT}/.env"
 echo "📝 Appending deployed addresses to $MAIN_ENV_FILE for forge commands..."
 # First, remove old deployed addresses from .env to prevent duplicates on restart
 sed -i '/^ELECTION_MANAGER=/d' "$MAIN_ENV_FILE"
@@ -225,7 +228,7 @@ sed -i '/^SOLANA_BRIDGE_SK=/d' "$MAIN_ENV_FILE"
 cat "$DEPLOYED_ENV_FILE" >> "$MAIN_ENV_FILE"
 
 # --- Generate bundler.config.json file ---
-BUNDLER_CONFIG_FILE="/app/bundler.config.json"
+BUNDLER_CONFIG_FILE="${APP_ROOT}/bundler.config.json"
 echo "📝 Generating bundler config file at $BUNDLER_CONFIG_FILE"
 BENEFICIARY_ADDR=$(cast wallet address --private-key $ORCHESTRATOR_KEY)
 
@@ -249,7 +252,7 @@ EOL
 echo "✅ Bundler config created."
 
 # --- Generate frontend's local environment file ---
-FRONTEND_LOCAL_ENV_FILE="/app/packages/frontend/.env.local"
+FRONTEND_LOCAL_ENV_FILE="${APP_ROOT}/packages/frontend/.env.local"
 echo "📝 Generating/updating frontend local environment file at $FRONTEND_LOCAL_ENV_FILE for hot-reloading..."
 
 {
@@ -267,7 +270,7 @@ echo "✅ Frontend .env.local created."
 
 # --- Install frontend dependencies ---
 echo "📦 Installing frontend dependencies..."
-cd /app/packages/frontend
+cd ${APP_ROOT}/packages/frontend
 yarn install
 cd - >/dev/null
 
