@@ -73,7 +73,11 @@ function run(cmd, args, capture = false) {
     ['-y', 'snarkjs', 'zkey', 'export', 'soliditycalldata', publicFile, proofFile],
     true,
   ).trim();
-  const [a, b, c, inputs] = JSON.parse('[' + cd + ']');
+  const [a, b, c, rawInputs] = JSON.parse('[' + cd + ']');
+  const inputs = new Array(7).fill('0');
+  for (let i = 0; i < Math.min(rawInputs.length, 7); i++) {
+    inputs[i] = rawInputs[i];
+  }
 
   const ok = await verifier.verifyProof(a, b, c, inputs);
   console.log('verifyProof(valid) =>', ok);
