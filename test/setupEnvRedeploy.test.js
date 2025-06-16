@@ -5,13 +5,12 @@ const {execSync} = require('child_process');
 const assert = require('assert');
 
 const root = path.resolve(__dirname, '..');
-const appLink = '/app';
-if (!fs.existsSync(appLink)) fs.symlinkSync(root, appLink);
+const appRoot = root;
 
-const envFile = path.join(appLink, '.env');
+const envFile = path.join(appRoot, '.env');
 fs.writeFileSync(envFile, 'ORCHESTRATOR_KEY=0x01\nSOLANA_BRIDGE_SK=[]\n');
 
-const deployedFile = path.join(appLink, '.env.deployed');
+const deployedFile = path.join(appRoot, '.env.deployed');
 fs.writeFileSync(deployedFile, 'ELECTION_MANAGER=0x0\nNEXT_PUBLIC_ELECTION_MANAGER=0x0\nNEXT_PUBLIC_WALLET_FACTORY=0x0\nNEXT_PUBLIC_ENTRYPOINT=0x0\n');
 
 const binDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stubbin-'));
@@ -40,7 +39,7 @@ fi
 exit 0
 `);
 
-const env = {...process.env, PATH: `${binDir}:${process.env.PATH}`};
+const env = {...process.env, APP_ROOT: appRoot, PATH: `${binDir}:${process.env.PATH}`};
 execSync('bash scripts/setup_env.sh anvil', {stdio:'inherit', env});
 
 const contents = fs.readFileSync(deployedFile,'utf8');
@@ -50,4 +49,3 @@ assert(!contents.includes('NEXT_PUBLIC_WALLET_FACTORY=0x0'), 'factory not update
 console.log('setup_env redeploy test passed');
 
 fs.rmSync(binDir, {recursive:true, force:true});
-fs.unlinkSync(appLink);
