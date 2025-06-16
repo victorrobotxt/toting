@@ -86,8 +86,10 @@ function run(cmd, args, capture = false) {
     process.exitCode = 1;
   }
 
-  inputs[0] = (BigInt(inputs[0]) + 1n).toString();
-  const bad = await verifier.verifyProof(a, b, c, inputs);
+  // Tamper with the proof to ensure verification fails
+  const badA = [...a];
+  badA[0] = (BigInt(badA[0]) + 1n).toString();
+  const bad = await verifier.verifyProof(badA, b, c, inputs);
   console.log('verifyProof(tampered) =>', bad);
   if (bad) {
     console.error('Tampered proof unexpectedly verified');
