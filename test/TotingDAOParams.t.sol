@@ -16,7 +16,7 @@ contract TotingDAOParamsTest is Test {
         dao = new TotingDAO(token, timelock);
     }
 
-    function testParameters() public {
+    function testParameters() public view {
         assertEq(dao.votingDelay(), 1);
         assertEq(dao.votingPeriod(), 45818);
     }
