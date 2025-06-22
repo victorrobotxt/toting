@@ -593,7 +593,7 @@ async def paymaster_data(user_op: dict):
 
 
 @app.post("/api/zk/{circuit}")
-def post_proof_generic(
+async def post_proof_generic(
     circuit: str,
     request: Request,
     db: Session = Depends(get_db),
@@ -608,7 +608,7 @@ def post_proof_generic(
     curve = x_curve.lower() if x_curve else "bn254"
     
     try:
-        payload = asyncio.run(request.json())
+        payload = await request.json()
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
