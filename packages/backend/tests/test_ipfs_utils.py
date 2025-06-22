@@ -42,6 +42,11 @@ def test_cid_from_meta_hash():
     assert cid == expected
 
 
+def test_cid_from_meta_hash_invalid():
+    with pytest.raises(ValueError):
+        ipfs.cid_from_meta_hash("0xzzzz")
+
+
 def test_fetch_json(monkeypatch):
     def mock_get(url, timeout):
         class R:

@@ -421,6 +421,16 @@ def test_get_election_not_found():
     assert r.status_code == 404
 
 
+def test_election_meta_bad_hash():
+    db = SessionLocal()
+    election = db.query(Election).get(1)
+    election.meta = "0xzz"
+    db.commit()
+    db.close()
+    r = client.get("/elections/1/meta")
+    assert r.status_code == 400
+
+
 def test_proof_requires_authentication():
     r = client.post("/api/zk/eligibility", json={"foo": "bar"})
     assert r.status_code == 401

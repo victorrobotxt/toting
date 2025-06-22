@@ -34,7 +34,10 @@ def cid_from_meta_hash(meta_hex: str) -> str:
     """Derive an IPFS CID from a hex-encoded sha256 digest."""
     if meta_hex.startswith("0x"):
         meta_hex = meta_hex[2:]
-    digest = bytes.fromhex(meta_hex)
+    try:
+        digest = bytes.fromhex(meta_hex)
+    except ValueError as exc:
+        raise ValueError("invalid metadata hash") from exc
     return b58encode(b"\x12\x20" + digest).decode()
 
 

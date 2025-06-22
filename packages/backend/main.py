@@ -525,6 +525,9 @@ def get_election_metadata(election_id: int, db: Session = Depends(get_db)):
         raise HTTPException(404, "metadata for election not found")
     try:
         cid = cid_from_meta_hash(election.meta)
+    except ValueError:
+        raise HTTPException(400, "invalid metadata hash")
+    try:
         return fetch_json(cid)
     except Exception as e:
         raise HTTPException(500, f"failed to fetch metadata: {e}")
