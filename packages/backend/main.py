@@ -32,7 +32,14 @@ logging.basicConfig(level=logging.INFO, handlers=[handler])
 
 sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"))
 
-from .db import SessionLocal, Base, engine, Election as DbElection, ProofRequest, ProofAudit
+from .db import (
+    SessionLocal,
+    Base,
+    engine,
+    Election as DbElection,
+    ProofRequest,
+    ProofAudit,
+)
 from .schemas import (
     ElectionSchema,
     CreateElectionSchema,
@@ -80,6 +87,7 @@ async def add_cors_header(request: Request, call_next):
         response.headers.setdefault("access-control-allow-origin", FRONTEND_ORIGIN)
     return response
 
+
 # -----------------------------------------------------------------------------
 # Initialize Web3 provider (pointing at your Anvil / local RPC).
 # -----------------------------------------------------------------------------
@@ -94,25 +102,36 @@ PUSH_API_URL = os.getenv("PUSH_API_URL", "https://backend.epns.io/apis/v1/payloa
 PUSH_CHANNEL = os.getenv("PUSH_CHANNEL")
 PUSH_ENV = os.getenv("PUSH_ENV", "staging")
 
-def send_push_notification(title: str, body: str, recipients: list[str] | None = None) -> None:
+
+def send_push_notification(
+    title: str, body: str, recipients: list[str] | None = None
+) -> bool:
     """Send a notification via Push Protocol if configured."""
     if not PUSH_CHANNEL:
         logging.info("Push Protocol not configured; skipping notification")
-        return
+        return False
     payload = {
         "senderType": 0,
         "type": 4 if recipients else 1,
         "identityType": 2,
         "notification": {"title": title, "body": body},
         "payload": {"title": title, "body": body, "cta": "", "img": ""},
-        "recipients": [f"eip155:{CHAIN_ID}:{r}" for r in recipients] if recipients else None,
+        "recipients": (
+            [f"eip155:{CHAIN_ID}:{r}" for r in recipients] if recipients else None
+        ),
         "channel": f"eip155:{CHAIN_ID}:{PUSH_CHANNEL}",
         "env": PUSH_ENV,
     }
     try:
-        httpx.post(PUSH_API_URL, json=payload, timeout=10)
+        response = httpx.post(PUSH_API_URL, json=payload, timeout=10)
+        response.raise_for_status()
+        return True
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code if exc.response else "unknown"
+        logging.error(f"Push notification failed with status {status}: {exc}")
     except Exception as exc:
         logging.error(f"Push notification failed: {exc}")
+    return False
 
 
 # Instantiate the Web3 object
@@ -122,6 +141,7 @@ web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
 EM_ABI = None
 PM_ABI = None
+
 
 def _load_abi(default_path: str, fallback_path: str | None = None) -> list:
     """Attempt to load a contract ABI from the given path with an optional fallback."""
@@ -173,6 +193,7 @@ def get_paymaster_contract():
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
 
+
 # Dependency to get DB session
 def get_db():
     db = SessionLocal()
@@ -196,6 +217,7 @@ PROOF_QUOTA = int(os.getenv("PROOF_QUOTA", "25"))
 OIDC_CONFIG: dict | None = None
 OIDC_JWKS: dict | None = None
 
+
 def fetch_oidc_config() -> dict:
     """Retrieve and cache the OIDC discovery document."""
     global OIDC_CONFIG
@@ -205,6 +227,7 @@ def fetch_oidc_config() -> dict:
         resp.raise_for_status()
         OIDC_CONFIG = resp.json()
     return OIDC_CONFIG
+
 
 def fetch_jwks() -> dict:
     """Retrieve and cache the JWKS used to verify ID tokens."""
@@ -216,6 +239,7 @@ def fetch_jwks() -> dict:
         resp.raise_for_status()
         OIDC_JWKS = resp.json()
     return OIDC_JWKS
+
 
 def decode_oidc_token(token: str) -> dict:
     """Validate a JWT using the provider's JWKS."""
@@ -239,15 +263,16 @@ def decode_oidc_token(token: str) -> dict:
         raise JWTError("Invalid audience")
     return claims
 
+
 def increment_quota(db: Session, user: str, day: str) -> bool:
     """Atomically increment daily proof counter."""
     if db.bind.dialect.name == "postgresql":
         # Use native ON CONFLICT for Postgres for atomicity and performance
         stmt = pg_insert(ProofRequest).values(user=user, day=day, count=1)
         update_stmt = stmt.on_conflict_do_update(
-            index_elements=['user', 'day'],
+            index_elements=["user", "day"],
             set_=dict(count=ProofRequest.count + 1),
-            where=(ProofRequest.count < PROOF_QUOTA)
+            where=(ProofRequest.count < PROOF_QUOTA),
         )
         result = db.execute(update_stmt)
         db.commit()
@@ -261,13 +286,18 @@ def increment_quota(db: Session, user: str, day: str) -> bool:
             return True
         except IntegrityError:
             db.rollback()
-            updated_rows = db.query(ProofRequest).filter(
-                ProofRequest.user == user,
-                ProofRequest.day == day,
-                ProofRequest.count < PROOF_QUOTA
-            ).update({"count": ProofRequest.count + 1}, synchronize_session=False)
+            updated_rows = (
+                db.query(ProofRequest)
+                .filter(
+                    ProofRequest.user == user,
+                    ProofRequest.day == day,
+                    ProofRequest.count < PROOF_QUOTA,
+                )
+                .update({"count": ProofRequest.count + 1}, synchronize_session=False)
+            )
             db.commit()
             return bool(updated_rows)
+
 
 if USE_REAL_OAUTH:
     if CLIENT_SEC == "test-client-secret":
@@ -287,7 +317,9 @@ if not PRIVATE_KEY:
 def get_current_user(authorization: str = Header(None)) -> dict:
     """Decodes the JWT and returns the claims payload."""
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+        raise HTTPException(
+            status_code=401, detail="Missing or invalid Authorization header"
+        )
     token = authorization.split()[1]
     try:
         if USE_REAL_OAUTH:
@@ -297,6 +329,7 @@ def get_current_user(authorization: str = Header(None)) -> dict:
         return claims
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
 
 # --- FIX: New dependency to check for admin role ---
 def require_admin_role(user: dict = Depends(get_current_user)):
@@ -309,7 +342,9 @@ def require_admin_role(user: dict = Depends(get_current_user)):
     elif isinstance(role, str):
         has_admin = role == "admin"
     if not has_admin:
-        raise HTTPException(status_code=403, detail="Insufficient permissions. Admin role required.")
+        raise HTTPException(
+            status_code=403, detail="Insufficient permissions. Admin role required."
+        )
     return user
 
 
@@ -377,7 +412,7 @@ async def callback(code: Optional[str] = None, user: Optional[str] = None):
     # --- FIX: Assign role based on email for easy testing ---
     role = "admin" if email == "admin@example.com" else "user"
     claims = {"email": email, "role": role}
-    
+
     signed_jwt = jwt.encode(claims, JWT_SECRET, algorithm="HS256")
     return {"id_token": signed_jwt, "eligibility": True}
 
@@ -389,24 +424,29 @@ def list_elections(db: Session = Depends(get_db)):
 
 # packages/backend/main.py
 
+
 @app.post("/elections", response_model=ElectionSchema, status_code=201)
 def create_election(
     payload: CreateElectionSchema,
     db: Session = Depends(get_db),
-    admin_user: dict = Depends(require_admin_role)
+    admin_user: dict = Depends(require_admin_role),
 ):
     print(f"Admin user '{admin_user.get('email')}' is creating an election.")
-    
+
     # 1. Pin the metadata to IPFS and derive the on-chain hash (sha256 digest)
     cid = pin_json(payload.metadata)
     digest = hashlib.sha256(payload.metadata.encode()).digest()
     meta_hash = digest
-    verifier_addr = Web3.to_checksum_address(payload.verifier) if payload.verifier else Web3.to_checksum_address('0x' + '0'*40)
-    
+    verifier_addr = (
+        Web3.to_checksum_address(payload.verifier)
+        if payload.verifier
+        else Web3.to_checksum_address("0x" + "0" * 40)
+    )
+
     # 2. Build & send the on-chain transaction
     account = Account.from_key(PRIVATE_KEY)
     contract = get_manager_contract()
-    
+
     try:
 
         try:
@@ -415,13 +455,16 @@ def create_election(
             )
         except Exception:
             encoded_calldata = "0x"
-        if not (isinstance(encoded_calldata, (bytes, str)) and str(encoded_calldata).startswith("0x")):
+        if not (
+            isinstance(encoded_calldata, (bytes, str))
+            and str(encoded_calldata).startswith("0x")
+        ):
             # In tests the mocked method may return a MagicMock object instead of
             # real calldata. Replace it with a trivial value so signing succeeds.
             encoded_calldata = "0x"
 
         tx = {
-            "to": ELECTION_MANAGER, # The address of the proxy contract
+            "to": ELECTION_MANAGER,  # The address of the proxy contract
             "from": account.address,
             "data": encoded_calldata,
             "chainId": CHAIN_ID,
@@ -440,7 +483,10 @@ def create_election(
 
         if receipt.status != 1:
             # This will now give a more direct error if the transaction reverts
-            raise HTTPException(status_code=500, detail=f"On-chain transaction reverted. Tx hash: {tx_hash.hex()}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"On-chain transaction reverted. Tx hash: {tx_hash.hex()}",
+            )
 
     except HTTPException:
         raise
@@ -462,7 +508,7 @@ def create_election(
             on_chain_id = args_data.id
             event_meta_bytes = args_data.meta
         meta_hex_string = Web3.to_hex(event_meta_bytes)
-        
+
         if meta_hex_string != Web3.to_hex(meta_hash):
             # In unit tests the event metadata is mocked and may not match the
             # calculated hash. Skip the strict check in that case.
@@ -474,11 +520,14 @@ def create_election(
     # 4. Read the start/end from the contract
     try:
         election_data = contract.functions.elections(on_chain_id).call()
-        start_block, end_block, chain_verifier = election_data[0], election_data[1], election_data[2]
+        start_block, end_block, chain_verifier = (
+            election_data[0],
+            election_data[1],
+            election_data[2],
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Could not read election state from contract: {e}"
+            status_code=500, detail=f"Could not read election state from contract: {e}"
         )
 
     # 5. Persist in Postgres
@@ -500,15 +549,15 @@ def create_election(
             return existing
         raise HTTPException(
             status_code=500,
-            detail=f"Database commit failed for election ID {on_chain_id}."
+            detail=f"Database commit failed for election ID {on_chain_id}.",
         )
 
     db.refresh(db_election)
     send_push_notification(
-        "New Election Created",
-        f"Election {on_chain_id} is now open"
+        "New Election Created", f"Election {on_chain_id} is now open"
     )
     return db_election
+
 
 @app.get("/elections/{election_id}", response_model=ElectionSchema)
 def get_election(election_id: int, db: Session = Depends(get_db)):
@@ -516,6 +565,7 @@ def get_election(election_id: int, db: Session = Depends(get_db)):
     if not election:
         raise HTTPException(404, "election not found")
     return election
+
 
 # --- NEW ENDPOINT TO SERVE METADATA ---
 @app.get("/elections/{election_id}/meta", response_model=Any)
@@ -528,6 +578,7 @@ def get_election_metadata(election_id: int, db: Session = Depends(get_db)):
         return fetch_json(cid)
     except Exception as e:
         raise HTTPException(500, f"failed to fetch metadata: {e}")
+
 
 @app.patch("/elections/{election_id}", response_model=ElectionSchema)
 def update_election(
@@ -603,7 +654,7 @@ def post_proof_generic(
         raise HTTPException(429, "proof quota exceeded")
 
     curve = x_curve.lower() if x_curve else "bn254"
-    
+
     try:
         payload = asyncio.run(request.json())
     except json.JSONDecodeError:
@@ -628,8 +679,11 @@ def get_proof_generic(circuit: str, job_id: str):
             try:
                 result_data = json.loads(result_data)
             except json.JSONDecodeError:
-                return {"status": "error", "detail": "Invalid result format from worker"}
-        
+                return {
+                    "status": "error",
+                    "detail": "Invalid result format from worker",
+                }
+
         return {"status": "done", **result_data}
     return {"status": "error"}
 
@@ -640,7 +694,11 @@ async def ws_proofs(websocket: WebSocket, job_id: str):
     while True:
         async_result = celery_app.AsyncResult(job_id)
         if async_result.state in {"PENDING", "STARTED"}:
-            progress = async_result.info.get("progress", 0) if isinstance(async_result.info, dict) else 0
+            progress = (
+                async_result.info.get("progress", 0)
+                if isinstance(async_result.info, dict)
+                else 0
+            )
             await websocket.send_json(
                 {"state": async_result.state.lower(), "progress": progress}
             )
