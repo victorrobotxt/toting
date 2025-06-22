@@ -1,0 +1,28 @@
+name: Repo Dump
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run copyDir script
+        run: python copyDir.py . -o repo-dump.txt
+
+      - name: Upload dump artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-dump
+          path: repo-dump.txt
+          if-no-files-found: error
