@@ -110,44 +110,57 @@ def wait_for_election_zero(w3: Web3, mgr) -> int | None:
 
 
 def get_tally_input(w3: Web3, mgr, election_id: int) -> dict:
+    """Aggregate yes/no votes for ``election_id`` using ``VoteCast`` logs.
+
+    Returns a dictionary matching the ``qv_tally.circom`` input format:
+    ``{"sums": [...], "results": [...]}`` where ``results`` contains the integer
+    square roots proving each sum.
     """
-    Fetches all votes for an election and aggregates them for the tally circuit.
-    
-    TODO: This is a critical function to implement correctly.
-    You must:
-    1. Define a `VoteCast` event in your smart contract. e.g., `event VoteCast(uint256 indexed electionId, bool vote);`
-    2. Filter for all instances of that event for the given `election_id`.
-    3. Count the 'yes' and 'no' votes.
-    4. Return a dictionary that matches the input format of your `qv_tally.circom` circuit.
-    """
+
+    print(f"🔍 Gathering votes for election #{election_id}...")
 
     try:
         start_block, end_block = mgr.functions.elections(election_id).call()
-    except Exception:
-        start_block, end_block = 0, "latest"
+    except Exception as exc:
+        print(f"⚠️ Failed to query election info: {exc}")
+        start_block, end_block = 0, w3.eth.block_number
 
-    try:
-        vote_filter = mgr.events.VoteCast.create_filter(
-            fromBlock=start_block,
-            toBlock=end_block,
-            argument_filters={"electionId": election_id},
-        )
-        logs = vote_filter.get_all_entries()
-    except Exception as e:
-        print(f"⚠️ Failed to fetch VoteCast events: {e}")
-        logs = []
+    # Ensure `end_block` is an integer for get_logs
+    if not isinstance(end_block, int) or end_block == 0:
+        end_block = w3.eth.block_number
 
     yes_votes = 0
     no_votes = 0
-    for log in logs:
+
+    step = 10_000  # fetch logs in chunks to avoid RPC limits
+    from_block = start_block
+    while from_block <= end_block:
+        to_block = min(from_block + step - 1, end_block)
         try:
-            vote = log.args.vote
-        except Exception:
-            vote = False
-        if vote:
-            yes_votes += 1
-        else:
-            no_votes += 1
+            vote_filter = mgr.events.VoteCast.create_filter(
+                fromBlock=from_block,
+                toBlock=to_block,
+                argument_filters={"electionId": election_id},
+            )
+            logs = vote_filter.get_all_entries()
+        except Exception as exc:
+            print(
+                f"⚠️ RPC error fetching VoteCast logs {from_block}-{to_block}: {exc}"
+            )
+            logs = []
+
+        for log in logs:
+            try:
+                vote = bool(log.args.vote)
+            except Exception:
+                vote = False
+
+            if vote:
+                yes_votes += 1
+            else:
+                no_votes += 1
+
+        from_block = to_block + 1
 
     yes_root = int(math.isqrt(yes_votes))
     no_root = int(math.isqrt(no_votes))
